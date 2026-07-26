@@ -1,0 +1,262 @@
+[
+    {
+        "id":  "everest",
+        "category":  "peak",
+        "name":  "Эверест",
+        "country_isos":  [
+                             "NPL",
+                             "CHN"
+                         ],
+        "continents":  [
+                           "Asia"
+                       ],
+        "difficulty":  "easy",
+        "point":  [
+                      86.925,
+                      27.988
+                  ],
+        "explanation":  "Эверест — высочайшая вершина Земли над уровнем моря."
+    },
+    {
+        "id":  "kilimanjaro",
+        "category":  "peak",
+        "name":  "Килиманджаро",
+        "country_isos":  [
+                             "TZA"
+                         ],
+        "continents":  [
+                           "Africa"
+                       ],
+        "difficulty":  "easy",
+        "point":  [
+                      37.355,
+                      -3.067
+                  ],
+        "explanation":  "Килиманджаро — вулканический массив и высшая точка Африки."
+    },
+    {
+        "id":  "elbrus",
+        "category":  "peak",
+        "name":  "Эльбрус",
+        "country_isos":  [
+                             "RUS"
+                         ],
+        "continents":  [
+                           "Europe"
+                       ],
+        "difficulty":  "easy",
+        "point":  [
+                      42.439,
+                      43.349
+                  ],
+        "explanation":  "Двуглавая вершина Эльбрус является высшей точкой России и Европы."
+    },
+    {
+        "id":  "denali",
+        "category":  "peak",
+        "name":  "Денали",
+        "country_isos":  [
+                             "USA"
+                         ],
+        "continents":  [
+                           "North America"
+                       ],
+        "difficulty":  "easy",
+        "point":  [
+                      -151.007,
+                      63.069
+                  ],
+        "explanation":  "Денали — высочайшая вершина Северной Америки."
+    },
+    {
+        "id":  "aconcagua",
+        "category":  "peak",
+        "name":  "Аконкагуа",
+        "country_isos":  [
+                             "ARG"
+                         ],
+        "continents":  [
+                           "South America"
+                       ],
+        "difficulty":  "easy",
+        "point":  [
+                      -70.011,
+                      -32.653
+                  ],
+        "explanation":  "Аконкагуа — высочайшая вершина Южной Америки и всего Западного полушария."
+    },
+    {
+        "id":  "mont_blanc",
+        "category":  "peak",
+        "name":  "Монблан",
+        "country_isos":  [
+                             "FRA",
+                             "ITA"
+                         ],
+        "continents":  [
+                           "Europe"
+                       ],
+        "difficulty":  "medium",
+        "point":  [
+                      6.865,
+                      45.833
+                  ],
+        "explanation":  "Монблан расположен в Альпах на границе Франции и Италии."
+    },
+    {
+        "id":  "matterhorn",
+        "category":  "peak",
+        "name":  "Маттерхорн",
+        "country_isos":  [
+                             "CHE",
+                             "ITA"
+                         ],
+        "continents":  [
+                           "Europe"
+                       ],
+        "difficulty":  "medium",
+        "point":  [
+                      7.658,
+                      45.977
+                  ],
+        "explanation":  "Пирамидальная вершина Маттерхорн стала одним из символов Альп."
+    },
+    {
+        "id":  "fuji",
+        "category":  "peak",
+        "name":  "Фудзи",
+        "country_isos":  [
+                             "JPN"
+                         ],
+        "continents":  [
+                           "Asia"
+                       ],
+        "difficulty":  "medium",
+        "point":  [
+                      138.727,
+                      35.361
+                  ],
+        "explanation":  "Фудзи — действующий стратовулкан и высшая точка Японии."
+    },
+    {
+        "id":  "kosciuszko",
+        "category":  "peak",
+        "name":  "Косцюшко",
+        "country_isos":  [
+                             "AUS"
+                         ],
+        "continents":  [
+                           "Oceania"
+                       ],
+        "difficulty":  "medium",
+        "point":  [
+                      148.263,
+                      -36.456
+                  ],
+        "explanation":  "Гора Косцюшко — высшая точка материковой Австралии."
+    },
+    {
+        "id":  "mauna_kea",
+        "category":  "peak",
+        "name":  "Мауна-Кеа",
+        "country_isos":  [
+                             "USA"
+                         ],
+        "continents":  [
+                           "Oceania"
+                       ],
+        "difficulty":  "medium",
+        "point":  [
+                      -155.468,
+                      19.821
+                  ],
+        "explanation":  "Если измерять от подводного основания, Мауна-Кеа выше Эвереста."
+    },
+    {
+        "id":  "k2",
+        "category":  "peak",
+        "name":  "К2",
+        "country_isos":  [
+                             "PAK",
+                             "CHN"
+                         ],
+        "continents":  [
+                           "Asia"
+                       ],
+        "difficulty":  "hard",
+        "point":  [
+                      76.514,
+                      35.881
+                  ],
+        "explanation":  "К2 — вторая по высоте вершина мира и одна из самых сложных для восхождения."
+    },
+    {
+        "id":  "annapurna",
+        "category":  "peak",
+        "name":  "Аннапурна I",
+        "country_isos":  [
+                             "NPL"
+                         ],
+        "continents":  [
+                           "Asia"
+                       ],
+        "difficulty":  "hard",
+        "point":  [
+                      83.821,
+                      28.596
+                  ],
+        "explanation":  "Аннапурна I — восьмитысячник в центральной части Непала."
+    },
+    {
+        "id":  "chimborazo",
+        "category":  "peak",
+        "name":  "Чимборасо",
+        "country_isos":  [
+                             "ECU"
+                         ],
+        "continents":  [
+                           "South America"
+                       ],
+        "difficulty":  "hard",
+        "point":  [
+                      -78.818,
+                      -1.469
+                  ],
+        "explanation":  "Вершина Чимборасо наиболее удалена от центра Земли из-за экваториального выпуклого профиля планеты."
+    },
+    {
+        "id":  "stanley",
+        "category":  "peak",
+        "name":  "Гора Стэнли",
+        "country_isos":  [
+                             "UGA",
+                             "COD"
+                         ],
+        "continents":  [
+                           "Africa"
+                       ],
+        "difficulty":  "hard",
+        "point":  [
+                      29.872,
+                      0.386
+                  ],
+        "explanation":  "Гора Стэнли находится в массиве Рувензори на границе Уганды и ДР Конго."
+    },
+    {
+        "id":  "aoraki",
+        "category":  "peak",
+        "name":  "Аораки / Маунт-Кук",
+        "country_isos":  [
+                             "NZL"
+                         ],
+        "continents":  [
+                           "Oceania"
+                       ],
+        "difficulty":  "hard",
+        "point":  [
+                      170.141,
+                      -43.595
+                  ],
+        "explanation":  "Аораки — высочайшая вершина Новой Зеландии."
+    }
+]

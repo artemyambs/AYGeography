@@ -10,7 +10,8 @@
       "capitals": {"correct": 1.0, "incorrect": 1.5},
       "population": {"correct": 3.0, "incorrect": 4.0},
       "countries": {"correct": 1.0, "incorrect": 1.5},
-      "waters": {"correct": 1.0, "incorrect": 1.5}
+      "waters": {"correct": 1.0, "incorrect": 1.5},
+      "wonders": {"correct": 5.0, "incorrect": 6.0}
     }
   },
   "colors": {
@@ -45,7 +46,8 @@
       "capitals": "Столицы",
       "population": "Население",
       "countries": "Страны",
-      "waters": "Моря и океаны"
+      "waters": "Моря и океаны",
+      "wonders": "Чудеса мира"
     },
     "difficulty": {
       "easy": "Легкий",

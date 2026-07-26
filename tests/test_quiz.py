@@ -29,6 +29,11 @@ from aygeography.quiz import (
 from aygeography.scoring import DEFAULT_SCORE_RULES, ScoreRules
 from aygeography.storage import GameRepository
 from aygeography.waters import WATER_REGIONS
+from aygeography.wonders import (
+    EXPECTED_COUNTS,
+    WonderCatalog,
+    WonderCategory,
+)
 
 
 class QuizTests(unittest.TestCase):
@@ -37,6 +42,90 @@ class QuizTests(unittest.TestCase):
         cls.catalog = CountryCatalog(
             CONFIGS_DIR / "countries_by_iso3.json",
             CONFIGS_DIR / "continents.json",
+        )
+        cls.wonders = WonderCatalog(
+            CONFIGS_DIR / "wonders",
+            cls.catalog.all(),
+            BASE_DIR / "assets",
+        )
+
+    def test_wonders_catalog_has_exact_content_distribution(self):
+        items = self.wonders.all()
+        self.assertEqual(120, len(items))
+        self.assertEqual(
+            Counter(EXPECTED_COUNTS),
+            Counter(item.category for item in items),
+        )
+        self.assertEqual(
+            {"easy": 40, "medium": 40, "hard": 40},
+            dict(Counter(item.difficulty for item in items)),
+        )
+
+    def test_wonders_builds_unique_weighted_round_with_six_options(self):
+        questions = QuestionFactory(
+            wonder_catalog=self.wonders
+        ).build(
+            GameConfig(
+                ["wonders"],
+                list(self.catalog.continents),
+                100,
+                difficulty="medium",
+            ),
+            self.catalog,
+            seed=44,
+        )
+        self.assertEqual(100, len({question.key for question in questions}))
+        self.assertEqual(
+            {"landmark": 38, "peak": 12, "river": 25, "fact": 25},
+            dict(Counter(
+                question.metadata["wonder_category"]
+                for question in questions
+            )),
+        )
+        for question in questions:
+            self.assertEqual(6, len(question.options))
+            self.assertEqual(6, len(set(question.options)))
+            self.assertIn(question.correct_answer, question.options)
+            self.assertTrue(question.explanation)
+
+    def test_landmark_format_is_seeded_per_round(self):
+        factory = QuestionFactory(wonder_catalog=self.wonders)
+        config = GameConfig(
+            ["wonders"],
+            list(self.catalog.continents),
+            120,
+            difficulty="medium",
+        )
+        first = factory.build(config, self.catalog, seed=11)
+        repeated = factory.build(config, self.catalog, seed=11)
+        changed = factory.build(config, self.catalog, seed=12)
+        first_formats = {
+            question.key: question.presentation
+            for question in first
+            if question.metadata["wonder_category"] == "landmark"
+        }
+        self.assertEqual(
+            first_formats,
+            {
+                question.key: question.presentation
+                for question in repeated
+                if question.metadata["wonder_category"] == "landmark"
+            },
+        )
+        self.assertNotEqual(
+            first_formats,
+            {
+                question.key: question.presentation
+                for question in changed
+                if question.metadata["wonder_category"] == "landmark"
+            },
+        )
+        self.assertEqual(
+            {
+                "wonder_landmark_name",
+                "wonder_landmark_country",
+            },
+            set(first_formats.values()),
         )
 
     def test_catalog_contains_195_countries(self):
@@ -53,6 +142,13 @@ class QuizTests(unittest.TestCase):
     def test_configs_directory_replaces_data_directory(self):
         self.assertTrue((CONFIGS_DIR / "app_settings.json").is_file())
         self.assertTrue((CONFIGS_DIR / "scoring.json").is_file())
+        self.assertEqual(
+            {"fact.json", "river.json", "landmark.json", "peak.json"},
+            {
+                path.name
+                for path in (CONFIGS_DIR / "wonders").glob("*.json")
+            },
+        )
         self.assertFalse((BASE_DIR / "data").exists())
 
     def test_feedback_delays_are_configured_for_every_mode(self):

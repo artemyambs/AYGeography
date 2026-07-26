@@ -13,10 +13,13 @@ from aygeography.app import AYGeographyApp
 from aygeography.config import ANSWER_FEEDBACK_SECONDS, ASSETS_DIR
 from aygeography.models import GameConfig
 from aygeography.formatting import format_population
+from aygeography.quiz import GameSession
 from aygeography.storage import GameRepository
 from aygeography.ui.components import (
     GREEN,
     LOGICAL_SIZE,
+    MAP_SELECTION_BORDER,
+    MAP_SELECTION_FILL,
     RED,
     MapCamera,
     MapRenderer,
@@ -24,9 +27,11 @@ from aygeography.ui.components import (
 from aygeography.ui.screens import (
     CAPITAL_LABEL_FONT_SIZE,
     CONTENT,
+    GAMEPLAY_AREA,
     PRIMARY_ACTION_SIZE,
     QUESTION_FLAG_IMAGE_SIZE,
     QUESTION_FLAG_PANEL_SIZE,
+    GameView,
     StatisticsView,
     draw_question_flag,
 )
@@ -197,6 +202,7 @@ class PygameAppTests(unittest.TestCase):
             "population",
             "countries",
             "waters",
+            "wonders",
             "fullscreen",
             "confirm",
             "correct",
@@ -238,10 +244,192 @@ class PygameAppTests(unittest.TestCase):
         self.assertIs(cache, self.app.map_renderer._mastery_cache)
 
     def test_every_game_mode_renders(self):
-        for mode in ("flags", "capitals", "population", "countries", "waters"):
+        for mode in (
+            "flags",
+            "capitals",
+            "population",
+            "countries",
+            "waters",
+            "wonders",
+        ):
             self.app.start_game(GameConfig([mode], ["Europe", "Asia"], 10))
             self.app.update(0.016)
             self.assertEqual(LOGICAL_SIZE, self.app.render().get_size(), mode)
+
+    def test_every_wonder_presentation_renders(self):
+        questions = self.app.question_factory.build(
+            GameConfig(
+                ["wonders"],
+                list(self.app.catalog.continents),
+                120,
+                difficulty="medium",
+            ),
+            self.app.catalog,
+            seed=55,
+        )
+        for category in ("landmark", "peak", "river", "fact"):
+            question = next(
+                item
+                for item in questions
+                if item.metadata["wonder_category"] == category
+            )
+            self.app.manager.clear_and_reset()
+            self.app.view = GameView(
+                self.app,
+                GameSession([question]),
+            )
+            self.assertEqual(
+                LOGICAL_SIZE,
+                self.app.render().get_size(),
+                category,
+            )
+
+    def test_wonder_feedback_text_has_one_left_edge(self):
+        self.app.start_game(
+            GameConfig(
+                ["wonders"],
+                list(self.app.catalog.continents),
+                10,
+            )
+        )
+        view = self.app.view
+        view._answer(view.active_question.correct_answer)
+
+        with (
+            patch("aygeography.ui.screens.draw_text") as draw_text_mock,
+            patch(
+                "aygeography.ui.screens.draw_multiline"
+            ) as draw_multiline_mock,
+        ):
+            view.draw(pygame.Surface(LOGICAL_SIZE))
+
+        feedback_call = next(
+            call
+            for call in draw_text_mock.call_args_list
+            if call.args[1] == view.feedback
+        )
+        explanation_call = next(
+            call
+            for call in draw_multiline_mock.call_args_list
+            if view.active_question.explanation in call.args[1]
+        )
+        self.assertEqual(
+            feedback_call.args[2][0],
+            explanation_call.args[2].left,
+        )
+
+    def test_wonder_feedback_has_no_next_button(self):
+        for is_correct in (True, False):
+            self.app.start_game(
+                GameConfig(
+                    ["wonders"],
+                    list(self.app.catalog.continents),
+                    10,
+                )
+            )
+            view = self.app.view
+            answer = view.active_question.correct_answer
+            if not is_correct:
+                answer = next(
+                    option
+                    for option in view.active_question.options
+                    if option != answer
+                )
+            view._answer(answer)
+
+            with patch(
+                "aygeography.ui.screens.draw_button"
+            ) as draw_button_mock:
+                view.draw(pygame.Surface(LOGICAL_SIZE))
+
+            self.assertNotIn(
+                "Далее",
+                [
+                    call.args[2]
+                    for call in draw_button_mock.call_args_list
+                ],
+            )
+
+    def test_wonder_feedback_delay_and_enter_advance(self):
+        previous_clock = self.app.clock_source
+        now = [100.0]
+        self.app.clock_source = lambda: now[0]
+        try:
+            self.app.start_game(
+                GameConfig(
+                    ["wonders"],
+                    list(self.app.catalog.continents),
+                    10,
+                )
+            )
+            view = self.app.view
+            view._answer(view.active_question.correct_answer)
+            self.assertEqual(
+                100.0 + ANSWER_FEEDBACK_SECONDS["wonders"]["correct"],
+                view.advance_at,
+            )
+            view.handle_event(
+                pygame.event.Event(
+                    pygame.KEYDOWN,
+                    {"key": pygame.K_RETURN},
+                )
+            )
+            self.assertEqual(2, view.active_question_number)
+        finally:
+            self.app.clock_source = previous_clock
+
+    def test_feedback_click_advances_only_inside_gameplay_area(self):
+        self.app.start_game(
+            GameConfig(
+                ["wonders"],
+                list(self.app.catalog.continents),
+                10,
+            )
+        )
+        view = self.app.view
+        incorrect = next(
+            option
+            for option in view.active_question.options
+            if option != view.active_question.correct_answer
+        )
+        view._answer(incorrect)
+
+        ignored_clicks = (
+            (10, GAMEPLAY_AREA.centery),
+            (GAMEPLAY_AREA.centerx, 35),
+            (GAMEPLAY_AREA.centerx, LOGICAL_SIZE[1] - 10),
+        )
+        for position in ignored_clicks:
+            view.handle_event(
+                pygame.event.Event(
+                    pygame.MOUSEBUTTONDOWN,
+                    {"pos": position, "button": 1},
+                )
+            )
+        view.handle_event(
+            pygame.event.Event(
+                pygame.MOUSEBUTTONDOWN,
+                {"pos": GAMEPLAY_AREA.center, "button": 3},
+            )
+        )
+        self.assertEqual(1, view.active_question_number)
+
+        view.handle_event(
+            pygame.event.Event(
+                pygame.MOUSEBUTTONDOWN,
+                {"pos": GAMEPLAY_AREA.center, "button": 1},
+            )
+        )
+        self.assertEqual(2, view.active_question_number)
+
+    def test_question_count_disables_unsupported_wonder_rounds(self):
+        self.app.pending_modes = ["wonders"]
+        self.app.pending_continents = ["Europe"]
+        self.app.pending_count = 100
+        self.app.show("question_count")
+        view = self.app.view
+        self.assertIn(10, view.available_counts)
+        self.assertNotIn(100, view.available_counts)
 
     def test_number_keys_choose_matching_answer(self):
         number_keys = (
@@ -314,6 +502,35 @@ class PygameAppTests(unittest.TestCase):
 
         self.assertEqual(background, surface.get_at((10, 25)))
         self.assertNotEqual(background, surface.get_at((25, 25)))
+
+    def test_wonder_overlays_use_region_selection_palette(self):
+        surface = pygame.Surface((200, 100))
+        rect = surface.get_rect()
+
+        with patch("pygame.draw.circle", wraps=pygame.draw.circle) as circle:
+            self.app.map_renderer._draw_overlay(
+                surface,
+                rect,
+                MapCamera(),
+                {"kind": "point", "point": [0, 0]},
+            )
+        point_colours = {call.args[1] for call in circle.call_args_list}
+        self.assertIn(MAP_SELECTION_FILL, point_colours)
+        self.assertIn(MAP_SELECTION_BORDER, point_colours)
+
+        with patch("pygame.draw.lines", wraps=pygame.draw.lines) as lines:
+            self.app.map_renderer._draw_overlay(
+                surface,
+                rect,
+                MapCamera(),
+                {
+                    "kind": "line",
+                    "lines": [[[-10, 0], [0, 5], [10, 0]]],
+                },
+            )
+        line_colours = {call.args[1] for call in lines.call_args_list}
+        self.assertIn(MAP_SELECTION_FILL, line_colours)
+        self.assertIn(MAP_SELECTION_BORDER, line_colours)
 
     def test_capital_question_uses_compact_flag_layout(self):
         self.app.start_game(GameConfig(["capitals"], ["Europe"], 10))

@@ -33,6 +33,8 @@ class Question:
     options: list[str] = field(default_factory=list)
     correct_answer: str = ""
     visual: str = ""
+    presentation: str = "default"
+    explanation: str = ""
     interaction: str = "choices"
     metadata: dict[str, Any] = field(default_factory=dict)
     country_isos: tuple[str, ...] = field(default_factory=tuple)

@@ -63,6 +63,12 @@ from .components import (
 )
 
 CONTENT = pygame.Rect(SIDEBAR_WIDTH, 0, LOGICAL_SIZE[0] - SIDEBAR_WIDTH, LOGICAL_SIZE[1] - FOOTER_HEIGHT)
+GAMEPLAY_AREA = pygame.Rect(
+    CONTENT.left,
+    70,
+    CONTENT.width,
+    CONTENT.height - 70,
+)
 PRIMARY_ACTION_SIZE = (280, 60)
 PRIMARY_ACTION_FONT_SIZE = 19
 QUESTION_FLAG_IMAGE_SIZE = (280, 180)
@@ -172,8 +178,82 @@ class PopulationComparisonPresenter:
             )
 
 
+class WonderPresenter:
+    owns_prompt = False
+    ANSWER_WIDTH = 390
+    ANSWER_GAP = 18
+
+    @classmethod
+    def answer_rects(cls) -> list[pygame.Rect]:
+        columns = 3
+        total_width = columns * cls.ANSWER_WIDTH + (columns - 1) * cls.ANSWER_GAP
+        start_x = SIDEBAR_WIDTH + (CONTENT.width - total_width) // 2
+        return [
+            pygame.Rect(
+                start_x + (index % columns) * (cls.ANSWER_WIDTH + cls.ANSWER_GAP),
+                cls.answer_top + (index // columns) * 62,
+                cls.ANSWER_WIDTH,
+                50,
+            )
+            for index in range(6)
+        ]
+
+
+class WonderPhotoPresenter(WonderPresenter):
+    answer_top = 610
+
+    @classmethod
+    def draw(cls, surface: pygame.Surface, app, question) -> None:
+        target = pygame.Rect(535, 150, 730, 420)
+        panel(surface, target, fill=PANEL, border=CYAN_DARK)
+        image = app.assets.image(ASSETS_DIR / question.visual)
+        scale = min(
+            (target.width - 18) / image.get_width(),
+            (target.height - 18) / image.get_height(),
+        )
+        size = (
+            max(1, round(image.get_width() * scale)),
+            max(1, round(image.get_height() * scale)),
+        )
+        rect = pygame.Rect((0, 0), size)
+        rect.center = target.center
+        blit_image(surface, image, rect)
+
+
+class WonderMapPresenter(WonderPresenter):
+    answer_top = 710
+
+    @classmethod
+    def draw(cls, surface: pygame.Surface, app, question) -> None:
+        return
+
+
+class WonderFactPresenter(WonderPresenter):
+    owns_prompt = True
+    answer_top = 540
+
+    @classmethod
+    def draw(cls, surface: pygame.Surface, app, question) -> None:
+        fact_rect = pygame.Rect(450, 180, 940, 270)
+        panel(surface, fact_rect, fill=PANEL_ALT, border=CYAN_DARK)
+        wrapped = "\n".join(textwrap.wrap(question.prompt, width=58))
+        draw_multiline(
+            surface,
+            wrapped,
+            fact_rect.inflate(-70, -45),
+            25,
+            TEXT,
+            bold=True,
+            line_gap=10,
+        )
+
+
 QUESTION_PRESENTERS = {
     PopulationComparisonPresenter.key: PopulationComparisonPresenter(),
+    "wonder_landmark_name": WonderPhotoPresenter(),
+    "wonder_landmark_country": WonderPhotoPresenter(),
+    "wonder_map": WonderMapPresenter(),
+    "wonder_fact": WonderFactPresenter(),
 }
 
 
@@ -285,6 +365,7 @@ class ModeSelectionView(SelectionView):
         ("population", "Население", "●●●"),
         ("countries", "Страны", "◎"),
         ("waters", "Моря и океаны", "≈"),
+        ("wonders", "Чудеса мира", "✦"),
     ]
 
     def __init__(self, app) -> None:
@@ -294,7 +375,7 @@ class ModeSelectionView(SelectionView):
         card_w, gap = 235, 24
         for index, (key, _, _) in enumerate(self.ITEMS):
             row, column = divmod(index, 3)
-            columns = 3 if row == 0 else 2
+            columns = min(3, len(self.ITEMS) - row * 3)
             row_width = columns * card_w + (columns - 1) * gap
             start_x = CONTENT.centerx - row_width // 2
             rect = pygame.Rect(
@@ -576,7 +657,26 @@ class QuestionCountView(SelectionView):
 
     def __init__(self, app) -> None:
         super().__init__(app)
-        self.selected = app.pending_count
+        probe = GameConfig(
+            app.pending_modes.copy(),
+            app.pending_continents.copy(),
+            app.pending_count,
+            difficulty=app.pending_difficulty,
+        )
+        self.available_counts = {
+            count
+            for count in (10, 25, 50, 100)
+            if app.question_factory.supports_count(
+                probe,
+                app.catalog,
+                count,
+            )
+        }
+        self.selected = (
+            app.pending_count
+            if app.pending_count in self.available_counts
+            else min(self.available_counts, default=10)
+        )
         self.selected_difficulty = app.pending_difficulty
         self.cards: dict[int, pygame.Rect] = {}
         card_w, gap = 205, 24
@@ -585,7 +685,11 @@ class QuestionCountView(SelectionView):
         for index, count in enumerate((10, 25, 50, 100)):
             rect = pygame.Rect(start_x + index * (card_w + gap), 165, card_w, 220)
             self.cards[count] = rect
-            self.add_action(rect, lambda value=count: setattr(self, "selected", value))
+            if count in self.available_counts:
+                self.add_action(
+                    rect,
+                    lambda value=count: setattr(self, "selected", value),
+                )
         self.difficulty_cards: dict[str, pygame.Rect] = {}
         difficulty_w, difficulty_gap = 220, 24
         difficulty_width = 3 * difficulty_w + 2 * difficulty_gap
@@ -608,6 +712,9 @@ class QuestionCountView(SelectionView):
         self.add_action(self.back_rect, lambda: app.show("continents"))
 
     def _start(self) -> None:
+        if self.selected not in self.available_counts:
+            self.app.toast("Недостаточно уникальных вопросов", RED)
+            return
         self.app.pending_count = self.selected
         self.app.pending_difficulty = self.selected_difficulty
         self.app.start_game(
@@ -635,16 +742,39 @@ class QuestionCountView(SelectionView):
         )
         for count, rect in self.cards.items():
             selected = count == self.selected
-            panel(surface, rect, fill=pygame.Color("#0b2828") if selected else PANEL, border=GREEN if selected else BORDER)
+            enabled = count in self.available_counts
+            panel(
+                surface,
+                rect,
+                fill=pygame.Color("#0b2828") if selected else PANEL,
+                border=GREEN if selected else BORDER,
+            )
             box = pygame.Rect(rect.left + 13, rect.top + 13, 19, 19)
             draw_checkbox(surface, box, selected)
             draw_question_count_icon(
                 surface,
                 (rect.centerx, rect.top + 78),
                 count,
-                GREEN if selected else CYAN,
+                GREEN if selected else (CYAN if enabled else MUTED),
             )
-            draw_text(surface, str(count), (rect.centerx, rect.top + 146), 31, TEXT, bold=True, anchor="center")
+            draw_text(
+                surface,
+                str(count),
+                (rect.centerx, rect.top + 146),
+                31,
+                TEXT if enabled else MUTED,
+                bold=True,
+                anchor="center",
+            )
+            if not enabled:
+                draw_text(
+                    surface,
+                    "Недоступно",
+                    (rect.centerx, rect.bottom - 24),
+                    12,
+                    MUTED,
+                    anchor="center",
+                )
         draw_text(
             surface,
             "Уровень сложности",
@@ -690,7 +820,7 @@ class QuestionCountView(SelectionView):
 
 
 class GameView(BaseView):
-    STATE_VERSION = 2
+    STATE_VERSION = 3
     ANSWER_KEY_INDEX = {
         pygame.K_1: 0,
         pygame.K_2: 1,
@@ -798,7 +928,9 @@ class GameView(BaseView):
         if not question.options:
             return
         presenter = QUESTION_PRESENTERS.get(
-            str(question.metadata.get("presentation", ""))
+            question.presentation
+            if question.presentation != "default"
+            else str(question.metadata.get("presentation", ""))
         )
         if presenter is not None:
             for value, rect in zip(question.options, presenter.answer_rects()):
@@ -828,6 +960,7 @@ class GameView(BaseView):
         return (
             bool(question.metadata.get("highlight"))
             or bool(question.metadata.get("water_highlight"))
+            or bool(question.metadata.get("map_overlay"))
         )
 
     @staticmethod
@@ -847,6 +980,29 @@ class GameView(BaseView):
         water_region = self._question_water_region(self.active_question)
         if water_region is not None:
             return water_region.longitude, water_region.latitude
+        overlay = self.active_question.metadata.get("map_overlay")
+        if isinstance(overlay, dict):
+            point = overlay.get("point")
+            if point:
+                return float(point[0]), float(point[1])
+            points = [
+                point
+                for line in overlay.get("lines", ())
+                for point in line
+            ]
+            if points:
+                return (
+                    (
+                        min(point[0] for point in points)
+                        + max(point[0] for point in points)
+                    )
+                    / 2,
+                    (
+                        min(point[1] for point in points)
+                        + max(point[1] for point in points)
+                    )
+                    / 2,
+                )
         return None
 
     def _zoom_map(self, factor: float) -> None:
@@ -883,6 +1039,16 @@ class GameView(BaseView):
                 (water_region.longitude, water_region.latitude),
                 self.map_rect,
                 zoom=3.0,
+            )
+            return
+        overlay = self.active_question.metadata.get("map_overlay")
+        target = self._zoom_target_position()
+        if isinstance(overlay, dict) and target is not None:
+            self.app.map_renderer.focus_position(
+                self.map_camera,
+                target,
+                self.map_rect,
+                zoom=4.5 if overlay.get("kind") == "point" else 2.2,
             )
 
     def _build_map_actions(self) -> None:
@@ -1028,7 +1194,11 @@ class GameView(BaseView):
             self._answer("")
 
     def handle_event(self, event: pygame.event.Event) -> None:
-        if self.paused or self.advance_at is not None:
+        if self.paused:
+            return
+        if self.advance_at is not None:
+            if self._is_feedback_advance_event(event):
+                self._next()
             return
         question = self.active_question
         if event.type == pygame.KEYDOWN:
@@ -1057,6 +1227,16 @@ class GameView(BaseView):
             return
         if event.type == pygame.MOUSEBUTTONUP and event.button == self._drag_button:
             self._drag_button = None
+
+    @staticmethod
+    def _is_feedback_advance_event(event: pygame.event.Event) -> bool:
+        if event.type == pygame.KEYDOWN:
+            return event.key in (pygame.K_RETURN, pygame.K_KP_ENTER)
+        return (
+            event.type == pygame.MOUSEBUTTONDOWN
+            and event.button == 1
+            and GAMEPLAY_AREA.collidepoint(event.pos)
+        )
 
     def _handle_map_key(self, key: int) -> None:
         if key in (pygame.K_PLUS, pygame.K_EQUALS, pygame.K_KP_PLUS):
@@ -1168,9 +1348,14 @@ class GameView(BaseView):
         self._draw_header(surface)
         question = self.active_question
         capital_layout = bool(question.metadata.get("capital_layout"))
+        presenter = QUESTION_PRESENTERS.get(
+            question.presentation
+            if question.presentation != "default"
+            else str(question.metadata.get("presentation", ""))
+        )
         if capital_layout:
             self._draw_capital_question(surface)
-        else:
+        elif presenter is None or not getattr(presenter, "owns_prompt", False):
             question_position, question_anchor = self._question_text_layout()
             draw_text(
                 surface,
@@ -1188,6 +1373,7 @@ class GameView(BaseView):
                 self.map_rect,
                 highlight_country=question.metadata.get("highlight"),
                 highlight_water=question.metadata.get("water_highlight"),
+                overlay=question.metadata.get("map_overlay"),
                 camera=self.map_camera,
             )
             self._draw_map_controls(surface)
@@ -1199,12 +1385,13 @@ class GameView(BaseView):
                 MUTED,
                 anchor="midbottom",
             )
-        presenter = QUESTION_PRESENTERS.get(
-            str(question.metadata.get("presentation", ""))
-        )
         if presenter is not None:
             presenter.draw(surface, self.app, question)
-        if question.visual and not capital_layout:
+        if (
+            question.visual
+            and not capital_layout
+            and not question.presentation.startswith("wonder_")
+        ):
             draw_question_flag(
                 surface,
                 self.app,
@@ -1215,7 +1402,39 @@ class GameView(BaseView):
             for button, value in self.answer_buttons.items():
                 index = question.options.index(value) + 1
                 draw_button(surface, button.rect, f"{index}.  {value}", selected=False, size=17)
-        if self.feedback:
+        if self.feedback and question.explanation:
+            feedback_rect = pygame.Rect(365, 738, 1100, 105)
+            panel(
+                surface,
+                feedback_rect,
+                fill=pygame.Color("#07171f"),
+                border=self.feedback_colour,
+            )
+            draw_text(
+                surface,
+                self.feedback,
+                (feedback_rect.left + 20, feedback_rect.top + 12),
+                15,
+                self.feedback_colour,
+                bold=True,
+            )
+            wrapped = "\n".join(
+                textwrap.wrap(question.explanation, width=106)
+            )
+            draw_multiline(
+                surface,
+                wrapped,
+                pygame.Rect(
+                    feedback_rect.left + 20,
+                    feedback_rect.top + 34,
+                    feedback_rect.width - 40,
+                    64,
+                ),
+                14,
+                TEXT,
+                align="left",
+            )
+        elif self.feedback:
             draw_text(surface, self.feedback, (CONTENT.centerx, 846), 16, self.feedback_colour, bold=True, anchor="midbottom")
         if self.paused:
             overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
@@ -1401,7 +1620,14 @@ class StatisticsView(BaseView):
         draw_text(surface, "Правильные ответы по режимам", (right.left + 20, right.top + 18), 16, TEXT, bold=True)
         mode_stats = {item["mode"]: item for item in stats["modes"]}
         centre = (right.centerx, right.centery + 25)
-        colours = [CYAN, pygame.Color("#6e83c9"), GREEN, pygame.Color("#f18b3a"), pygame.Color("#a76cd1")]
+        colours = [
+            CYAN,
+            pygame.Color("#6e83c9"),
+            GREEN,
+            pygame.Color("#f18b3a"),
+            pygame.Color("#a76cd1"),
+            YELLOW,
+        ]
         start = -math.pi / 2
         total_attempts = max(1, sum(item["total"] for item in mode_stats.values()))
         for index, (mode, label) in enumerate(MODE_NAMES.items()):

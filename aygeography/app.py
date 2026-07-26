@@ -53,6 +53,7 @@ from .ui.components import (
 )
 from .ui.modals import ConfirmationModal
 from .ui.screens import GameView, HomeView, ResultView, VIEW_TYPES
+from .wonders import WonderCatalog
 
 
 class AssetStore:
@@ -146,6 +147,11 @@ class AYGeographyApp:
             CONFIGS_DIR / "countries_by_iso3.json",
             CONFIGS_DIR / "continents.json",
         )
+        self.wonder_catalog = WonderCatalog(
+            CONFIGS_DIR / "wonders",
+            self.catalog.all(),
+            ASSETS_DIR,
+        )
         self.repository = repository or GameRepository(DATABASE_PATH)
         self.progression_catalog = ProgressionCatalog(
             CONFIGS_DIR / "progression.json",
@@ -157,7 +163,9 @@ class AYGeographyApp:
             self.progression_catalog,
         )
         self.progression.sync()
-        self.question_factory = QuestionFactory()
+        self.question_factory = QuestionFactory(
+            wonder_catalog=self.wonder_catalog
+        )
         self.map_renderer = MapRenderer(ASSETS_DIR / "maps/world_geometry.json")
         self.assets = AssetStore()
         self.manager = LogicalUIManager(

@@ -32,6 +32,8 @@ RED = pygame.Color(COLORS["red"])
 WATER = pygame.Color(COLORS["water"])
 MAP_FILL = pygame.Color(COLORS["map"])
 MAP_BORDER = pygame.Color(COLORS["map_border"])
+MAP_SELECTION_FILL = (171, 211, 42, 150)
+MAP_SELECTION_BORDER = (239, 255, 104, 255)
 
 _SCALED_IMAGE_CACHE: dict[
     tuple[int, tuple[int, int]],
@@ -1025,19 +1027,19 @@ class MapRenderer:
         for points in polygons:
             pygame.draw.polygon(
                 highlight,
-                (171, 211, 42, 150),
+                MAP_SELECTION_FILL,
                 points,
             )
             pygame.draw.lines(
                 highlight,
-                (239, 255, 104, 255),
+                MAP_SELECTION_BORDER,
                 True,
                 points,
                 1,
             )
             pygame.draw.aalines(
                 highlight,
-                (239, 255, 104, 255),
+                MAP_SELECTION_BORDER,
                 True,
                 points,
             )
@@ -1085,6 +1087,7 @@ class MapRenderer:
         *,
         highlight_country: str | None = None,
         highlight_water: str | None = None,
+        overlay: dict | None = None,
         camera: MapCamera | None = None,
     ) -> None:
         camera = camera or MapCamera()
@@ -1098,6 +1101,7 @@ class MapRenderer:
             round(render_camera.offset.y, 2),
             highlight_country,
             highlight_water,
+            json.dumps(overlay, sort_keys=True) if overlay else "",
         )
         if cache_key == self._view_cache_key and self._view_cache is not None:
             surface.blit(self._view_cache, target_rect)
@@ -1129,6 +1133,8 @@ class MapRenderer:
                     canvas,
                     [points],
                 )
+        if overlay:
+            self._draw_overlay(canvas, local_rect, render_camera, overlay)
         pygame.draw.rect(
             canvas,
             BORDER,
@@ -1139,6 +1145,57 @@ class MapRenderer:
         self._view_cache_key = cache_key
         self._view_cache = canvas
         surface.blit(canvas, target_rect)
+
+    def _draw_overlay(
+        self,
+        surface: pygame.Surface,
+        rect: pygame.Rect,
+        camera: MapCamera,
+        overlay: dict,
+    ) -> None:
+        kind = overlay.get("kind")
+        if kind == "point" and overlay.get("point"):
+            layer = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+            center = self.project(overlay["point"], rect, camera)
+            pygame.draw.circle(layer, MAP_SELECTION_BORDER, center, 13)
+            pygame.draw.circle(layer, MAP_SELECTION_FILL, center, 11)
+            surface.blit(layer, (0, 0))
+            return
+        if kind != "line":
+            return
+        layer = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+        for line in overlay.get("lines", ()):
+            points = [self.project(point, rect, camera) for point in line]
+            if len(points) < 2:
+                continue
+            pygame.draw.lines(
+                layer,
+                MAP_SELECTION_BORDER,
+                False,
+                points,
+                10,
+            )
+            pygame.draw.lines(
+                layer,
+                MAP_SELECTION_FILL,
+                False,
+                points,
+                7,
+            )
+            for center in (points[0], points[-1]):
+                pygame.draw.circle(
+                    layer,
+                    MAP_SELECTION_BORDER,
+                    center,
+                    5,
+                )
+                pygame.draw.circle(
+                    layer,
+                    MAP_SELECTION_FILL,
+                    center,
+                    3,
+                )
+        surface.blit(layer, (0, 0))
 
     def draw_mastery_map(
         self,

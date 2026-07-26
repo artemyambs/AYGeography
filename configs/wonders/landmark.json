@@ -1,0 +1,634 @@
+[
+    {
+        "id":  "eiffel_tower",
+        "category":  "landmark",
+        "name":  "Эйфелева башня",
+        "country_isos":  [
+                             "FRA"
+                         ],
+        "continents":  [
+                           "Europe"
+                       ],
+        "difficulty":  "easy",
+        "image":  "wonders/landmarks/eiffel_tower.jpg",
+        "explanation":  "Башню построили в Париже к Всемирной выставке 1889 года."
+    },
+    {
+        "id":  "colosseum",
+        "category":  "landmark",
+        "name":  "Колизей",
+        "country_isos":  [
+                             "ITA"
+                         ],
+        "continents":  [
+                           "Europe"
+                       ],
+        "difficulty":  "easy",
+        "image":  "wonders/landmarks/colosseum.jpg",
+        "explanation":  "Крупнейший амфитеатр Древнего Рима находится в центре Рима."
+    },
+    {
+        "id":  "big_ben",
+        "category":  "landmark",
+        "name":  "Биг-Бен",
+        "country_isos":  [
+                             "GBR"
+                         ],
+        "continents":  [
+                           "Europe"
+                       ],
+        "difficulty":  "easy",
+        "image":  "wonders/landmarks/big_ben.jpg",
+        "explanation":  "Биг-Бен — название главного колокола башни Елизаветы в Лондоне."
+    },
+    {
+        "id":  "statue_of_liberty",
+        "category":  "landmark",
+        "name":  "Статуя Свободы",
+        "country_isos":  [
+                             "USA"
+                         ],
+        "continents":  [
+                           "North America"
+                       ],
+        "difficulty":  "easy",
+        "image":  "wonders/landmarks/statue_of_liberty.jpg",
+        "explanation":  "Франция подарила монумент Соединённым Штатам в XIX веке."
+    },
+    {
+        "id":  "golden_gate",
+        "category":  "landmark",
+        "name":  "Мост Золотые Ворота",
+        "country_isos":  [
+                             "USA"
+                         ],
+        "continents":  [
+                           "North America"
+                       ],
+        "difficulty":  "easy",
+        "image":  "wonders/landmarks/golden_gate.jpg",
+        "explanation":  "Подвесной мост соединяет Сан-Франциско с округом Марин."
+    },
+    {
+        "id":  "christ_redeemer",
+        "category":  "landmark",
+        "name":  "Статуя Христа-Искупителя",
+        "country_isos":  [
+                             "BRA"
+                         ],
+        "continents":  [
+                           "South America"
+                       ],
+        "difficulty":  "easy",
+        "image":  "wonders/landmarks/christ_redeemer.jpg",
+        "explanation":  "Монумент возвышается над Рио-де-Жанейро на горе Корковаду."
+    },
+    {
+        "id":  "machu_picchu",
+        "category":  "landmark",
+        "name":  "Мачу-Пикчу",
+        "country_isos":  [
+                             "PER"
+                         ],
+        "continents":  [
+                           "South America"
+                       ],
+        "difficulty":  "easy",
+        "image":  "wonders/landmarks/machu_picchu.jpg",
+        "explanation":  "Город инков расположен высоко в перуанских Андах."
+    },
+    {
+        "id":  "great_wall",
+        "category":  "landmark",
+        "name":  "Великая Китайская стена",
+        "country_isos":  [
+                             "CHN"
+                         ],
+        "continents":  [
+                           "Asia"
+                       ],
+        "difficulty":  "easy",
+        "image":  "wonders/landmarks/great_wall.jpg",
+        "explanation":  "Систему укреплений строили и перестраивали на протяжении многих веков."
+    },
+    {
+        "id":  "taj_mahal",
+        "category":  "landmark",
+        "name":  "Тадж-Махал",
+        "country_isos":  [
+                             "IND"
+                         ],
+        "continents":  [
+                           "Asia"
+                       ],
+        "difficulty":  "easy",
+        "image":  "wonders/landmarks/taj_mahal.jpg",
+        "explanation":  "Беломраморный мавзолей находится в индийском городе Агра."
+    },
+    {
+        "id":  "sydney_opera",
+        "category":  "landmark",
+        "name":  "Сиднейский оперный театр",
+        "country_isos":  [
+                             "AUS"
+                         ],
+        "continents":  [
+                           "Oceania"
+                       ],
+        "difficulty":  "easy",
+        "image":  "wonders/landmarks/sydney_opera.jpg",
+        "explanation":  "Крыши здания напоминают паруса и стали символом Сиднея."
+    },
+    {
+        "id":  "giza_pyramids",
+        "category":  "landmark",
+        "name":  "Пирамиды Гизы",
+        "country_isos":  [
+                             "EGY"
+                         ],
+        "continents":  [
+                           "Africa"
+                       ],
+        "difficulty":  "easy",
+        "image":  "wonders/landmarks/giza_pyramids.jpg",
+        "explanation":  "Комплекс включает пирамиду Хеопса — единственное сохранившееся чудо древнего мира."
+    },
+    {
+        "id":  "petra",
+        "category":  "landmark",
+        "name":  "Петра",
+        "country_isos":  [
+                             "JOR"
+                         ],
+        "continents":  [
+                           "Asia"
+                       ],
+        "difficulty":  "easy",
+        "image":  "wonders/landmarks/petra.jpg",
+        "explanation":  "Фасады древнего города высечены в розовых скалах Иордании."
+    },
+    {
+        "id":  "burj_khalifa",
+        "category":  "landmark",
+        "name":  "Бурдж-Халифа",
+        "country_isos":  [
+                             "ARE"
+                         ],
+        "continents":  [
+                           "Asia"
+                       ],
+        "difficulty":  "easy",
+        "image":  "wonders/landmarks/burj_khalifa.jpg",
+        "explanation":  "Небоскрёб в Дубае имеет высоту 828 метров."
+    },
+    {
+        "id":  "sagrada_familia",
+        "category":  "landmark",
+        "name":  "Саграда-Фамилия",
+        "country_isos":  [
+                             "ESP"
+                         ],
+        "continents":  [
+                           "Europe"
+                       ],
+        "difficulty":  "easy",
+        "image":  "wonders/landmarks/sagrada_familia.jpg",
+        "explanation":  "Храм в Барселоне строится по проекту архитектора Антонио Гауди."
+    },
+    {
+        "id":  "moscow_kremlin",
+        "category":  "landmark",
+        "name":  "Московский Кремль",
+        "country_isos":  [
+                             "RUS"
+                         ],
+        "continents":  [
+                           "Europe"
+                       ],
+        "difficulty":  "easy",
+        "image":  "wonders/landmarks/moscow_kremlin.jpg",
+        "explanation":  "Крепостной комплекс расположен в историческом центре Москвы."
+    },
+    {
+        "id":  "mont_saint_michel",
+        "category":  "landmark",
+        "name":  "Мон-Сен-Мишель",
+        "country_isos":  [
+                             "FRA"
+                         ],
+        "continents":  [
+                           "Europe"
+                       ],
+        "difficulty":  "medium",
+        "image":  "wonders/landmarks/mont_saint_michel.jpg",
+        "explanation":  "Скалистый остров с аббатством во время прилива оказывается окружён водой."
+    },
+    {
+        "id":  "neuschwanstein",
+        "category":  "landmark",
+        "name":  "Замок Нойшванштайн",
+        "country_isos":  [
+                             "DEU"
+                         ],
+        "continents":  [
+                           "Europe"
+                       ],
+        "difficulty":  "medium",
+        "image":  "wonders/landmarks/neuschwanstein.jpg",
+        "explanation":  "Баварский замок XIX века построен для короля Людвига II."
+    },
+    {
+        "id":  "acropolis",
+        "category":  "landmark",
+        "name":  "Афинский Акрополь",
+        "country_isos":  [
+                             "GRC"
+                         ],
+        "continents":  [
+                           "Europe"
+                       ],
+        "difficulty":  "medium",
+        "image":  "wonders/landmarks/acropolis.jpg",
+        "explanation":  "Главный храм комплекса — Парфенон, посвящённый богине Афине."
+    },
+    {
+        "id":  "alhambra",
+        "category":  "landmark",
+        "name":  "Альгамбра",
+        "country_isos":  [
+                             "ESP"
+                         ],
+        "continents":  [
+                           "Europe"
+                       ],
+        "difficulty":  "medium",
+        "image":  "wonders/landmarks/alhambra.jpg",
+        "explanation":  "Дворцово-крепостной ансамбль возвышается над испанской Гранадой."
+    },
+    {
+        "id":  "angkor_wat",
+        "category":  "landmark",
+        "name":  "Ангкор-Ват",
+        "country_isos":  [
+                             "KHM"
+                         ],
+        "continents":  [
+                           "Asia"
+                       ],
+        "difficulty":  "medium",
+        "image":  "wonders/landmarks/angkor_wat.jpg",
+        "explanation":  "Крупный храмовый комплекс изображён на государственном флаге Камбоджи."
+    },
+    {
+        "id":  "borobudur",
+        "category":  "landmark",
+        "name":  "Боробудур",
+        "country_isos":  [
+                             "IDN"
+                         ],
+        "continents":  [
+                           "Asia"
+                       ],
+        "difficulty":  "medium",
+        "image":  "wonders/landmarks/borobudur.jpg",
+        "explanation":  "Буддийский храм на острове Ява состоит из нескольких террас."
+    },
+    {
+        "id":  "forbidden_city",
+        "category":  "landmark",
+        "name":  "Запретный город",
+        "country_isos":  [
+                             "CHN"
+                         ],
+        "continents":  [
+                           "Asia"
+                       ],
+        "difficulty":  "medium",
+        "image":  "wonders/landmarks/forbidden_city.jpg",
+        "explanation":  "Бывший императорский дворец расположен в центре Пекина."
+    },
+    {
+        "id":  "chichen_itza",
+        "category":  "landmark",
+        "name":  "Чичен-Ица",
+        "country_isos":  [
+                             "MEX"
+                         ],
+        "continents":  [
+                           "North America"
+                       ],
+        "difficulty":  "medium",
+        "image":  "wonders/landmarks/chichen_itza.jpg",
+        "explanation":  "Древний город майя находится на мексиканском полуострове Юкатан."
+    },
+    {
+        "id":  "moai",
+        "category":  "landmark",
+        "name":  "Моаи острова Пасхи",
+        "country_isos":  [
+                             "CHL"
+                         ],
+        "continents":  [
+                           "Oceania"
+                       ],
+        "difficulty":  "medium",
+        "image":  "wonders/landmarks/moai.jpg",
+        "explanation":  "Монолитные статуи созданы народом рапа-нуи на удалённом острове в Тихом океане."
+    },
+    {
+        "id":  "table_mountain",
+        "category":  "landmark",
+        "name":  "Столовая гора",
+        "country_isos":  [
+                             "ZAF"
+                         ],
+        "continents":  [
+                           "Africa"
+                       ],
+        "difficulty":  "medium",
+        "image":  "wonders/landmarks/table_mountain.jpg",
+        "explanation":  "Гора с плоской вершиной доминирует над Кейптауном."
+    },
+    {
+        "id":  "victoria_falls",
+        "category":  "landmark",
+        "name":  "Водопад Виктория",
+        "country_isos":  [
+                             "ZMB",
+                             "ZWE"
+                         ],
+        "continents":  [
+                           "Africa"
+                       ],
+        "difficulty":  "medium",
+        "image":  "wonders/landmarks/victoria_falls.jpg",
+        "explanation":  "Водопад расположен на реке Замбези на границе Замбии и Зимбабве."
+    },
+    {
+        "id":  "uluru",
+        "category":  "landmark",
+        "name":  "Улуру",
+        "country_isos":  [
+                             "AUS"
+                         ],
+        "continents":  [
+                           "Oceania"
+                       ],
+        "difficulty":  "medium",
+        "image":  "wonders/landmarks/uluru.jpg",
+        "explanation":  "Красный песчаниковый монолит священен для народа анангу."
+    },
+    {
+        "id":  "milford_sound",
+        "category":  "landmark",
+        "name":  "Милфорд-Саунд",
+        "country_isos":  [
+                             "NZL"
+                         ],
+        "continents":  [
+                           "Oceania"
+                       ],
+        "difficulty":  "medium",
+        "image":  "wonders/landmarks/milford_sound.jpg",
+        "explanation":  "Фьорд расположен на Южном острове Новой Зеландии."
+    },
+    {
+        "id":  "cn_tower",
+        "category":  "landmark",
+        "name":  "Си-Эн Тауэр",
+        "country_isos":  [
+                             "CAN"
+                         ],
+        "continents":  [
+                           "North America"
+                       ],
+        "difficulty":  "medium",
+        "image":  "wonders/landmarks/cn_tower.jpg",
+        "explanation":  "Телебашня высотой более 550 метров является символом Торонто."
+    },
+    {
+        "id":  "hagia_sophia",
+        "category":  "landmark",
+        "name":  "Собор Святой Софии",
+        "country_isos":  [
+                             "TUR"
+                         ],
+        "continents":  [
+                           "Asia",
+                           "Europe"
+                       ],
+        "difficulty":  "medium",
+        "image":  "wonders/landmarks/hagia_sophia.jpg",
+        "explanation":  "Здание в Стамбуле в разные эпохи служило собором, мечетью и музеем."
+    },
+    {
+        "id":  "registan",
+        "category":  "landmark",
+        "name":  "Регистан",
+        "country_isos":  [
+                             "UZB"
+                         ],
+        "continents":  [
+                           "Asia"
+                       ],
+        "difficulty":  "hard",
+        "image":  "wonders/landmarks/registan.jpg",
+        "explanation":  "Площадь с тремя медресе находится в историческом центре Самарканда."
+    },
+    {
+        "id":  "bagan",
+        "category":  "landmark",
+        "name":  "Храмы Багана",
+        "country_isos":  [
+                             "MMR"
+                         ],
+        "continents":  [
+                           "Asia"
+                       ],
+        "difficulty":  "hard",
+        "image":  "wonders/landmarks/bagan.jpg",
+        "explanation":  "На равнине Баган сохранились тысячи буддийских храмов и пагод."
+    },
+    {
+        "id":  "sigiriya",
+        "category":  "landmark",
+        "name":  "Сигирия",
+        "country_isos":  [
+                             "LKA"
+                         ],
+        "continents":  [
+                           "Asia"
+                       ],
+        "difficulty":  "hard",
+        "image":  "wonders/landmarks/sigiriya.jpg",
+        "explanation":  "Древняя крепость построена на вершине высокой скалы на Шри-Ланке."
+    },
+    {
+        "id":  "potala",
+        "category":  "landmark",
+        "name":  "Дворец Потала",
+        "country_isos":  [
+                             "CHN"
+                         ],
+        "continents":  [
+                           "Asia"
+                       ],
+        "difficulty":  "hard",
+        "image":  "wonders/landmarks/potala.jpg",
+        "explanation":  "Монументальный дворец возвышается над городом Лхаса в Тибете."
+    },
+    {
+        "id":  "prambanan",
+        "category":  "landmark",
+        "name":  "Прамбанан",
+        "country_isos":  [
+                             "IDN"
+                         ],
+        "continents":  [
+                           "Asia"
+                       ],
+        "difficulty":  "hard",
+        "image":  "wonders/landmarks/prambanan.jpg",
+        "explanation":  "Крупнейший индуистский храмовый комплекс Индонезии расположен на Яве."
+    },
+    {
+        "id":  "lalibela",
+        "category":  "landmark",
+        "name":  "Церкви Лалибэлы",
+        "country_isos":  [
+                             "ETH"
+                         ],
+        "continents":  [
+                           "Africa"
+                       ],
+        "difficulty":  "hard",
+        "image":  "wonders/landmarks/lalibela.jpg",
+        "explanation":  "Средневековые церкви Эфиопии высечены непосредственно в скальной породе."
+    },
+    {
+        "id":  "djenne_mosque",
+        "category":  "landmark",
+        "name":  "Великая мечеть Дженне",
+        "country_isos":  [
+                             "MLI"
+                         ],
+        "continents":  [
+                           "Africa"
+                       ],
+        "difficulty":  "hard",
+        "image":  "wonders/landmarks/djenne_mosque.jpg",
+        "explanation":  "Здание считается одним из крупнейших сооружений из необожжённой глины."
+    },
+    {
+        "id":  "kilwa_kisiwani",
+        "category":  "landmark",
+        "name":  "Руины Килва-Кисивани",
+        "country_isos":  [
+                             "TZA"
+                         ],
+        "continents":  [
+                           "Africa"
+                       ],
+        "difficulty":  "hard",
+        "image":  "wonders/landmarks/kilwa_kisiwani.jpg",
+        "explanation":  "Островной город был важным торговым центром побережья Суахили."
+    },
+    {
+        "id":  "tikal",
+        "category":  "landmark",
+        "name":  "Тикаль",
+        "country_isos":  [
+                             "GTM"
+                         ],
+        "continents":  [
+                           "North America"
+                       ],
+        "difficulty":  "hard",
+        "image":  "wonders/landmarks/tikal.jpg",
+        "explanation":  "Пирамиды древнего города майя возвышаются над джунглями Гватемалы."
+    },
+    {
+        "id":  "salar_uyuni",
+        "category":  "landmark",
+        "name":  "Солончак Уюни",
+        "country_isos":  [
+                             "BOL"
+                         ],
+        "continents":  [
+                           "South America"
+                       ],
+        "difficulty":  "hard",
+        "image":  "wonders/landmarks/salar_uyuni.jpg",
+        "explanation":  "Крупнейший солончак мира расположен на высокогорном плато Боливии."
+    },
+    {
+        "id":  "galapagos",
+        "category":  "landmark",
+        "name":  "Галапагосские острова",
+        "country_isos":  [
+                             "ECU"
+                         ],
+        "continents":  [
+                           "South America"
+                       ],
+        "difficulty":  "hard",
+        "image":  "wonders/landmarks/galapagos.jpg",
+        "explanation":  "Изолированный архипелаг известен большим числом эндемичных видов."
+    },
+    {
+        "id":  "nan_madol",
+        "category":  "landmark",
+        "name":  "Нан-Мадол",
+        "country_isos":  [
+                             "FSM"
+                         ],
+        "continents":  [
+                           "Oceania"
+                       ],
+        "difficulty":  "hard",
+        "image":  "wonders/landmarks/nan_madol.jpg",
+        "explanation":  "Древний город построен на искусственных островках у острова Понпеи."
+    },
+    {
+        "id":  "meteora",
+        "category":  "landmark",
+        "name":  "Монастыри Метеоры",
+        "country_isos":  [
+                             "GRC"
+                         ],
+        "continents":  [
+                           "Europe"
+                       ],
+        "difficulty":  "hard",
+        "image":  "wonders/landmarks/meteora.jpg",
+        "explanation":  "Православные монастыри построены на вершинах отвесных скал."
+    },
+    {
+        "id":  "rila_monastery",
+        "category":  "landmark",
+        "name":  "Рильский монастырь",
+        "country_isos":  [
+                             "BGR"
+                         ],
+        "continents":  [
+                           "Europe"
+                       ],
+        "difficulty":  "hard",
+        "image":  "wonders/landmarks/rila_monastery.jpg",
+        "explanation":  "Крупнейший православный монастырь Болгарии расположен в горах Рила."
+    },
+    {
+        "id":  "kotor",
+        "category":  "landmark",
+        "name":  "Старый город Котор",
+        "country_isos":  [
+                             "MNE"
+                         ],
+        "continents":  [
+                           "Europe"
+                       ],
+        "difficulty":  "hard",
+        "image":  "wonders/landmarks/kotor.jpg",
+        "explanation":  "Средневековый город окружён стенами у Которского залива."
+    }
+]

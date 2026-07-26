@@ -3,9 +3,9 @@ from __future__ import annotations
 import random
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 from datetime import datetime
-from typing import Any
+from typing import Any, Generic, TypeVar
 
 from .catalog import CountryCatalog
 from .config import CONFIGS_DIR, MODE_NAMES, QUESTION_TIME_SECONDS
@@ -13,6 +13,17 @@ from .difficulty import DIFFICULTY_KEYS, DifficultyCatalog
 from .models import AnswerRecord, Country, GameConfig, Question, RoundResult
 from .scoring import DEFAULT_SCORE_RULES, ScoreRules
 from .waters import WATER_REGIONS, WaterRegion
+from .wonders import WonderCatalog, WonderCategory, WonderItem
+
+
+@dataclass(frozen=True, slots=True)
+class QuestionBuildContext:
+    catalog: CountryCatalog
+    candidate_pool: list[Country]
+    subject_pool: list[Country]
+    continents: tuple[str, ...]
+    wrong_isos: frozenset[str]
+    difficulty: str | None
 
 
 class QuestionStrategy(ABC):
@@ -44,6 +55,14 @@ class QuestionStrategy(ABC):
     def continent_pool(country: Country, pool: list[Country]) -> list[Country]:
         """Returns distractor candidates from the target country's continent."""
         return [item for item in pool if item.continent == country.continent]
+
+    def prepare(
+        self,
+        context: QuestionBuildContext,
+        difficulty: DifficultyCatalog,
+        rng: random.Random,
+    ) -> PreparedQuestionPool:
+        return CountryPreparedQuestionPool(self, context, difficulty, rng)
 
 
 class PopulationPairSelector:
@@ -363,6 +382,490 @@ class WaterQuestionStrategy(QuestionStrategy):
             metadata={"water_highlight": region.key},
         )
 
+    def prepare(
+        self,
+        context: QuestionBuildContext,
+        difficulty: DifficultyCatalog,
+        rng: random.Random,
+    ) -> PreparedQuestionPool:
+        return WaterPreparedQuestionPool(self, context, difficulty, rng)
+
+
+class WonderQuestionStrategy(QuestionStrategy):
+    mode = "wonders"
+
+    def __init__(self, catalog: WonderCatalog) -> None:
+        self.catalog = catalog
+
+    def create(
+        self,
+        country: Country,
+        pool: list[Country],
+        serial: int,
+        rng: random.Random,
+        *,
+        eligible_water_keys: frozenset[str] | None = None,
+    ) -> Question:
+        raise NotImplementedError("Wonder-вопрос создаётся из WonderItem")
+
+    def prepare(
+        self,
+        context: QuestionBuildContext,
+        difficulty: DifficultyCatalog,
+        rng: random.Random,
+    ) -> PreparedQuestionPool:
+        return WonderPreparedQuestionPool(self, context, difficulty, rng)
+
+    def create_item(
+        self,
+        item: WonderItem,
+        eligible_items: list[WonderItem],
+        countries: list[Country],
+        rng: random.Random,
+    ) -> Question:
+        if item.category == WonderCategory.LANDMARK:
+            return self._landmark(item, eligible_items, countries, rng)
+        if item.category == WonderCategory.PEAK:
+            return self._named_map_item(item, eligible_items, rng, "point")
+        if item.category == WonderCategory.RIVER:
+            return self._named_map_item(item, eligible_items, rng, "line")
+        return self._fact(item, countries, rng)
+
+    def _landmark(
+        self,
+        item: WonderItem,
+        eligible_items: list[WonderItem],
+        countries: list[Country],
+        rng: random.Random,
+    ) -> Question:
+        ask_country = rng.choice((False, True))
+        if ask_country:
+            correct = self.catalog.country_name(item.country_iso)
+            options = self._country_options(
+                correct,
+                item,
+                countries,
+                rng,
+            )
+            prompt = f"В какой стране находится {item.name}?"
+            presentation = "wonder_landmark_country"
+        else:
+            correct = item.name
+            options = self._item_options(item, eligible_items, rng)
+            prompt = "Какая достопримечательность изображена?"
+            presentation = "wonder_landmark_name"
+        return Question(
+            key=f"wonders:{item.key}",
+            mode=self.mode,
+            prompt=prompt,
+            country_iso=item.country_iso,
+            country_isos=item.country_isos,
+            options=options,
+            correct_answer=correct,
+            visual=item.image,
+            presentation=presentation,
+            explanation=item.explanation,
+        )
+
+    def _named_map_item(
+        self,
+        item: WonderItem,
+        eligible_items: list[WonderItem],
+        rng: random.Random,
+        overlay_kind: str,
+    ) -> Question:
+        metadata: dict[str, Any] = {
+            "map_overlay": {
+                "kind": overlay_kind,
+                "point": list(item.point) if item.point else None,
+                "lines": [
+                    [list(point) for point in line] for line in item.lines
+                ],
+            }
+        }
+        prompt = (
+            "Какая горная вершина отмечена на карте?"
+            if item.category == WonderCategory.PEAK
+            else "Какая река выделена на карте?"
+        )
+        return Question(
+            key=f"wonders:{item.key}",
+            mode=self.mode,
+            prompt=prompt,
+            country_iso=item.country_iso,
+            country_isos=item.country_isos,
+            options=self._item_options(item, eligible_items, rng),
+            correct_answer=item.name,
+            presentation="wonder_map",
+            explanation=item.explanation,
+            metadata=metadata,
+        )
+
+    def _fact(
+        self,
+        item: WonderItem,
+        countries: list[Country],
+        rng: random.Random,
+    ) -> Question:
+        correct = self.catalog.country_name(item.country_iso)
+        return Question(
+            key=f"wonders:{item.key}",
+            mode=self.mode,
+            prompt=item.prompt,
+            country_iso=item.country_iso,
+            country_isos=item.country_isos,
+            options=self._country_options(correct, item, countries, rng),
+            correct_answer=correct,
+            presentation="wonder_fact",
+            explanation=item.explanation,
+        )
+
+    @staticmethod
+    def _ranked_items(
+        item: WonderItem,
+        items: list[WonderItem],
+    ) -> list[WonderItem]:
+        return sorted(
+            (
+                candidate
+                for candidate in items
+                if candidate.category == item.category
+                and candidate.key != item.key
+            ),
+            key=lambda candidate: (
+                candidate.difficulty != item.difficulty,
+                not bool(set(candidate.continents) & set(item.continents)),
+                candidate.key,
+            ),
+        )
+
+    def _item_options(
+        self,
+        item: WonderItem,
+        items: list[WonderItem],
+        rng: random.Random,
+    ) -> list[str]:
+        ranked = self._ranked_items(item, items)
+        grouped: dict[tuple[bool, bool], list[str]] = defaultdict(list)
+        for candidate in ranked:
+            rank = (
+                candidate.difficulty != item.difficulty,
+                not bool(set(candidate.continents) & set(item.continents)),
+            )
+            grouped[rank].append(candidate.name)
+        candidates: list[str] = []
+        for rank in sorted(grouped):
+            values = list(dict.fromkeys(grouped[rank]))
+            rng.shuffle(values)
+            candidates.extend(values)
+        return self._six_options(item.name, candidates, rng)
+
+    def _country_options(
+        self,
+        correct: str,
+        item: WonderItem,
+        countries: list[Country],
+        rng: random.Random,
+    ) -> list[str]:
+        ranked = sorted(
+            (country for country in countries if country.name != correct),
+            key=lambda country: (
+                country.continent not in item.continents,
+                country.iso3,
+            ),
+        )
+        same_continent = [
+            country.name
+            for country in ranked
+            if country.continent in item.continents
+        ]
+        other = [
+            country.name
+            for country in ranked
+            if country.continent not in item.continents
+        ]
+        rng.shuffle(same_continent)
+        rng.shuffle(other)
+        return self._six_options(correct, same_continent + other, rng)
+
+    @staticmethod
+    def _six_options(
+        correct: str,
+        candidates: list[str],
+        rng: random.Random,
+    ) -> list[str]:
+        unique = list(
+            dict.fromkeys(
+                value for value in candidates if value and value != correct
+            )
+        )
+        if len(unique) < 5:
+            raise ValueError(
+                f"Недостаточно вариантов ответа для «{correct}»"
+            )
+        result = unique[:5] + [correct]
+        rng.shuffle(result)
+        return result
+
+
+class PreparedQuestionPool(ABC):
+    @property
+    @abstractmethod
+    def capacity(self) -> int:
+        raise NotImplementedError
+
+    def plan(self, count: int) -> None:
+        if count > self.capacity:
+            raise ValueError("Недостаточно уникальных вопросов")
+
+    @abstractmethod
+    def next(self, serial: int) -> Question:
+        raise NotImplementedError
+
+
+T = TypeVar("T")
+
+
+class DifficultyQueue(Generic[T]):
+    def __init__(
+        self,
+        queues: dict[str, list[T]],
+        selected: str | None,
+        difficulty: DifficultyCatalog,
+        rng: random.Random,
+    ) -> None:
+        self.queues = queues
+        self.selected = selected
+        self.difficulty = difficulty
+        self.rng = rng
+
+    @property
+    def capacity(self) -> int:
+        return sum(len(queue) for queue in self.queues.values())
+
+    def pop(self) -> tuple[T, str | None]:
+        available = {level for level, queue in self.queues.items() if queue}
+        if not available:
+            raise ValueError("Закончились уникальные вопросы")
+        if self.selected is None:
+            level = self.rng.choice(sorted(available))
+            return self.queues[level].pop(), None
+        level = self.difficulty.choose_available(
+            self.selected,
+            available,
+            self.rng,
+        )
+        return self.queues[level].pop(), level
+
+
+class CountryPreparedQuestionPool(PreparedQuestionPool):
+    def __init__(
+        self,
+        strategy: QuestionStrategy,
+        context: QuestionBuildContext,
+        difficulty: DifficultyCatalog,
+        rng: random.Random,
+    ) -> None:
+        self.strategy = strategy
+        self.context = context
+        self.rng = rng
+        reset = getattr(strategy, "reset", None)
+        if reset is not None:
+            reset()
+        queues = (
+            {"all": context.subject_pool.copy()}
+            if context.difficulty is None
+            else {
+                level: difficulty.countries(level, context.subject_pool)
+                for level in DIFFICULTY_KEYS
+            }
+        )
+        for queue in queues.values():
+            rng.shuffle(queue)
+        self.queue = DifficultyQueue(
+            queues,
+            context.difficulty,
+            difficulty,
+            rng,
+        )
+
+    @property
+    def capacity(self) -> int:
+        return self.queue.capacity
+
+    def next(self, serial: int) -> Question:
+        country, level = self.queue.pop()
+        question = self.strategy.create(
+            country,
+            self.context.candidate_pool,
+            serial,
+            self.rng,
+        )
+        if level is not None:
+            question.metadata["difficulty"] = level
+        return question
+
+
+class WaterPreparedQuestionPool(PreparedQuestionPool):
+    def __init__(
+        self,
+        strategy: WaterQuestionStrategy,
+        context: QuestionBuildContext,
+        difficulty: DifficultyCatalog,
+        rng: random.Random,
+    ) -> None:
+        self.strategy = strategy
+        self.context = context
+        self.rng = rng
+        queues = (
+            {"all": list(WATER_REGIONS)}
+            if context.difficulty is None
+            else {
+                level: [
+                    region
+                    for region in WATER_REGIONS
+                    if region.key in difficulty.water_keys(level)
+                ]
+                for level in DIFFICULTY_KEYS
+            }
+        )
+        for queue in queues.values():
+            rng.shuffle(queue)
+        self.queue = DifficultyQueue(
+            queues,
+            context.difficulty,
+            difficulty,
+            rng,
+        )
+
+    @property
+    def capacity(self) -> int:
+        return self.queue.capacity
+
+    def next(self, serial: int) -> Question:
+        region, level = self.queue.pop()
+        country = self.context.candidate_pool[
+            serial % len(self.context.candidate_pool)
+        ]
+        question = self.strategy.create(
+            country,
+            self.context.candidate_pool,
+            serial,
+            self.rng,
+            eligible_water_keys=frozenset({region.key}),
+        )
+        if level is not None:
+            question.metadata["difficulty"] = level
+        return question
+
+
+class WonderPreparedQuestionPool(PreparedQuestionPool):
+    CATEGORY_CYCLE = (
+        WonderCategory.LANDMARK,
+        WonderCategory.RIVER,
+        WonderCategory.FACT,
+        WonderCategory.LANDMARK,
+        WonderCategory.PEAK,
+        WonderCategory.RIVER,
+        WonderCategory.FACT,
+        WonderCategory.LANDMARK,
+    )
+
+    def __init__(
+        self,
+        strategy: WonderQuestionStrategy,
+        context: QuestionBuildContext,
+        difficulty: DifficultyCatalog,
+        rng: random.Random,
+    ) -> None:
+        self.strategy = strategy
+        self.context = context
+        self.difficulty = difficulty
+        self.rng = rng
+        self.items = strategy.catalog.eligible(
+            context.continents,
+            context.wrong_isos,
+        )
+        self.queues: dict[
+            WonderCategory,
+            dict[str, list[WonderItem]],
+        ] = {
+            category: {
+                level: [
+                    item
+                    for item in self.items
+                    if item.category == category
+                    and item.difficulty == level
+                ]
+                for level in DIFFICULTY_KEYS
+            }
+            for category in WonderCategory
+        }
+        for levels in self.queues.values():
+            for queue in levels.values():
+                rng.shuffle(queue)
+        self.schedule: list[WonderCategory] = []
+
+    @property
+    def capacity(self) -> int:
+        return len(self.items)
+
+    def plan(self, count: int) -> None:
+        super().plan(count)
+        remaining = {
+            category: sum(len(queue) for queue in levels.values())
+            for category, levels in self.queues.items()
+        }
+        schedule: list[WonderCategory] = []
+        cycle_index = 0
+        while len(schedule) < count:
+            category = self.CATEGORY_CYCLE[
+                cycle_index % len(self.CATEGORY_CYCLE)
+            ]
+            cycle_index += 1
+            if remaining[category] <= 0:
+                if cycle_index > count * len(self.CATEGORY_CYCLE) * 2:
+                    break
+                continue
+            schedule.append(category)
+            remaining[category] -= 1
+        if len(schedule) < count:
+            for category in WonderCategory:
+                while remaining[category] > 0 and len(schedule) < count:
+                    schedule.append(category)
+                    remaining[category] -= 1
+        if len(schedule) != count:
+            raise ValueError("Недостаточно уникальных вопросов wonders")
+        self.schedule = schedule
+
+    def next(self, serial: int) -> Question:
+        if not self.schedule:
+            raise ValueError("Очередь wonders не подготовлена")
+        category = self.schedule.pop(0)
+        levels = self.queues[category]
+        available = {level for level, queue in levels.items() if queue}
+        if self.context.difficulty is None:
+            level = self.rng.choice(sorted(available))
+            sampled_level: str | None = None
+        else:
+            level = self.difficulty.choose_available(
+                self.context.difficulty,
+                available,
+                self.rng,
+            )
+            sampled_level = level
+        item = levels[level].pop()
+        question = self.strategy.create_item(
+            item,
+            self.items,
+            self.context.candidate_pool,
+            self.rng,
+        )
+        if sampled_level is not None:
+            question.metadata["difficulty"] = sampled_level
+        question.metadata["wonder_category"] = category.value
+        return question
+
 
 class QuestionFactory:
     """Реестр стратегий: новый режим добавляется без изменения движка."""
@@ -371,18 +874,22 @@ class QuestionFactory:
         self,
         strategies: list[QuestionStrategy] | None = None,
         difficulty_catalog: DifficultyCatalog | None = None,
+        wonder_catalog: WonderCatalog | None = None,
     ) -> None:
-        items = strategies or [
-            FlagQuestionStrategy(),
-            CapitalQuestionStrategy(),
-            PopulationQuestionStrategy(),
-            CountryMapQuestionStrategy(),
-            WaterQuestionStrategy(),
-        ]
-        self._strategies = {item.mode: item for item in items}
         self._difficulty = difficulty_catalog or DifficultyCatalog(
             CONFIGS_DIR / "difficulty_levels.json"
         )
+        if strategies is None:
+            strategies = [
+                FlagQuestionStrategy(),
+                CapitalQuestionStrategy(),
+                PopulationQuestionStrategy(),
+                CountryMapQuestionStrategy(),
+                WaterQuestionStrategy(),
+            ]
+            if wonder_catalog is not None:
+                strategies.append(WonderQuestionStrategy(wonder_catalog))
+        self._strategies = {item.mode: item for item in strategies}
 
     def build(
         self,
@@ -400,33 +907,99 @@ class QuestionFactory:
             raise ValueError(f"Неизвестные режимы: {sorted(unknown_modes)}")
         if not candidate_pool:
             raise ValueError("Для выбранных континентов нет стран")
-
         subject_pool = candidate_pool.copy()
         if config.wrong_only and wrong_isos:
             wrong_set = set(wrong_isos)
             subject_pool = [
                 country for country in subject_pool if country.iso3 in wrong_set
             ] or subject_pool
-        if config.difficulty is not None:
-            return self._build_by_difficulty(
-                config,
-                catalog,
-                candidate_pool,
-                subject_pool,
+        if config.difficulty is not None and config.difficulty not in DIFFICULTY_KEYS:
+            raise ValueError(f"Неизвестный уровень сложности: {config.difficulty}")
+        self._difficulty.validate_countries(catalog.all())
+        self._difficulty.validate_water_keys(
+            {region.key for region in WATER_REGIONS}
+        )
+        context = QuestionBuildContext(
+            catalog=catalog,
+            candidate_pool=candidate_pool,
+            subject_pool=subject_pool,
+            continents=tuple(config.continents),
+            wrong_isos=frozenset(wrong_isos or ()) if config.wrong_only else frozenset(),
+            difficulty=config.difficulty,
+        )
+        prepared = {
+            mode: self._strategies[mode].prepare(
+                context,
+                self._difficulty,
                 rng,
             )
-        return self._build_without_difficulty(
-            config,
-            candidate_pool,
-            subject_pool,
-            rng,
+            for mode in dict.fromkeys(config.modes)
+        }
+        required = self._required_by_mode(config)
+        self._ensure_capacity(
+            required,
+            {mode: pool.capacity for mode, pool in prepared.items()},
         )
+        for mode, count in required.items():
+            prepared[mode].plan(count)
 
-    def _reset_round_strategies(self, modes: list[str]) -> None:
-        for mode in dict.fromkeys(modes):
-            reset = getattr(self._strategies[mode], "reset", None)
-            if reset is not None:
-                reset()
+        questions: list[Question] = []
+        mode_serials: dict[str, int] = defaultdict(int)
+        for serial in range(config.question_count):
+            mode = config.modes[serial % len(config.modes)]
+            mode_serial = mode_serials[mode]
+            mode_serials[mode] += 1
+            questions.append(prepared[mode].next(mode_serial))
+        return questions
+
+    def capacities(
+        self,
+        config: GameConfig,
+        catalog: CountryCatalog,
+        wrong_isos: list[str] | None = None,
+    ) -> dict[str, int]:
+        candidate_pool = catalog.by_continents(config.continents)
+        subject_pool = candidate_pool.copy()
+        if config.wrong_only and wrong_isos:
+            wrong_set = set(wrong_isos)
+            subject_pool = [
+                country for country in subject_pool if country.iso3 in wrong_set
+            ] or subject_pool
+        context = QuestionBuildContext(
+            catalog=catalog,
+            candidate_pool=candidate_pool,
+            subject_pool=subject_pool,
+            continents=tuple(config.continents),
+            wrong_isos=frozenset(wrong_isos or ()) if config.wrong_only else frozenset(),
+            difficulty=config.difficulty,
+        )
+        return {
+            mode: self._strategies[mode]
+            .prepare(context, self._difficulty, random.Random(0))
+            .capacity
+            for mode in dict.fromkeys(config.modes)
+        }
+
+    def supports_count(
+        self,
+        config: GameConfig,
+        catalog: CountryCatalog,
+        question_count: int,
+        wrong_isos: list[str] | None = None,
+    ) -> bool:
+        probe = GameConfig(
+            config.modes,
+            config.continents,
+            question_count,
+            wrong_only=config.wrong_only,
+            difficulty=config.difficulty,
+        )
+        required = self._required_by_mode(probe)
+        capacities = self.capacities(probe, catalog, wrong_isos)
+        return all(
+            required[mode] <= capacities.get(mode, 0)
+            for mode in required
+        )
 
     @staticmethod
     def _required_by_mode(config: GameConfig) -> dict[str, int]:
@@ -449,153 +1022,6 @@ class QuestionFactory:
                     f"Для режима «{name}» доступно {available} уникальных "
                     f"вопросов, требуется {count}"
                 )
-
-    def _build_without_difficulty(
-        self,
-        config: GameConfig,
-        candidate_pool: list[Country],
-        subject_pool: list[Country],
-        rng: random.Random,
-    ) -> list[Question]:
-        self._reset_round_strategies(config.modes)
-        country_queues: dict[str, list[Country]] = {}
-        for mode in dict.fromkeys(config.modes):
-            if mode == WaterQuestionStrategy.mode:
-                continue
-            country_queues[mode] = subject_pool.copy()
-            rng.shuffle(country_queues[mode])
-
-        water_queue = [region.key for region in WATER_REGIONS]
-        rng.shuffle(water_queue)
-        capacities = {
-            mode: (
-                len(water_queue)
-                if mode == WaterQuestionStrategy.mode
-                else len(country_queues[mode])
-            )
-            for mode in dict.fromkeys(config.modes)
-        }
-        self._ensure_capacity(self._required_by_mode(config), capacities)
-
-        questions: list[Question] = []
-        mode_serials: dict[str, int] = defaultdict(int)
-        for serial in range(config.question_count):
-            mode = config.modes[serial % len(config.modes)]
-            mode_serial = mode_serials[mode]
-            mode_serials[mode] += 1
-            if mode == WaterQuestionStrategy.mode:
-                water_key = water_queue.pop()
-                country = candidate_pool[serial % len(candidate_pool)]
-                question = self._strategies[mode].create(
-                    country,
-                    candidate_pool,
-                    mode_serial,
-                    rng,
-                    eligible_water_keys=frozenset({water_key}),
-                )
-            else:
-                country = country_queues[mode].pop()
-                question = self._strategies[mode].create(
-                    country,
-                    candidate_pool,
-                    mode_serial,
-                    rng,
-                )
-            questions.append(question)
-        return questions
-
-    def _build_by_difficulty(
-        self,
-        config: GameConfig,
-        catalog: CountryCatalog,
-        candidate_pool: list[Country],
-        subject_pool: list[Country],
-        rng: random.Random,
-    ) -> list[Question]:
-        self._reset_round_strategies(config.modes)
-        if config.difficulty not in DIFFICULTY_KEYS:
-            raise ValueError(f"Неизвестный уровень сложности: {config.difficulty}")
-        if not candidate_pool:
-            raise ValueError("Для выбранных континентов нет стран")
-        self._difficulty.validate_countries(catalog.all())
-        self._difficulty.validate_water_keys(
-            {region.key for region in WATER_REGIONS}
-        )
-
-        country_queues: dict[str, dict[str, list[Country]]] = {}
-        for mode in dict.fromkeys(config.modes):
-            if mode == WaterQuestionStrategy.mode:
-                continue
-            country_queues[mode] = {}
-            for level in DIFFICULTY_KEYS:
-                queue = self._difficulty.countries(level, subject_pool)
-                rng.shuffle(queue)
-                country_queues[mode][level] = queue
-
-        water_queues: dict[str, list[str]] = {}
-        for level in DIFFICULTY_KEYS:
-            allowed = self._difficulty.water_keys(level)
-            queue = [
-                region.key
-                for region in WATER_REGIONS
-                if region.key in allowed
-            ]
-            rng.shuffle(queue)
-            water_queues[level] = queue
-
-        capacities = {
-            mode: (
-                sum(len(queue) for queue in water_queues.values())
-                if mode == WaterQuestionStrategy.mode
-                else sum(
-                    len(queue)
-                    for queue in country_queues[mode].values()
-                )
-            )
-            for mode in dict.fromkeys(config.modes)
-        }
-        self._ensure_capacity(self._required_by_mode(config), capacities)
-
-        questions: list[Question] = []
-        mode_serials: dict[str, int] = defaultdict(int)
-        for serial in range(config.question_count):
-            mode = config.modes[serial % len(config.modes)]
-            mode_serial = mode_serials[mode]
-            mode_serials[mode] += 1
-            queues = (
-                water_queues
-                if mode == WaterQuestionStrategy.mode
-                else country_queues[mode]
-            )
-            available_levels = {
-                level for level, queue in queues.items() if queue
-            }
-            level = self._difficulty.choose_available(
-                config.difficulty,
-                available_levels,
-                rng,
-            )
-            if mode == WaterQuestionStrategy.mode:
-                water_key = water_queues[level].pop()
-                country = candidate_pool[serial % len(candidate_pool)]
-                question = self._strategies[mode].create(
-                    country,
-                    candidate_pool,
-                    mode_serial,
-                    rng,
-                    eligible_water_keys=frozenset({water_key}),
-                )
-            else:
-                country = country_queues[mode][level].pop()
-                question = self._strategies[mode].create(
-                    country,
-                    candidate_pool,
-                    mode_serial,
-                    rng,
-                )
-            question.metadata["difficulty"] = level
-            questions.append(question)
-        return questions
 
 
 class GameSession:
