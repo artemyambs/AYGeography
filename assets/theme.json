@@ -1,0 +1,63 @@
+{
+  "defaults": {
+    "colours": {
+      "normal_bg": "#071c28",
+      "hovered_bg": "#0b3141",
+      "disabled_bg": "#071c28",
+      "selected_bg": "#367e13",
+      "active_bg": "#367e13",
+      "normal_text": "#f4f8fa",
+      "hovered_text": "#ffffff",
+      "selected_text": "#ffffff",
+      "disabled_text": "#8fa6b1",
+      "normal_border": "#164052",
+      "hovered_border": "#39d7ee",
+      "active_border": "#76c52b"
+    },
+    "font": {
+      "name": "Segoe UI",
+      "size": "18"
+    }
+  },
+  "#hitbox": {
+    "colours": {
+      "normal_bg": "#00000000",
+      "hovered_bg": "#39d7ee12",
+      "disabled_bg": "#00000000",
+      "selected_bg": "#00000000",
+      "active_bg": "#ffffff08",
+      "normal_text": "#00000000",
+      "hovered_text": "#00000000",
+      "selected_text": "#00000000",
+      "disabled_text": "#00000000",
+      "normal_border": "#00000000",
+      "hovered_border": "#39d7ee00",
+      "active_border": "#00000000"
+    },
+    "misc": {
+      "shape": "rounded_rectangle",
+      "shape_corner_radius": "7",
+      "border_width": "0",
+      "shadow_width": "0"
+    }
+  },
+  "#profile_entry": {
+    "colours": {
+      "dark_bg": "#00000000",
+      "normal_text": "#00000000",
+      "selected_text": "#00000000",
+      "selected_bg": "#00000000",
+      "normal_border": "#00000000"
+    },
+    "font": {
+      "name": "Segoe UI",
+      "size": "24"
+    },
+    "misc": {
+      "shape": "rounded_rectangle",
+      "shape_corner_radius": "7",
+      "border_width": "0",
+      "shadow_width": "0"
+    }
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "app": {
+    "name": "AYGeography",
+    "version": "1.0.0"
+  },
+  "gameplay": {
+    "question_time_seconds": 60,
+    "correct_answer_feedback_seconds": 1.0,
+    "incorrect_answer_feedback_seconds": 1.5
+  },
+  "colors": {
+    "background": "#020d14",
+    "sidebar": "#051722",
+    "panel": "#071c28",
+    "panel_alt": "#092633",
+    "border": "#164052",
+    "text": "#f4f8fa",
+    "muted": "#8fa6b1",
+    "cyan": "#39d7ee",
+    "cyan_dark": "#0b6378",
+    "green": "#76c52b",
+    "green_dark": "#367e13",
+    "yellow": "#f6b817",
+    "red": "#e85b5b",
+    "map": "#0a5572",
+    "map_border": "#1683a4",
+    "water": "#031b29"
+  },
+  "labels": {
+    "continents": {
+      "Europe": "Европа",
+      "Asia": "Азия",
+      "North America": "Северная Америка",
+      "South America": "Южная Америка",
+      "Africa": "Африка",
+      "Oceania": "Австралия и Океания"
+    },
+    "modes": {
+      "flags": "Флаги",
+      "capitals": "Столицы",
+      "population": "Население",
+      "countries": "Страны",
+      "waters": "Моря и океаны"
+    },
+    "difficulty": {
+      "easy": "Легкий",
+      "medium": "Средний",
+      "hard": "Сложный"
+    }
+  }
+}

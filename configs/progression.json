@@ -1,0 +1,16 @@
+{
+  "country_mastery": {
+    "modes": ["flags", "capitals", "population", "countries"],
+    "levels": [
+      {"stars": 1, "correct_per_mode": 1},
+      {"stars": 2, "correct_per_mode": 2},
+      {"stars": 3, "correct_per_mode": 3}
+    ],
+    "colors": {
+      "0": "#0a5268",
+      "1": "#247b88",
+      "2": "#39aeb6",
+      "3": "#76c52b"
+    }
+  }
+}

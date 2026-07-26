@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="badge-16" x1="8" y1="8" x2="56" y2="56">
+      <stop stop-color="#123541"/>
+      <stop offset="1" stop-color="#061923"/>
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="29" fill="url(#badge-16)" stroke="#c56d1d" stroke-width="2"/>
+  <circle cx="32" cy="32" r="25" fill="none" stroke="#f6b817" stroke-width="1" opacity=".45" stroke-dasharray="3 5" transform="rotate(32 32 32)"/>
+  <circle cx="32" cy="35" r="16" fill="none" stroke="#f6b817" stroke-width="3"/><path d="M27 14h10m-5 5v16l9-6m4-9 4 4" fill="none" stroke="#c56d1d" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="15" cy="13" r="2" fill="#f6b817" opacity=".9"/>
+</svg>

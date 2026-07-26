@@ -1,0 +1,54 @@
+{
+  "easy": {
+    "chance_falling_out": "90%",
+    "countries": [
+      "RUS", "DEU", "FRA", "GBR", "ITA", "ESP", "PRT", "NLD", "BEL", "CHE",
+      "AUT", "POL", "CZE", "GRC", "SWE", "NOR", "FIN", "DNK", "IRL", "ISL",
+      "UKR", "BLR", "ROU", "HUN", "SRB", "BGR", "HRV", "USA", "CAN", "MEX",
+      "CUB", "DOM", "JAM", "BRA", "ARG", "CHL", "PER", "COL", "VEN", "ECU",
+      "BOL", "URY", "CHN", "JPN", "KOR", "PRK", "IND", "IDN", "THA", "VNM",
+      "TUR", "ISR", "ARE", "SAU", "IRN", "IRQ", "KAZ", "AUS", "NZL", "EGY",
+      "ZAF", "MAR", "DZA", "TUN", "ETH", "KEN", "NGA", "GHA", "MDG", "VAT",
+      "MCO", "SGP"
+    ],
+    "waters": [
+      "atlantic", "pacific_w", "pacific_e", "indian", "arctic", "southern",
+      "mediterranean", "black", "baltic", "red", "arabian", "caribbean",
+      "bering", "north", "japan", "south_china"
+    ]
+  },
+  "medium": {
+    "chance_falling_out": "80%",
+    "countries": [
+      "PAK", "BGD", "PHL", "COD", "TZA", "MMR", "UGA", "SDN", "AFG", "AGO",
+      "UZB", "YEM", "MYS", "MOZ", "NPL", "CIV", "CMR", "NER", "MLI", "BFA",
+      "SYR", "LKA", "MWI", "ZMB", "TCD", "SOM", "GTM", "SEN", "KHM", "ZWE",
+      "GIN", "RWA", "BEN", "BDI", "HTI", "JOR", "SSD", "HND", "PNG", "AZE",
+      "TJK", "TGO", "SLE", "LAO", "NIC", "LBY", "PRY", "KGZ", "TKM", "SLV",
+      "COG", "SVK", "CAF", "PSE", "LBR", "LBN", "CRI", "MRT", "OMN", "PAN",
+      "KWT", "ERI"
+    ],
+    "waters": [
+      "okhotsk", "coral", "adriatic", "aegean", "azov", "barents",
+      "beaufort", "chukchi", "east_siberian", "laptev", "kara", "norwegian",
+      "greenland", "labrador", "sargasso", "scotia", "weddell"
+    ]
+  },
+  "hard": {
+    "chance_falling_out": "70%",
+    "countries": [
+      "GEO", "MNG", "MDA", "BIH", "ALB", "ARM", "GMB", "LTU", "QAT", "BWA",
+      "NAM", "GAB", "LSO", "GNB", "SVN", "MKD", "LVA", "GNQ", "TTO", "BHR",
+      "TLS", "EST", "MUS", "CYP", "SWZ", "DJI", "FJI", "COM", "GUY", "BTN",
+      "SLB", "LUX", "MNE", "SUR", "CPV", "MLT", "MDV", "BRN", "BHS", "BLZ",
+      "VUT", "BRB", "STP", "WSM", "LCA", "KIR", "GRD", "FSM", "TON", "SYC",
+      "VCT", "ATG", "AND", "DMA", "KNA", "MHL", "LIE", "SMR", "PLW", "NRU",
+      "TUV"
+    ],
+    "waters": [
+      "ross", "tasman", "timor", "arafura", "java", "banda", "celebes",
+      "sulu", "philippine", "yellow", "east_china", "andaman", "irish",
+      "marmara", "ionian", "ligurian", "tyrrhenian"
+    ]
+  }
+}
