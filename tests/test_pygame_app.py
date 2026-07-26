@@ -173,7 +173,7 @@ class PygameAppTests(unittest.TestCase):
         self.assertEqual(75, StatisticsView._answer_percentage(3, 4))
         self.assertEqual(0, StatisticsView._answer_percentage(0, 0))
 
-    def test_all_svg_avatars_load(self):
+    def test_all_avatars_load(self):
         for index in range(10):
             self.assertEqual((160, 160), self.app.assets.avatar(index).get_size())
 

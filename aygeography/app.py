@@ -74,14 +74,10 @@ class AssetStore:
     def avatar(self, index: int) -> pygame.Surface:
         index %= 10
         if index not in self._avatars:
-            png_path = ASSETS_DIR / "avatars" / f"avatar_{index + 1:02d}.png"
-            path = (
-                png_path
-                if png_path.exists()
-                else ASSETS_DIR / "avatars" / f"avatar_{index + 1:02d}.svg"
-            )
             self._avatars[index] = pygame.transform.smoothscale(
-                self.image(path),
+                self.image(
+                    ASSETS_DIR / "avatars" / f"avatar_{index + 1:02d}.png"
+                ),
                 (160, 160),
             )
         return self._avatars[index]
