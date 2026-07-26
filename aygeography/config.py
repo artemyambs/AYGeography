@@ -31,14 +31,38 @@ APP_VERSION = str(APP_SETTINGS["app"]["version"])
 QUESTION_TIME_SECONDS = int(
     APP_SETTINGS["gameplay"]["question_time_seconds"]
 )
-CORRECT_ANSWER_FEEDBACK_SECONDS = float(
-    APP_SETTINGS["gameplay"]["correct_answer_feedback_seconds"]
-)
-INCORRECT_ANSWER_FEEDBACK_SECONDS = float(
-    APP_SETTINGS["gameplay"]["incorrect_answer_feedback_seconds"]
-)
 
 COLORS = dict(APP_SETTINGS["colors"])
 CONTINENT_NAMES = dict(APP_SETTINGS["labels"]["continents"])
 MODE_NAMES = dict(APP_SETTINGS["labels"]["modes"])
 DIFFICULTY_NAMES = dict(APP_SETTINGS["labels"]["difficulty"])
+
+
+def _load_feedback_seconds() -> dict[str, dict[str, float]]:
+    raw = APP_SETTINGS["gameplay"]["answer_feedback_seconds_by_mode"]
+    if not isinstance(raw, dict) or set(raw) != set(MODE_NAMES):
+        raise ValueError(
+            "Задержки ответов должны быть заданы для каждого режима"
+        )
+    result: dict[str, dict[str, float]] = {}
+    for mode, values in raw.items():
+        if not isinstance(values, dict) or set(values) != {
+            "correct",
+            "incorrect",
+        }:
+            raise ValueError(
+                f"Некорректные задержки ответов для режима: {mode}"
+            )
+        parsed = {
+            answer: float(seconds)
+            for answer, seconds in values.items()
+        }
+        if any(seconds <= 0 for seconds in parsed.values()):
+            raise ValueError(
+                f"Задержка ответа должна быть положительной: {mode}"
+            )
+        result[mode] = parsed
+    return result
+
+
+ANSWER_FEEDBACK_SECONDS = _load_feedback_seconds()

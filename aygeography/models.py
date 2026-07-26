@@ -35,6 +35,12 @@ class Question:
     visual: str = ""
     interaction: str = "choices"
     metadata: dict[str, Any] = field(default_factory=dict)
+    country_isos: tuple[str, ...] = field(default_factory=tuple)
+
+    @property
+    def subjects(self) -> tuple[str, ...]:
+        """All countries whose mastery is affected by this question."""
+        return self.country_isos or (self.country_iso,)
 
 
 @dataclass(slots=True)
@@ -47,6 +53,12 @@ class AnswerRecord:
     is_correct: bool
     seconds: float
     points: int
+    country_isos: tuple[str, ...] = field(default_factory=tuple)
+
+    @property
+    def subjects(self) -> tuple[str, ...]:
+        """All countries associated with this answer."""
+        return self.country_isos or (self.country_iso,)
 
 
 @dataclass(slots=True)

@@ -7,7 +7,13 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from aygeography.catalog import CountryCatalog
-from aygeography.config import BASE_DIR, CONFIGS_DIR, QUESTION_TIME_SECONDS
+from aygeography.config import (
+    ANSWER_FEEDBACK_SECONDS,
+    BASE_DIR,
+    CONFIGS_DIR,
+    MODE_NAMES,
+    QUESTION_TIME_SECONDS,
+)
 from aygeography.difficulty import DIFFICULTY_KEYS, DifficultyCatalog
 from aygeography.formatting import format_population
 from aygeography.models import AnswerRecord, GameConfig, RoundResult
@@ -16,6 +22,7 @@ from aygeography.quiz import (
     CountryMapQuestionStrategy,
     FlagQuestionStrategy,
     GameSession,
+    PopulationPairSelector,
     QuestionFactory,
     WaterQuestionStrategy,
 )
@@ -35,10 +42,32 @@ class QuizTests(unittest.TestCase):
     def test_catalog_contains_195_countries(self):
         self.assertEqual(195, len(self.catalog.all()))
 
+    def test_catalog_uses_wpp_2024_midyear_population_values(self):
+        self.assertEqual(144_820_423, self.catalog.get("RUS").population)
+        self.assertEqual(84_552_242, self.catalog.get("DEU").population)
+        self.assertEqual(1_450_935_791, self.catalog.get("IND").population)
+        self.assertTrue(
+            all(country.population > 0 for country in self.catalog.all())
+        )
+
     def test_configs_directory_replaces_data_directory(self):
         self.assertTrue((CONFIGS_DIR / "app_settings.json").is_file())
         self.assertTrue((CONFIGS_DIR / "scoring.json").is_file())
         self.assertFalse((BASE_DIR / "data").exists())
+
+    def test_feedback_delays_are_configured_for_every_mode(self):
+        self.assertEqual(set(MODE_NAMES), set(ANSWER_FEEDBACK_SECONDS))
+        for mode in MODE_NAMES:
+            self.assertEqual(
+                {"correct", "incorrect"},
+                set(ANSWER_FEEDBACK_SECONDS[mode]),
+            )
+            self.assertTrue(
+                all(
+                    seconds > 0
+                    for seconds in ANSWER_FEEDBACK_SECONDS[mode].values()
+                )
+            )
 
     def test_difficulty_file_partitions_every_country(self):
         levels = DifficultyCatalog(CONFIGS_DIR / "difficulty_levels.json")
@@ -244,21 +273,81 @@ class QuizTests(unittest.TestCase):
         self.assertEqual(10, session.score)
         self.assertEqual(2, session.result().duration_seconds)
 
-    def test_population_feedback_rounding(self):
-        self.assertEqual("900 000", format_population(949_999))
-        self.assertEqual("1 000 000", format_population(950_000))
-        self.assertEqual("18 000 000", format_population(17_500_000))
+    def test_population_feedback_uses_exact_grouped_value(self):
+        self.assertEqual("949 999", format_population(949_999))
+        self.assertEqual("17 500 000", format_population(17_500_000))
 
-    def test_population_question_exposes_exact_population_for_feedback(self):
+    def test_population_question_compares_two_countries(self):
         question = QuestionFactory().build(
             GameConfig(["population"], ["South America"], 1),
             self.catalog,
             seed=7,
         )[0]
+        countries = [
+            self.catalog.get(iso3) for iso3 in question.country_isos
+        ]
+        self.assertEqual(2, len(question.options))
         self.assertEqual(
-            self.catalog.get(question.country_iso).population,
-            question.metadata["population"],
+            max(countries, key=lambda country: country.population).name,
+            question.correct_answer,
         )
+        self.assertEqual(
+            {country.iso3: country.population for country in countries},
+            question.metadata["population_values"],
+        )
+        self.assertEqual(
+            "country_comparison",
+            question.metadata["presentation"],
+        )
+
+    def test_population_pairs_are_unique_and_balanced(self):
+        questions = QuestionFactory().build(
+            GameConfig(["population"], ["Europe"], 30),
+            self.catalog,
+            seed=7,
+        )
+        pairs = {
+            tuple(sorted(question.country_isos)) for question in questions
+        }
+        kinds = Counter(
+            question.metadata["pair_kind"] for question in questions
+        )
+        self.assertEqual(30, len(pairs))
+        self.assertEqual({"close": 15, "contrast": 15}, dict(kinds))
+        for question in questions:
+            first, second = (
+                self.catalog.get(iso3) for iso3 in question.country_isos
+            )
+            ratio = PopulationPairSelector.ratio(first, second)
+            if question.metadata["pair_kind"] == "close":
+                self.assertGreaterEqual(ratio, 1.15)
+                self.assertLess(ratio, 2.0)
+            else:
+                self.assertGreaterEqual(ratio, 2.0)
+                self.assertLessEqual(ratio, 10.0)
+
+    def test_population_difficulty_applies_to_primary_country_only(self):
+        levels = DifficultyCatalog(CONFIGS_DIR / "difficulty_levels.json")
+        questions = QuestionFactory().build(
+            GameConfig(
+                ["population"],
+                list(self.catalog.continents),
+                50,
+                difficulty="hard",
+            ),
+            self.catalog,
+            seed=17,
+        )
+        for question in questions:
+            sampled_level = question.metadata["difficulty"]
+            allowed_primary = {
+                country.iso3
+                for country in levels.countries(
+                    sampled_level,
+                    self.catalog.all(),
+                )
+            }
+            self.assertIn(question.country_iso, allowed_primary)
 
     def test_country_answer_options_match_germany_continent(self):
         germany = self.catalog.get("DEU")
@@ -477,6 +566,31 @@ class QuizTests(unittest.TestCase):
             self.assertEqual(1, stats["total"]["rounds"])
             self.assertEqual(1, stats["total"]["question_count"])
 
+    def test_population_answer_links_both_countries_once(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repository = GameRepository(Path(directory) / "population.db")
+            question = QuestionFactory().build(
+                GameConfig(["population"], ["Europe"], 1),
+                self.catalog,
+                seed=4,
+            )[0]
+            session = GameSession([question])
+            session.answer("__wrong__", 5)
+
+            repository.save_round(session.result())
+
+            stats = repository.statistics()
+            links = repository.lifetime_answer_countries()
+            self.assertEqual(1, stats["modes"][0]["total"])
+            self.assertEqual(2, len(stats["countries"]))
+            self.assertEqual(set(question.country_isos), {
+                link["country_iso"] for link in links
+            })
+            self.assertEqual(
+                set(question.country_isos),
+                set(repository.wrong_country_isos()),
+            )
+
     def test_repository_returns_exact_30_day_play_time_calendar(self):
         with tempfile.TemporaryDirectory() as directory:
             repository = GameRepository(Path(directory) / "activity.db")
@@ -624,6 +738,29 @@ class QuizTests(unittest.TestCase):
         self.assertEqual(session.current.key, restored.current.key)
         self.assertEqual(session.answers, restored.answers)
         self.assertEqual(session.started_at, restored.started_at)
+
+    def test_legacy_session_state_restores_single_country_subjects(self):
+        question = QuestionFactory().build(
+            GameConfig(["flags"], ["Europe"], 1),
+            self.catalog,
+            seed=3,
+        )[0]
+        session = GameSession([question])
+        session.answer(question.correct_answer, 2)
+        state = session.to_state()
+        state["questions"][0].pop("country_isos")
+        state["answers"][0].pop("country_isos")
+
+        restored = GameSession.from_state(state)
+
+        self.assertEqual(
+            (restored.questions[0].country_iso,),
+            restored.questions[0].subjects,
+        )
+        self.assertEqual(
+            (restored.answers[0].country_iso,),
+            restored.answers[0].subjects,
+        )
 
     def test_repository_persists_and_clears_active_game(self):
         with tempfile.TemporaryDirectory() as directory:

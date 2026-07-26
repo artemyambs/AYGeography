@@ -33,15 +33,23 @@ DEMO_COUNTRIES = {
 
 
 def _remove_demo(db: sqlite3.Connection) -> int:
-    round_rows = db.execute(
+    answer_rows = db.execute(
         """
-        SELECT DISTINCT round_id
+        SELECT id, round_id
         FROM answers
         WHERE prompt LIKE ?
         """,
         (f"{DEMO_TAG}%",),
     ).fetchall()
-    round_ids = [int(row[0]) for row in round_rows]
+    answer_ids = [int(row[0]) for row in answer_rows]
+    round_ids = sorted({int(row[1]) for row in answer_rows})
+    if answer_ids:
+        placeholders = ",".join("?" for _ in answer_ids)
+        db.execute(
+            f"DELETE FROM answer_countries "
+            f"WHERE answer_id IN ({placeholders})",
+            answer_ids,
+        )
     db.execute(
         "DELETE FROM answers WHERE prompt LIKE ?",
         (f"{DEMO_TAG}%",),
@@ -110,6 +118,15 @@ def seed(repository: GameRepository) -> None:
             ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             [(round_id, *answer) for answer in answers],
+        )
+        db.execute(
+            """
+            INSERT INTO answer_countries(answer_id, country_iso)
+            SELECT id, country_iso
+            FROM answers
+            WHERE round_id=?
+            """,
+            (round_id,),
         )
         db.commit()
     print(

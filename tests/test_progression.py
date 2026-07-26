@@ -84,22 +84,48 @@ class ProgressionTests(unittest.TestCase):
                     self.countries,
                     self.catalog,
                 )
-                repository.save_round(
-                    RoundResult(
-                        "2026-07-26T12:00:00",
-                        10,
-                        100,
-                        [
-                            self._answer(mode)
-                            for _ in range(expected)
-                            for mode in self.catalog.mastery_modes
-                        ],
+                for round_index in range(expected):
+                    repository.save_round(
+                        RoundResult(
+                            f"2026-07-{20 + round_index:02d}T12:00:00",
+                            10,
+                            100,
+                            [
+                                self._answer(mode)
+                                for mode in self.catalog.mastery_modes
+                            ],
+                        )
                     )
-                )
                 self.assertEqual(
                     service.country_mastery()["RUS"].stars,
                     expected,
                 )
+
+    def test_population_mastery_counts_both_countries_once_per_round(self):
+        answer = AnswerRecord(
+            mode="population",
+            country_iso="RUS",
+            country_isos=("RUS", "DEU"),
+            prompt="В какой стране население больше?",
+            answer="Россия",
+            correct_answer="Россия",
+            is_correct=True,
+            seconds=2.0,
+            points=10,
+        )
+        self.repository.save_round(
+            RoundResult(
+                "2026-07-26T12:00:00",
+                4,
+                20,
+                [answer, answer],
+            )
+        )
+
+        mastery = self.service.country_mastery()
+
+        self.assertEqual(1, mastery["RUS"].correct_by_mode["population"])
+        self.assertEqual(1, mastery["DEU"].correct_by_mode["population"])
 
     def test_new_mastery_mode_is_required_without_code_changes(self):
         progression = json.loads(
@@ -178,6 +204,50 @@ class ProgressionTests(unittest.TestCase):
             db.commit()
         repository = GameRepository(old_path)
         self.assertEqual(repository.lifetime_rounds()[0]["difficulty"], "medium")
+
+    def test_old_answers_are_backfilled_into_country_links(self):
+        old_path = Path(self.temporary.name) / "old_answers.db"
+        with closing(sqlite3.connect(old_path)) as db:
+            db.executescript(
+                """
+                CREATE TABLE rounds (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    started_at TEXT NOT NULL,
+                    duration REAL NOT NULL,
+                    score INTEGER NOT NULL,
+                    correct_count INTEGER NOT NULL,
+                    question_count INTEGER NOT NULL
+                );
+                CREATE TABLE answers (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    round_id INTEGER NOT NULL,
+                    mode TEXT NOT NULL,
+                    country_iso TEXT NOT NULL,
+                    prompt TEXT NOT NULL,
+                    answer TEXT NOT NULL,
+                    correct_answer TEXT NOT NULL,
+                    is_correct INTEGER NOT NULL,
+                    seconds REAL NOT NULL,
+                    points INTEGER NOT NULL
+                );
+                INSERT INTO rounds(
+                    started_at, duration, score, correct_count, question_count
+                ) VALUES('2026-07-20T12:00:00', 2, 10, 1, 1);
+                INSERT INTO answers(
+                    round_id, mode, country_iso, prompt, answer,
+                    correct_answer, is_correct, seconds, points
+                ) VALUES(1, 'flags', 'RUS', 'Вопрос', 'Россия',
+                         'Россия', 1, 2, 10);
+                """
+            )
+            db.commit()
+
+        repository = GameRepository(old_path)
+
+        self.assertEqual(
+            "RUS",
+            repository.lifetime_answer_countries()[0]["country_iso"],
+        )
 
 
 if __name__ == "__main__":

@@ -11,6 +11,17 @@ class CountryCatalog:
 
     def __init__(self, countries_path: Path, continents_path: Path) -> None:
         raw_countries = json.loads(countries_path.read_text(encoding="utf-8"))
+        invalid_population = [
+            iso3
+            for iso3, data in raw_countries.items()
+            if not isinstance(data.get("population"), int)
+            or int(data["population"]) <= 0
+        ]
+        if invalid_population:
+            raise ValueError(
+                "Некорректное население стран: "
+                + ", ".join(sorted(invalid_population))
+            )
         self._countries = {
             iso3: Country(
                 iso3=iso3,

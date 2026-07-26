@@ -67,6 +67,12 @@ class GameRepository:
                     points INTEGER NOT NULL,
                     FOREIGN KEY(round_id) REFERENCES rounds(id)
                 );
+                CREATE TABLE IF NOT EXISTS answer_countries (
+                    answer_id INTEGER NOT NULL,
+                    country_iso TEXT NOT NULL,
+                    PRIMARY KEY(answer_id, country_iso),
+                    FOREIGN KEY(answer_id) REFERENCES answers(id)
+                );
                 CREATE TABLE IF NOT EXISTS active_game (
                     id INTEGER PRIMARY KEY CHECK (id = 1),
                     payload TEXT NOT NULL
@@ -87,6 +93,12 @@ class GameRepository:
                 "rounds",
                 "difficulty",
                 "TEXT NOT NULL DEFAULT 'medium'",
+            )
+            db.execute(
+                """
+                INSERT OR IGNORE INTO answer_countries(answer_id, country_iso)
+                SELECT id, country_iso FROM answers
+                """
             )
             db.execute(
                 "INSERT OR IGNORE INTO profile(id, nickname, avatar, xp) VALUES(1, ?, 0, 0)",
@@ -181,14 +193,14 @@ class GameRepository:
                 ),
             )
             round_id = int(cursor.lastrowid)
-            db.executemany(
-                """
-                INSERT INTO answers(
-                    round_id, mode, country_iso, prompt, answer, correct_answer,
-                    is_correct, seconds, points
-                ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                [
+            for item in result.answers:
+                answer_cursor = db.execute(
+                    """
+                    INSERT INTO answers(
+                        round_id, mode, country_iso, prompt, answer,
+                        correct_answer, is_correct, seconds, points
+                    ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
                     (
                         round_id,
                         item.mode,
@@ -199,10 +211,19 @@ class GameRepository:
                         int(item.is_correct),
                         item.seconds,
                         item.points,
-                    )
-                    for item in result.answers
-                ],
-            )
+                    ),
+                )
+                answer_id = int(answer_cursor.lastrowid)
+                db.executemany(
+                    """
+                    INSERT INTO answer_countries(answer_id, country_iso)
+                    VALUES(?, ?)
+                    """,
+                    [
+                        (answer_id, country_iso)
+                        for country_iso in dict.fromkeys(item.subjects)
+                    ],
+                )
             db.execute("UPDATE profile SET xp = xp + ? WHERE id=1", (result.score,))
             db.commit()
 
@@ -228,6 +249,21 @@ class GameRepository:
                        seconds, points
                 FROM answers
                 ORDER BY id
+                """
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def lifetime_answer_countries(self) -> list[dict[str, object]]:
+        """Country associations used by mastery without duplicating attempts."""
+        with closing(self._connect()) as db:
+            rows = db.execute(
+                """
+                SELECT answers.id answer_id, answers.round_id, answers.mode,
+                       answer_countries.country_iso, answers.is_correct
+                FROM answers
+                JOIN answer_countries
+                  ON answer_countries.answer_id = answers.id
+                ORDER BY answers.id, answer_countries.country_iso
                 """
             ).fetchall()
         return [dict(row) for row in rows]
@@ -383,12 +419,14 @@ class GameRepository:
             ).fetchall()
             continents = db.execute(
                 """
-                SELECT answers.country_iso, COUNT(*) total,
+                SELECT answer_countries.country_iso, COUNT(*) total,
                        SUM(answers.is_correct) correct
                 FROM answers
                 JOIN rounds ON rounds.id = answers.round_id
+                JOIN answer_countries
+                  ON answer_countries.answer_id = answers.id
                 WHERE rounds.id > ? AND rounds.started_at >= ?
-                GROUP BY answers.country_iso
+                GROUP BY answer_countries.country_iso
                 """,
                 (reset_after_round_id, reset_at),
             ).fetchall()
@@ -429,9 +467,11 @@ class GameRepository:
             reset_after_round_id, reset_at = self._statistics_reset_state(db)
             rows = db.execute(
                 """
-                SELECT DISTINCT answers.country_iso
+                SELECT DISTINCT answer_countries.country_iso
                 FROM answers
                 JOIN rounds ON rounds.id = answers.round_id
+                JOIN answer_countries
+                  ON answer_countries.answer_id = answers.id
                 WHERE answers.is_correct=0
                   AND rounds.id > ?
                   AND rounds.started_at >= ?

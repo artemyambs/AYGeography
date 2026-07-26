@@ -10,7 +10,7 @@ os.environ["SDL_AUDIODRIVER"] = "dummy"
 import pygame
 
 from aygeography.app import AYGeographyApp
-from aygeography.config import ASSETS_DIR
+from aygeography.config import ANSWER_FEEDBACK_SECONDS, ASSETS_DIR
 from aygeography.models import GameConfig
 from aygeography.formatting import format_population
 from aygeography.storage import GameRepository
@@ -22,9 +22,13 @@ from aygeography.ui.components import (
     MapRenderer,
 )
 from aygeography.ui.screens import (
+    CAPITAL_LABEL_FONT_SIZE,
     CONTENT,
     PRIMARY_ACTION_SIZE,
+    QUESTION_FLAG_IMAGE_SIZE,
+    QUESTION_FLAG_PANEL_SIZE,
     StatisticsView,
+    draw_question_flag,
 )
 
 
@@ -175,7 +179,9 @@ class PygameAppTests(unittest.TestCase):
 
     def test_all_avatars_load(self):
         for index in range(10):
-            self.assertEqual((160, 160), self.app.assets.avatar(index).get_size())
+            avatar = self.app.assets.avatar(index)
+            self.assertEqual((160, 160), avatar.get_size())
+            self.assertEqual(0, avatar.get_at((0, 0)).a)
 
     def test_svg_icon_set_loads(self):
         icon_names = (
@@ -317,6 +323,35 @@ class PygameAppTests(unittest.TestCase):
         self.assertEqual(view.active_question.country_iso, view.active_question.visual)
         self.assertEqual(530, answers_top)
 
+    def test_capital_country_name_keeps_catalogue_casing(self):
+        self.app.start_game(GameConfig(["capitals"], ["Europe"], 10))
+        view = self.app.view
+        with patch("aygeography.ui.screens.draw_text") as draw:
+            view._draw_capital_question(pygame.Surface(LOGICAL_SIZE))
+
+        self.assertEqual(view.active_question.prompt, draw.call_args_list[0].args[1])
+        self.assertNotEqual(
+            view.active_question.prompt.upper(),
+            draw.call_args_list[0].args[1],
+        )
+
+    def test_flag_question_modes_use_one_framed_flag_size(self):
+        self.assertEqual((280, 180), QUESTION_FLAG_IMAGE_SIZE)
+        self.assertEqual((300, 200), QUESTION_FLAG_PANEL_SIZE)
+        self.assertEqual(26, CAPITAL_LABEL_FONT_SIZE)
+        for mode, expected_flags in (
+            ("flags", 1),
+            ("capitals", 1),
+            ("population", 2),
+        ):
+            self.app.start_game(GameConfig([mode], ["Europe"], 10))
+            with patch(
+                "aygeography.ui.screens.draw_question_flag",
+                wraps=draw_question_flag,
+            ) as framed_flag:
+                self.app.render()
+            self.assertEqual(expected_flags, framed_flag.call_count, mode)
+
     def test_answer_feedback_does_not_mix_two_questions(self):
         for mode in ("flags", "capitals", "population", "countries", "waters"):
             self.app.start_game(GameConfig([mode], ["Europe", "Asia"], 10))
@@ -328,19 +363,46 @@ class PygameAppTests(unittest.TestCase):
             view.update(1.0)
             self.assertEqual(LOGICAL_SIZE, self.app.render().get_size(), mode)
 
-    def test_population_feedback_shows_rounded_population(self):
+    def test_population_comparison_renders_two_answers(self):
         self.app.start_game(GameConfig(["population"], ["Europe"], 10))
         view = self.app.view
-        population = view.active_question.metadata["population"]
+        self.assertEqual(
+            "country_comparison",
+            view.active_question.metadata["presentation"],
+        )
+        self.assertEqual(2, len(view.active_question.country_isos))
+        self.assertEqual(2, len(view.answer_buttons))
+        self.assertEqual(LOGICAL_SIZE, self.app.render().get_size())
+
+    def test_population_feedback_shows_both_exact_values(self):
+        self.app.start_game(GameConfig(["population"], ["Europe"], 10))
+        view = self.app.view
+        question = view.active_question
+        countries_by_name = {
+            self.app.catalog.get(iso3).name: self.app.catalog.get(iso3)
+            for iso3 in question.country_isos
+        }
+        details = " • ".join(
+            f"{name} — {format_population(countries_by_name[name].population)}"
+            for name in question.options
+        )
         view._answer(view.active_question.correct_answer)
         self.assertEqual(
-            f"Верно! Население {format_population(population)} человек",
+            f"Верно! {details} человек",
             view.feedback,
         )
 
         self.app.start_game(GameConfig(["population"], ["Europe"], 10))
         view = self.app.view
-        population = view.active_question.metadata["population"]
+        question = view.active_question
+        countries_by_name = {
+            self.app.catalog.get(iso3).name: self.app.catalog.get(iso3)
+            for iso3 in question.country_isos
+        }
+        details = " • ".join(
+            f"{name} — {format_population(countries_by_name[name].population)}"
+            for name in question.options
+        )
         wrong_answer = next(
             option
             for option in view.active_question.options
@@ -348,9 +410,37 @@ class PygameAppTests(unittest.TestCase):
         )
         view._answer(wrong_answer)
         self.assertEqual(
-            f"Неверно. Правильный ответ: {format_population(population)} человек",
+            f"Неверно. {details} человек",
             view.feedback,
         )
+
+    def test_population_uses_its_own_feedback_delays(self):
+        previous_clock = self.app.clock_source
+        now = [100.0]
+        self.app.clock_source = lambda: now[0]
+        try:
+            self.app.start_game(GameConfig(["population"], ["Europe"], 10))
+            view = self.app.view
+            view._answer(view.active_question.correct_answer)
+            self.assertEqual(
+                100.0 + ANSWER_FEEDBACK_SECONDS["population"]["correct"],
+                view.advance_at,
+            )
+
+            self.app.start_game(GameConfig(["population"], ["Europe"], 10))
+            view = self.app.view
+            wrong_answer = next(
+                option
+                for option in view.active_question.options
+                if option != view.active_question.correct_answer
+            )
+            view._answer(wrong_answer)
+            self.assertEqual(
+                100.0 + ANSWER_FEEDBACK_SECONDS["population"]["incorrect"],
+                view.advance_at,
+            )
+        finally:
+            self.app.clock_source = previous_clock
 
     def test_correct_answer_feedback_is_visible_for_one_second(self):
         previous_clock = self.app.clock_source

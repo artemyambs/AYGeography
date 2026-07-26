@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import random
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from dataclasses import asdict
 from datetime import datetime
 from typing import Any
@@ -43,6 +44,121 @@ class QuestionStrategy(ABC):
     def continent_pool(country: Country, pool: list[Country]) -> list[Country]:
         """Returns distractor candidates from the target country's continent."""
         return [item for item in pool if item.continent == country.continent]
+
+
+class PopulationPairSelector:
+    """Selects unique, balanced population comparisons for one round."""
+
+    CLOSE_MIN_RATIO = 1.15
+    CLOSE_MAX_RATIO = 2.0
+    CONTRAST_MAX_RATIO = 10.0
+
+    def __init__(self) -> None:
+        self._used_pairs: set[tuple[str, str]] = set()
+        self._appearances: dict[str, int] = defaultdict(int)
+
+    def reset(self) -> None:
+        self._used_pairs.clear()
+        self._appearances.clear()
+
+    @staticmethod
+    def _pair_key(first: Country, second: Country) -> tuple[str, str]:
+        return tuple(sorted((first.iso3, second.iso3)))
+
+    @staticmethod
+    def ratio(first: Country, second: Country) -> float:
+        smaller = min(first.population, second.population)
+        if smaller <= 0:
+            raise ValueError("Население страны должно быть положительным")
+        return max(first.population, second.population) / smaller
+
+    def _available(
+        self,
+        primary: Country,
+        pool: list[Country],
+    ) -> list[Country]:
+        return [
+            country
+            for country in pool
+            if country.iso3 != primary.iso3
+            and self._pair_key(primary, country) not in self._used_pairs
+        ]
+
+    def _balanced_choice(
+        self,
+        candidates: list[Country],
+        rng: random.Random,
+    ) -> Country:
+        minimum = min(self._appearances[country.iso3] for country in candidates)
+        balanced = [
+            country
+            for country in candidates
+            if self._appearances[country.iso3] == minimum
+        ]
+        return rng.choice(balanced)
+
+    def select(
+        self,
+        primary: Country,
+        pool: list[Country],
+        mode_serial: int,
+        rng: random.Random,
+    ) -> tuple[Country, str]:
+        available = self._available(primary, pool)
+        if not available:
+            available = [
+                country for country in pool if country.iso3 != primary.iso3
+            ]
+        if not available:
+            raise ValueError(
+                "Для сравнения населения нужны как минимум две страны"
+            )
+
+        prefer_close = mode_serial % 2 == 0
+        if prefer_close:
+            candidates = [
+                country
+                for country in available
+                if self.CLOSE_MIN_RATIO
+                <= self.ratio(primary, country)
+                < self.CLOSE_MAX_RATIO
+            ]
+            kind = "close"
+        else:
+            candidates = [
+                country
+                for country in available
+                if self.CLOSE_MAX_RATIO
+                <= self.ratio(primary, country)
+                <= self.CONTRAST_MAX_RATIO
+            ]
+            kind = "contrast"
+
+        if not candidates:
+            candidates = [
+                country
+                for country in available
+                if self.CLOSE_MIN_RATIO
+                <= self.ratio(primary, country)
+                <= self.CONTRAST_MAX_RATIO
+            ]
+            kind = "fallback"
+        if not candidates:
+            closest_ratio = min(
+                self.ratio(primary, country) for country in available
+            )
+            candidates = [
+                country
+                for country in available
+                if self.ratio(primary, country) == closest_ratio
+            ]
+            kind = "fallback"
+
+        comparison = self._balanced_choice(candidates, rng)
+        self._used_pairs.add(self._pair_key(primary, comparison))
+        self._appearances[primary.iso3] += 1
+        self._appearances[comparison.iso3] += 1
+        return comparison, kind
 
 
 class FlagQuestionStrategy(QuestionStrategy):
@@ -104,12 +220,15 @@ class CapitalQuestionStrategy(QuestionStrategy):
 
 class PopulationQuestionStrategy(QuestionStrategy):
     mode = "population"
-    BUCKETS = [
-        (0, 1_000_000, "Меньше 1 млн"),
-        (1_000_000, 10_000_000, "1–10 млн"),
-        (10_000_000, 100_000_000, "10–100 млн"),
-        (100_000_000, float("inf"), "Больше 100 млн"),
-    ]
+
+    def __init__(
+        self,
+        pair_selector: PopulationPairSelector | None = None,
+    ) -> None:
+        self._pair_selector = pair_selector or PopulationPairSelector()
+
+    def reset(self) -> None:
+        self._pair_selector.reset()
 
     def create(
         self,
@@ -120,20 +239,32 @@ class PopulationQuestionStrategy(QuestionStrategy):
         *,
         eligible_water_keys: frozenset[str] | None = None,
     ) -> Question:
-        correct = next(
-            label
-            for lower, upper, label in self.BUCKETS
-            if lower <= country.population < upper
+        comparison, pair_kind = self._pair_selector.select(
+            country,
+            pool,
+            serial,
+            rng,
         )
+        countries = [country, comparison]
+        rng.shuffle(countries)
+        correct_country = max(countries, key=lambda item: item.population)
         return Question(
-            key=f"population:{country.iso3}",
+            key="population:compare:" + ":".join(
+                sorted((country.iso3, comparison.iso3))
+            ),
             mode=self.mode,
-            prompt=f"Какое население у страны «{country.name}»?",
+            prompt="В какой стране население больше?",
             country_iso=country.iso3,
-            options=[bucket[2] for bucket in self.BUCKETS],
-            correct_answer=correct,
-            visual=country.iso3,
-            metadata={"population": country.population},
+            country_isos=(country.iso3, comparison.iso3),
+            options=[item.name for item in countries],
+            correct_answer=correct_country.name,
+            metadata={
+                "presentation": "country_comparison",
+                "pair_kind": pair_kind,
+                "population_values": {
+                    item.iso3: item.population for item in countries
+                },
+            },
         )
 
 
@@ -291,6 +422,12 @@ class QuestionFactory:
             rng,
         )
 
+    def _reset_round_strategies(self, modes: list[str]) -> None:
+        for mode in dict.fromkeys(modes):
+            reset = getattr(self._strategies[mode], "reset", None)
+            if reset is not None:
+                reset()
+
     @staticmethod
     def _required_by_mode(config: GameConfig) -> dict[str, int]:
         required = dict.fromkeys(config.modes, 0)
@@ -320,6 +457,7 @@ class QuestionFactory:
         subject_pool: list[Country],
         rng: random.Random,
     ) -> list[Question]:
+        self._reset_round_strategies(config.modes)
         country_queues: dict[str, list[Country]] = {}
         for mode in dict.fromkeys(config.modes):
             if mode == WaterQuestionStrategy.mode:
@@ -340,15 +478,18 @@ class QuestionFactory:
         self._ensure_capacity(self._required_by_mode(config), capacities)
 
         questions: list[Question] = []
+        mode_serials: dict[str, int] = defaultdict(int)
         for serial in range(config.question_count):
             mode = config.modes[serial % len(config.modes)]
+            mode_serial = mode_serials[mode]
+            mode_serials[mode] += 1
             if mode == WaterQuestionStrategy.mode:
                 water_key = water_queue.pop()
                 country = candidate_pool[serial % len(candidate_pool)]
                 question = self._strategies[mode].create(
                     country,
                     candidate_pool,
-                    serial,
+                    mode_serial,
                     rng,
                     eligible_water_keys=frozenset({water_key}),
                 )
@@ -357,7 +498,7 @@ class QuestionFactory:
                 question = self._strategies[mode].create(
                     country,
                     candidate_pool,
-                    serial,
+                    mode_serial,
                     rng,
                 )
             questions.append(question)
@@ -371,6 +512,7 @@ class QuestionFactory:
         subject_pool: list[Country],
         rng: random.Random,
     ) -> list[Question]:
+        self._reset_round_strategies(config.modes)
         if config.difficulty not in DIFFICULTY_KEYS:
             raise ValueError(f"Неизвестный уровень сложности: {config.difficulty}")
         if not candidate_pool:
@@ -415,8 +557,11 @@ class QuestionFactory:
         self._ensure_capacity(self._required_by_mode(config), capacities)
 
         questions: list[Question] = []
+        mode_serials: dict[str, int] = defaultdict(int)
         for serial in range(config.question_count):
             mode = config.modes[serial % len(config.modes)]
+            mode_serial = mode_serials[mode]
+            mode_serials[mode] += 1
             queues = (
                 water_queues
                 if mode == WaterQuestionStrategy.mode
@@ -436,7 +581,7 @@ class QuestionFactory:
                 question = self._strategies[mode].create(
                     country,
                     candidate_pool,
-                    serial,
+                    mode_serial,
                     rng,
                     eligible_water_keys=frozenset({water_key}),
                 )
@@ -445,7 +590,7 @@ class QuestionFactory:
                 question = self._strategies[mode].create(
                     country,
                     candidate_pool,
-                    serial,
+                    mode_serial,
                     rng,
                 )
             question.metadata["difficulty"] = level
@@ -499,6 +644,7 @@ class GameSession:
             is_correct=correct,
             seconds=elapsed_seconds,
             points=points,
+            country_isos=question.subjects,
         )
         self.answers.append(record)
         self.index += 1
@@ -527,7 +673,11 @@ class GameSession:
 
     @classmethod
     def from_state(cls, state: dict[str, Any]) -> GameSession:
-        questions = [Question(**item) for item in state["questions"]]
+        questions = []
+        for raw_question in state["questions"]:
+            item = dict(raw_question)
+            item["country_isos"] = tuple(item.get("country_isos", ()))
+            questions.append(Question(**item))
         session = cls(
             questions,
             difficulty=str(state.get("difficulty", "medium")),
@@ -537,6 +687,10 @@ class GameSession:
             raise ValueError("Некорректный индекс сохранённого вопроса")
         session.score = int(state["score"])
         session.streak = int(state["streak"])
-        session.answers = [AnswerRecord(**item) for item in state["answers"]]
+        session.answers = []
+        for raw_answer in state["answers"]:
+            item = dict(raw_answer)
+            item["country_isos"] = tuple(item.get("country_isos", ()))
+            session.answers.append(AnswerRecord(**item))
         session.started_at = datetime.fromisoformat(state["started_at"])
         return session

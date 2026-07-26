@@ -196,9 +196,17 @@ class ProgressionService:
         counts: dict[str, dict[str, int]] = defaultdict(
             lambda: defaultdict(int)
         )
-        for answer in self.repository.lifetime_answers():
+        counted_population: set[tuple[int, str]] = set()
+        for answer in self.repository.lifetime_answer_countries():
             if bool(answer["is_correct"]):
-                counts[str(answer["country_iso"])][str(answer["mode"])] += 1
+                country_iso = str(answer["country_iso"])
+                mode = str(answer["mode"])
+                if mode == "population":
+                    key = int(answer["round_id"]), country_iso
+                    if key in counted_population:
+                        continue
+                    counted_population.add(key)
+                counts[country_iso][mode] += 1
         result: dict[str, CountryMastery] = {}
         for country in self.countries.all():
             by_mode = {

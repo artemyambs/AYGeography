@@ -7,7 +7,7 @@
     "iso2": "RU",
     "continent": "Europe",
     "capital": "Москва",
-    "population": 146150789,
+    "population": 144820423,
     "area": 17098246
   },
   "AUS": {
@@ -18,7 +18,7 @@
     "iso2": "AU",
     "continent": "Oceania",
     "capital": "Канберра",
-    "population": 26439111,
+    "population": 26713205,
     "area": 7692024
   },
   "AUT": {
@@ -29,7 +29,7 @@
     "iso2": "AT",
     "continent": "Europe",
     "capital": "Вена",
-    "population": 9104772,
+    "population": 9120813,
     "area": 83879
   },
   "AZE": {
@@ -40,7 +40,7 @@
     "iso2": "AZ",
     "continent": "Asia",
     "capital": "Баку",
-    "population": 10300205,
+    "population": 10336577,
     "area": 86600
   },
   "ALB": {
@@ -51,7 +51,7 @@
     "iso2": "AL",
     "continent": "Europe",
     "capital": "Тирана",
-    "population": 2793592,
+    "population": 2791765,
     "area": 28748
   },
   "DZA": {
@@ -62,7 +62,7 @@
     "iso2": "DZ",
     "continent": "Africa",
     "capital": "Алжир",
-    "population": 45606480,
+    "population": 46814308,
     "area": 2381741
   },
   "AGO": {
@@ -73,7 +73,7 @@
     "iso2": "AO",
     "continent": "Africa",
     "capital": "Луанда",
-    "population": 36684202,
+    "population": 37885849,
     "area": 1246700
   },
   "AND": {
@@ -84,7 +84,7 @@
     "iso2": "AD",
     "continent": "Europe",
     "capital": "Андорра-ла-Велья",
-    "population": 80088,
+    "population": 81938,
     "area": 468
   },
   "ATG": {
@@ -95,7 +95,7 @@
     "iso2": "AG",
     "continent": "North America",
     "capital": "Сент-Джонс",
-    "population": 94298,
+    "population": 93772,
     "area": 442
   },
   "ARG": {
@@ -106,7 +106,7 @@
     "iso2": "AR",
     "continent": "South America",
     "capital": "Буэнос-Айрес",
-    "population": 46044703,
+    "population": 45696159,
     "area": 2780400
   },
   "ARM": {
@@ -117,7 +117,7 @@
     "iso2": "AM",
     "continent": "Asia",
     "capital": "Ереван",
-    "population": 2777970,
+    "population": 2973840,
     "area": 29743
   },
   "AFG": {
@@ -128,7 +128,7 @@
     "iso2": "AF",
     "continent": "Asia",
     "capital": "Кабул",
-    "population": 42239854,
+    "population": 42647492,
     "area": 652230
   },
   "BHS": {
@@ -139,7 +139,7 @@
     "iso2": "BS",
     "continent": "North America",
     "capital": "Нассау",
-    "population": 412623,
+    "population": 401283,
     "area": 13943
   },
   "BGD": {
@@ -150,7 +150,7 @@
     "iso2": "BD",
     "continent": "Asia",
     "capital": "Дакка",
-    "population": 172954319,
+    "population": 173562364,
     "area": 147570
   },
   "BRB": {
@@ -161,7 +161,7 @@
     "iso2": "BB",
     "continent": "North America",
     "capital": "Бриджтаун",
-    "population": 281995,
+    "population": 282467,
     "area": 430
   },
   "BHR": {
@@ -172,7 +172,7 @@
     "iso2": "BH",
     "continent": "Asia",
     "capital": "Манама",
-    "population": 1487509,
+    "population": 1607049,
     "area": 765
   },
   "BLZ": {
@@ -183,7 +183,7 @@
     "iso2": "BZ",
     "continent": "North America",
     "capital": "Бельмопан",
-    "population": 410825,
+    "population": 417072,
     "area": 22966
   },
   "BLR": {
@@ -194,7 +194,7 @@
     "iso2": "BY",
     "continent": "Europe",
     "capital": "Минск",
-    "population": 9200617,
+    "population": 9056696,
     "area": 207600
   },
   "BEL": {
@@ -205,7 +205,7 @@
     "iso2": "BE",
     "continent": "Europe",
     "capital": "Брюссель",
-    "population": 11686140,
+    "population": 11738763,
     "area": 30528
   },
   "BEN": {
@@ -216,7 +216,7 @@
     "iso2": "BJ",
     "continent": "Africa",
     "capital": "Порто-Ново",
-    "population": 13712828,
+    "population": 14462724,
     "area": 112622
   },
   "BGR": {
@@ -227,7 +227,7 @@
     "iso2": "BG",
     "continent": "Europe",
     "capital": "София",
-    "population": 6447710,
+    "population": 6757689,
     "area": 110879
   },
   "BOL": {
@@ -238,7 +238,7 @@
     "iso2": "BO",
     "continent": "South America",
     "capital": "Сукре",
-    "population": 12388571,
+    "population": 12413315,
     "area": 1098581
   },
   "BIH": {
@@ -249,7 +249,7 @@
     "iso2": "BA",
     "continent": "Europe",
     "capital": "Сараево",
-    "population": 3210847,
+    "population": 3164253,
     "area": 51197
   },
   "BWA": {
@@ -260,7 +260,7 @@
     "iso2": "BW",
     "continent": "Africa",
     "capital": "Габороне",
-    "population": 2675352,
+    "population": 2521139,
     "area": 581730
   },
   "BRA": {
@@ -271,7 +271,7 @@
     "iso2": "BR",
     "continent": "South America",
     "capital": "Бразилиа",
-    "population": 216422446,
+    "population": 211998573,
     "area": 8515767
   },
   "BRN": {
@@ -282,7 +282,7 @@
     "iso2": "BN",
     "continent": "Asia",
     "capital": "Бандар-Сери-Бегаван",
-    "population": 452524,
+    "population": 462721,
     "area": 5765
   },
   "BFA": {
@@ -293,7 +293,7 @@
     "iso2": "BF",
     "continent": "Africa",
     "capital": "Уагадугу",
-    "population": 23251485,
+    "population": 23548781,
     "area": 274200
   },
   "BDI": {
@@ -304,7 +304,7 @@
     "iso2": "BI",
     "continent": "Africa",
     "capital": "Гитега",
-    "population": 13238559,
+    "population": 14047786,
     "area": 27834
   },
   "BTN": {
@@ -315,7 +315,7 @@
     "iso2": "BT",
     "continent": "Asia",
     "capital": "Тхимпху",
-    "population": 787424,
+    "population": 791524,
     "area": 38394
   },
   "VUT": {
@@ -326,7 +326,7 @@
     "iso2": "VU",
     "continent": "Oceania",
     "capital": "Порт-Вила",
-    "population": 334506,
+    "population": 327777,
     "area": 12189
   },
   "VAT": {
@@ -337,7 +337,7 @@
     "iso2": "VA",
     "continent": "Europe",
     "capital": "Ватикан",
-    "population": 764,
+    "population": 496,
     "area": 0
   },
   "GBR": {
@@ -348,7 +348,7 @@
     "iso2": "GB",
     "continent": "Europe",
     "capital": "Лондон",
-    "population": 67736802,
+    "population": 69138192,
     "area": 242495
   },
   "HUN": {
@@ -359,7 +359,7 @@
     "iso2": "HU",
     "continent": "Europe",
     "capital": "Будапешт",
-    "population": 9597085,
+    "population": 9676135,
     "area": 93030
   },
   "VEN": {
@@ -370,7 +370,7 @@
     "iso2": "VE",
     "continent": "South America",
     "capital": "Каракас",
-    "population": 28838499,
+    "population": 28405543,
     "area": 916445
   },
   "TLS": {
@@ -381,7 +381,7 @@
     "iso2": "TL",
     "continent": "Asia",
     "capital": "Дили",
-    "population": 1360596,
+    "population": 1400638,
     "area": 14874
   },
   "VNM": {
@@ -392,7 +392,7 @@
     "iso2": "VN",
     "continent": "Asia",
     "capital": "Ханой",
-    "population": 98186856,
+    "population": 100987686,
     "area": 331210
   },
   "GAB": {
@@ -403,7 +403,7 @@
     "iso2": "GA",
     "continent": "Africa",
     "capital": "Либревиль",
-    "population": 2436566,
+    "population": 2538952,
     "area": 267668
   },
   "HTI": {
@@ -414,7 +414,7 @@
     "iso2": "HT",
     "continent": "North America",
     "capital": "Порт-о-Пренс",
-    "population": 11724763,
+    "population": 11772557,
     "area": 27750
   },
   "GUY": {
@@ -425,7 +425,7 @@
     "iso2": "GY",
     "continent": "South America",
     "capital": "Джорджтаун",
-    "population": 813834,
+    "population": 831087,
     "area": 214969
   },
   "GMB": {
@@ -436,7 +436,7 @@
     "iso2": "GM",
     "continent": "Africa",
     "capital": "Банжул",
-    "population": 2773168,
+    "population": 2759988,
     "area": 11295
   },
   "GHA": {
@@ -447,7 +447,7 @@
     "iso2": "GH",
     "continent": "Africa",
     "capital": "Аккра",
-    "population": 34121985,
+    "population": 34427414,
     "area": 238533
   },
   "GTM": {
@@ -458,7 +458,7 @@
     "iso2": "GT",
     "continent": "North America",
     "capital": "Гватемала",
-    "population": 18092026,
+    "population": 18406359,
     "area": 108889
   },
   "GIN": {
@@ -469,7 +469,7 @@
     "iso2": "GN",
     "continent": "Africa",
     "capital": "Конакри",
-    "population": 14190612,
+    "population": 14754785,
     "area": 245857
   },
   "GNB": {
@@ -480,7 +480,7 @@
     "iso2": "GW",
     "continent": "Africa",
     "capital": "Бисау",
-    "population": 2150842,
+    "population": 2201352,
     "area": 36125
   },
   "DEU": {
@@ -491,7 +491,7 @@
     "iso2": "DE",
     "continent": "Europe",
     "capital": "Берлин",
-    "population": 83294633,
+    "population": 84552242,
     "area": 357022
   },
   "HND": {
@@ -502,7 +502,7 @@
     "iso2": "HN",
     "continent": "North America",
     "capital": "Тегусигальпа",
-    "population": 10593798,
+    "population": 10825703,
     "area": 112492
   },
   "GRD": {
@@ -513,7 +513,7 @@
     "iso2": "GD",
     "continent": "North America",
     "capital": "Сент-Джорджес",
-    "population": 126183,
+    "population": 117207,
     "area": 344
   },
   "GRC": {
@@ -524,7 +524,7 @@
     "iso2": "GR",
     "continent": "Europe",
     "capital": "Афины",
-    "population": 10341277,
+    "population": 10047817,
     "area": 131957
   },
   "GEO": {
@@ -535,7 +535,7 @@
     "iso2": "GE",
     "continent": "Asia",
     "capital": "Тбилиси",
-    "population": 3728573,
+    "population": 3807670,
     "area": 69700
   },
   "DNK": {
@@ -546,7 +546,7 @@
     "iso2": "DK",
     "continent": "Europe",
     "capital": "Копенгаген",
-    "population": 5910913,
+    "population": 5977412,
     "area": 43094
   },
   "DJI": {
@@ -557,7 +557,7 @@
     "iso2": "DJ",
     "continent": "Africa",
     "capital": "Джибути",
-    "population": 1136455,
+    "population": 1168722,
     "area": 23200
   },
   "DMA": {
@@ -568,7 +568,7 @@
     "iso2": "DM",
     "continent": "North America",
     "capital": "Розо",
-    "population": 73040,
+    "population": 66205,
     "area": 751
   },
   "DOM": {
@@ -579,7 +579,7 @@
     "iso2": "DO",
     "continent": "North America",
     "capital": "Санто-Доминго",
-    "population": 11228821,
+    "population": 11427557,
     "area": 48671
   },
   "EGY": {
@@ -590,7 +590,7 @@
     "iso2": "EG",
     "continent": "Africa",
     "capital": "Каир",
-    "population": 110990103,
+    "population": 116538258,
     "area": 1002450
   },
   "ZMB": {
@@ -601,7 +601,7 @@
     "iso2": "ZM",
     "continent": "Africa",
     "capital": "Лусака",
-    "population": 20569737,
+    "population": 21314956,
     "area": 752612
   },
   "ZWE": {
@@ -612,7 +612,7 @@
     "iso2": "ZW",
     "continent": "Africa",
     "capital": "Хараре",
-    "population": 16665409,
+    "population": 16634373,
     "area": 390757
   },
   "ISR": {
@@ -623,7 +623,7 @@
     "iso2": "IL",
     "continent": "Asia",
     "capital": "Иерусалим",
-    "population": 9174520,
+    "population": 9387021,
     "area": 20770
   },
   "IND": {
@@ -634,7 +634,7 @@
     "iso2": "IN",
     "continent": "Asia",
     "capital": "Нью-Дели",
-    "population": 1428627663,
+    "population": 1450935791,
     "area": 3287263
   },
   "IDN": {
@@ -645,7 +645,7 @@
     "iso2": "ID",
     "continent": "Asia",
     "capital": "Джакарта",
-    "population": 277534122,
+    "population": 283487931,
     "area": 1904569
   },
   "JOR": {
@@ -656,7 +656,7 @@
     "iso2": "JO",
     "continent": "Asia",
     "capital": "Амман",
-    "population": 11337052,
+    "population": 11552876,
     "area": 89342
   },
   "IRQ": {
@@ -667,7 +667,7 @@
     "iso2": "IQ",
     "continent": "Asia",
     "capital": "Багдад",
-    "population": 45504560,
+    "population": 46042015,
     "area": 438317
   },
   "IRN": {
@@ -678,7 +678,7 @@
     "iso2": "IR",
     "continent": "Asia",
     "capital": "Тегеран",
-    "population": 89172767,
+    "population": 91567738,
     "area": 1648195
   },
   "IRL": {
@@ -689,7 +689,7 @@
     "iso2": "IE",
     "continent": "Europe",
     "capital": "Дублин",
-    "population": 5056935,
+    "population": 5255017,
     "area": 70273
   },
   "ISL": {
@@ -700,7 +700,7 @@
     "iso2": "IS",
     "continent": "Europe",
     "capital": "Рейкьявик",
-    "population": 376248,
+    "population": 393396,
     "area": 103000
   },
   "ESP": {
@@ -711,7 +711,7 @@
     "iso2": "ES",
     "continent": "Europe",
     "capital": "Мадрид",
-    "population": 47519628,
+    "population": 47910526,
     "area": 505990
   },
   "ITA": {
@@ -722,7 +722,7 @@
     "iso2": "IT",
     "continent": "Europe",
     "capital": "Рим",
-    "population": 58870762,
+    "population": 59342867,
     "area": 301340
   },
   "YEM": {
@@ -733,7 +733,7 @@
     "iso2": "YE",
     "continent": "Asia",
     "capital": "Сана",
-    "population": 34449825,
+    "population": 40583164,
     "area": 527968
   },
   "CPV": {
@@ -744,7 +744,7 @@
     "iso2": "CV",
     "continent": "Africa",
     "capital": "Прая",
-    "population": 598682,
+    "population": 524877,
     "area": 4033
   },
   "KAZ": {
@@ -755,7 +755,7 @@
     "iso2": "KZ",
     "continent": "Asia",
     "capital": "Астана",
-    "population": 19606633,
+    "population": 20592571,
     "area": 2724900
   },
   "KHM": {
@@ -766,7 +766,7 @@
     "iso2": "KH",
     "continent": "Asia",
     "capital": "Пномпень",
-    "population": 16944826,
+    "population": 17638801,
     "area": 181035
   },
   "CMR": {
@@ -777,7 +777,7 @@
     "iso2": "CM",
     "continent": "Africa",
     "capital": "Яунде",
-    "population": 28647293,
+    "population": 29123744,
     "area": 475442
   },
   "CAN": {
@@ -788,7 +788,7 @@
     "iso2": "CA",
     "continent": "North America",
     "capital": "Оттава",
-    "population": 40097761,
+    "population": 39742430,
     "area": 9984670
   },
   "QAT": {
@@ -799,7 +799,7 @@
     "iso2": "QA",
     "continent": "Asia",
     "capital": "Доха",
-    "population": 2716391,
+    "population": 3048423,
     "area": 11586
   },
   "KEN": {
@@ -810,7 +810,7 @@
     "iso2": "KE",
     "continent": "Africa",
     "capital": "Найроби",
-    "population": 55100586,
+    "population": 56432944,
     "area": 580367
   },
   "CYP": {
@@ -821,7 +821,7 @@
     "iso2": "CY",
     "continent": "Asia",
     "capital": "Никосия",
-    "population": 1260138,
+    "population": 1358282,
     "area": 9251
   },
   "KGZ": {
@@ -832,7 +832,7 @@
     "iso2": "KG",
     "continent": "Asia",
     "capital": "Бишкек",
-    "population": 6735347,
+    "population": 7186009,
     "area": 199951
   },
   "KIR": {
@@ -843,7 +843,7 @@
     "iso2": "KI",
     "continent": "Oceania",
     "capital": "Южная Тарава",
-    "population": 133515,
+    "population": 134518,
     "area": 811
   },
   "CHN": {
@@ -854,7 +854,7 @@
     "iso2": "CN",
     "continent": "Asia",
     "capital": "Пекин",
-    "population": 1425671352,
+    "population": 1419321278,
     "area": 9596961
   },
   "COL": {
@@ -865,7 +865,7 @@
     "iso2": "CO",
     "continent": "South America",
     "capital": "Богота",
-    "population": 52085168,
+    "population": 52886363,
     "area": 1141748
   },
   "COM": {
@@ -876,7 +876,7 @@
     "iso2": "KM",
     "continent": "Africa",
     "capital": "Морони",
-    "population": 852075,
+    "population": 866628,
     "area": 1862
   },
   "COD": {
@@ -887,7 +887,7 @@
     "iso2": "CD",
     "continent": "Africa",
     "capital": "Киншаса",
-    "population": 102262808,
+    "population": 109276265,
     "area": 2344858
   },
   "COG": {
@@ -898,7 +898,7 @@
     "iso2": "CG",
     "continent": "Africa",
     "capital": "Браззавиль",
-    "population": 6106869,
+    "population": 6332961,
     "area": 342000
   },
   "PRK": {
@@ -909,7 +909,7 @@
     "iso2": "KP",
     "continent": "Asia",
     "capital": "Пхеньян",
-    "population": 26160821,
+    "population": 26498823,
     "area": 120538
   },
   "CRI": {
@@ -920,7 +920,7 @@
     "iso2": "CR",
     "continent": "North America",
     "capital": "Сан-Хосе",
-    "population": 5212173,
+    "population": 5129910,
     "area": 51100
   },
   "CIV": {
@@ -931,7 +931,7 @@
     "iso2": "CI",
     "continent": "Africa",
     "capital": "Ямусукро",
-    "population": 28873034,
+    "population": 31934230,
     "area": 322463
   },
   "CUB": {
@@ -942,7 +942,7 @@
     "iso2": "CU",
     "continent": "North America",
     "capital": "Гавана",
-    "population": 11194449,
+    "population": 10979783,
     "area": 109884
   },
   "KWT": {
@@ -953,7 +953,7 @@
     "iso2": "KW",
     "continent": "Asia",
     "capital": "Эль-Кувейт",
-    "population": 4310108,
+    "population": 4934507,
     "area": 17818
   },
   "LAO": {
@@ -964,7 +964,7 @@
     "iso2": "LA",
     "continent": "Asia",
     "capital": "Вьентьян",
-    "population": 7633779,
+    "population": 7769819,
     "area": 236800
   },
   "LVA": {
@@ -975,7 +975,7 @@
     "iso2": "LV",
     "continent": "Europe",
     "capital": "Рига",
-    "population": 1830211,
+    "population": 1871871,
     "area": 64589
   },
   "LSO": {
@@ -986,7 +986,7 @@
     "iso2": "LS",
     "continent": "Africa",
     "capital": "Масеру",
-    "population": 2330318,
+    "population": 2337423,
     "area": 30355
   },
   "LBR": {
@@ -997,7 +997,7 @@
     "iso2": "LR",
     "continent": "Africa",
     "capital": "Монровия",
-    "population": 5418377,
+    "population": 5612817,
     "area": 111369
   },
   "LBN": {
@@ -1008,7 +1008,7 @@
     "iso2": "LB",
     "continent": "Asia",
     "capital": "Бейрут",
-    "population": 5353930,
+    "population": 5805962,
     "area": 10452
   },
   "LBY": {
@@ -1019,7 +1019,7 @@
     "iso2": "LY",
     "continent": "Africa",
     "capital": "Триполи",
-    "population": 6888388,
+    "population": 7381023,
     "area": 1759540
   },
   "LTU": {
@@ -1030,7 +1030,7 @@
     "iso2": "LT",
     "continent": "Europe",
     "capital": "Вильнюс",
-    "population": 2718352,
+    "population": 2859110,
     "area": 65300
   },
   "LIE": {
@@ -1041,7 +1041,7 @@
     "iso2": "LI",
     "continent": "Europe",
     "capital": "Вадуц",
-    "population": 39584,
+    "population": 39870,
     "area": 160
   },
   "LUX": {
@@ -1052,7 +1052,7 @@
     "iso2": "LU",
     "continent": "Europe",
     "capital": "Люксембург",
-    "population": 654768,
+    "population": 673036,
     "area": 2586
   },
   "MUS": {
@@ -1063,7 +1063,7 @@
     "iso2": "MU",
     "continent": "Africa",
     "capital": "Порт-Луи",
-    "population": 1300557,
+    "population": 1271169,
     "area": 2040
   },
   "MRT": {
@@ -1074,7 +1074,7 @@
     "iso2": "MR",
     "continent": "Africa",
     "capital": "Нуакшот",
-    "population": 4862989,
+    "population": 5169395,
     "area": 1030700
   },
   "MDG": {
@@ -1085,7 +1085,7 @@
     "iso2": "MG",
     "continent": "Africa",
     "capital": "Антананариву",
-    "population": 30325732,
+    "population": 31964956,
     "area": 587041
   },
   "MWI": {
@@ -1096,7 +1096,7 @@
     "iso2": "MW",
     "continent": "Africa",
     "capital": "Лилонгве",
-    "population": 20931751,
+    "population": 21655286,
     "area": 118484
   },
   "MYS": {
@@ -1107,7 +1107,7 @@
     "iso2": "MY",
     "continent": "Asia",
     "capital": "Куала-Лумпур",
-    "population": 34308525,
+    "population": 35557673,
     "area": 330803
   },
   "MLI": {
@@ -1118,7 +1118,7 @@
     "iso2": "ML",
     "continent": "Africa",
     "capital": "Бамако",
-    "population": 23293698,
+    "population": 24478595,
     "area": 1240192
   },
   "MDV": {
@@ -1129,7 +1129,7 @@
     "iso2": "MV",
     "continent": "Asia",
     "capital": "Мале",
-    "population": 521021,
+    "population": 527799,
     "area": 298
   },
   "MLT": {
@@ -1140,7 +1140,7 @@
     "iso2": "MT",
     "continent": "Europe",
     "capital": "Валлетта",
-    "population": 535064,
+    "population": 539607,
     "area": 316
   },
   "MAR": {
@@ -1151,7 +1151,7 @@
     "iso2": "MA",
     "continent": "Africa",
     "capital": "Рабат",
-    "population": 37840044,
+    "population": 38081173,
     "area": 446550
   },
   "MHL": {
@@ -1162,7 +1162,7 @@
     "iso2": "MH",
     "continent": "Oceania",
     "capital": "Маджуро",
-    "population": 41996,
+    "population": 37548,
     "area": 181
   },
   "MEX": {
@@ -1173,7 +1173,7 @@
     "iso2": "MX",
     "continent": "North America",
     "capital": "Мехико",
-    "population": 128455567,
+    "population": 130861007,
     "area": 1964375
   },
   "FSM": {
@@ -1184,7 +1184,7 @@
     "iso2": "FM",
     "continent": "Oceania",
     "capital": "Паликир",
-    "population": 115224,
+    "population": 113160,
     "area": 702
   },
   "MOZ": {
@@ -1195,7 +1195,7 @@
     "iso2": "MZ",
     "continent": "Africa",
     "capital": "Мапуту",
-    "population": 33897354,
+    "population": 34631766,
     "area": 801590
   },
   "MDA": {
@@ -1206,7 +1206,7 @@
     "iso2": "MD",
     "continent": "Europe",
     "capital": "Кишинёв",
-    "population": 3435931,
+    "population": 3034961,
     "area": 33851
   },
   "MCO": {
@@ -1217,7 +1217,7 @@
     "iso2": "MC",
     "continent": "Europe",
     "capital": "Монако",
-    "population": 36297,
+    "population": 38631,
     "area": 2
   },
   "MNG": {
@@ -1228,7 +1228,7 @@
     "iso2": "MN",
     "continent": "Asia",
     "capital": "Улан-Батор",
-    "population": 3447157,
+    "population": 3475540,
     "area": 1564116
   },
   "MMR": {
@@ -1239,7 +1239,7 @@
     "iso2": "MM",
     "continent": "Asia",
     "capital": "Нейпьидо",
-    "population": 54179306,
+    "population": 54500091,
     "area": 676578
   },
   "NAM": {
@@ -1250,7 +1250,7 @@
     "iso2": "NA",
     "continent": "Africa",
     "capital": "Виндхук",
-    "population": 2604172,
+    "population": 3030131,
     "area": 825615
   },
   "NRU": {
@@ -1261,7 +1261,7 @@
     "iso2": "NR",
     "continent": "Oceania",
     "capital": "Ярен",
-    "population": 12780,
+    "population": 11947,
     "area": 21
   },
   "NPL": {
@@ -1272,7 +1272,7 @@
     "iso2": "NP",
     "continent": "Asia",
     "capital": "Катманду",
-    "population": 30896590,
+    "population": 29651054,
     "area": 147516
   },
   "NER": {
@@ -1283,7 +1283,7 @@
     "iso2": "NE",
     "continent": "Africa",
     "capital": "Ниамей",
-    "population": 27202843,
+    "population": 27032412,
     "area": 1267000
   },
   "NGA": {
@@ -1294,7 +1294,7 @@
     "iso2": "NG",
     "continent": "Africa",
     "capital": "Абуджа",
-    "population": 223804632,
+    "population": 232679478,
     "area": 923768
   },
   "NLD": {
@@ -1305,7 +1305,7 @@
     "iso2": "NL",
     "continent": "Europe",
     "capital": "Амстердам",
-    "population": 17618299,
+    "population": 18228742,
     "area": 41543
   },
   "NIC": {
@@ -1316,7 +1316,7 @@
     "iso2": "NI",
     "continent": "North America",
     "capital": "Манагуа",
-    "population": 7046310,
+    "population": 6916140,
     "area": 130373
   },
   "NZL": {
@@ -1327,7 +1327,7 @@
     "iso2": "NZ",
     "continent": "Oceania",
     "capital": "Веллингтон",
-    "population": 5228100,
+    "population": 5213944,
     "area": 268838
   },
   "NOR": {
@@ -1338,7 +1338,7 @@
     "iso2": "NO",
     "continent": "Europe",
     "capital": "Осло",
-    "population": 5474360,
+    "population": 5576660,
     "area": 323802
   },
   "ARE": {
@@ -1349,7 +1349,7 @@
     "iso2": "AE",
     "continent": "Asia",
     "capital": "Абу-Даби",
-    "population": 9516871,
+    "population": 11027129,
     "area": 83600
   },
   "OMN": {
@@ -1360,7 +1360,7 @@
     "iso2": "OM",
     "continent": "Asia",
     "capital": "Маскат",
-    "population": 4644384,
+    "population": 5281538,
     "area": 309500
   },
   "PAK": {
@@ -1371,7 +1371,7 @@
     "iso2": "PK",
     "continent": "Asia",
     "capital": "Исламабад",
-    "population": 240485658,
+    "population": 251269164,
     "area": 881912
   },
   "PLW": {
@@ -1382,7 +1382,7 @@
     "iso2": "PW",
     "continent": "Oceania",
     "capital": "Нгерулмуд",
-    "population": 18058,
+    "population": 17695,
     "area": 459
   },
   "PSE": {
@@ -1393,7 +1393,7 @@
     "iso2": "PS",
     "continent": "Asia",
     "capital": "Восточный Иерусалим (де-юре), Рамалла (де-факто)",
-    "population": 5483450,
+    "population": 5495443,
     "area": 6020
   },
   "PAN": {
@@ -1404,7 +1404,7 @@
     "iso2": "PA",
     "continent": "North America",
     "capital": "Панама",
-    "population": 4468087,
+    "population": 4515577,
     "area": 75420
   },
   "PNG": {
@@ -1415,7 +1415,7 @@
     "iso2": "PG",
     "continent": "Oceania",
     "capital": "Порт-Морсби",
-    "population": 10329931,
+    "population": 10576502,
     "area": 462840
   },
   "PRY": {
@@ -1426,7 +1426,7 @@
     "iso2": "PY",
     "continent": "South America",
     "capital": "Асунсьон",
-    "population": 6861524,
+    "population": 6929153,
     "area": 406752
   },
   "PER": {
@@ -1437,7 +1437,7 @@
     "iso2": "PE",
     "continent": "South America",
     "capital": "Лима",
-    "population": 34352719,
+    "population": 34217848,
     "area": 1285216
   },
   "POL": {
@@ -1448,7 +1448,7 @@
     "iso2": "PL",
     "continent": "Europe",
     "capital": "Варшава",
-    "population": 41026067,
+    "population": 38539201,
     "area": 312696
   },
   "PRT": {
@@ -1459,7 +1459,7 @@
     "iso2": "PT",
     "continent": "Europe",
     "capital": "Лиссабон",
-    "population": 10247605,
+    "population": 10425292,
     "area": 92090
   },
   "RWA": {
@@ -1470,7 +1470,7 @@
     "iso2": "RW",
     "continent": "Africa",
     "capital": "Кигали",
-    "population": 14094683,
+    "population": 14256567,
     "area": 26338
   },
   "ROU": {
@@ -1481,7 +1481,7 @@
     "iso2": "RO",
     "continent": "Europe",
     "capital": "Бухарест",
-    "population": 19031335,
+    "population": 19015088,
     "area": 238397
   },
   "SLV": {
@@ -1492,7 +1492,7 @@
     "iso2": "SV",
     "continent": "North America",
     "capital": "Сан-Сальвадор",
-    "population": 6364943,
+    "population": 6338193,
     "area": 21041
   },
   "WSM": {
@@ -1503,7 +1503,7 @@
     "iso2": "WS",
     "continent": "Oceania",
     "capital": "Апиа",
-    "population": 225681,
+    "population": 218019,
     "area": 2842
   },
   "SMR": {
@@ -1514,7 +1514,7 @@
     "iso2": "SM",
     "continent": "Europe",
     "capital": "Сан-Марино",
-    "population": 33660,
+    "population": 33581,
     "area": 61
   },
   "STP": {
@@ -1525,7 +1525,7 @@
     "iso2": "ST",
     "continent": "Africa",
     "capital": "Сан-Томе",
-    "population": 231856,
+    "population": 235536,
     "area": 964
   },
   "SAU": {
@@ -1536,7 +1536,7 @@
     "iso2": "SA",
     "continent": "Asia",
     "capital": "Эр-Рияд",
-    "population": 36947025,
+    "population": 33962757,
     "area": 2149690
   },
   "MKD": {
@@ -1547,7 +1547,7 @@
     "iso2": "MK",
     "continent": "Europe",
     "capital": "Скопье",
-    "population": 2085679,
+    "population": 1823009,
     "area": 25713
   },
   "SYC": {
@@ -1558,7 +1558,7 @@
     "iso2": "SC",
     "continent": "Africa",
     "capital": "Виктория",
-    "population": 107660,
+    "population": 130418,
     "area": 455
   },
   "SEN": {
@@ -1569,7 +1569,7 @@
     "iso2": "SN",
     "continent": "Africa",
     "capital": "Дакар",
-    "population": 17763163,
+    "population": 18501984,
     "area": 196722
   },
   "VCT": {
@@ -1580,7 +1580,7 @@
     "iso2": "VC",
     "continent": "North America",
     "capital": "Кингстаун",
-    "population": 103698,
+    "population": 100616,
     "area": 389
   },
   "KNA": {
@@ -1591,7 +1591,7 @@
     "iso2": "KN",
     "continent": "North America",
     "capital": "Бастер",
-    "population": 47755,
+    "population": 46843,
     "area": 261
   },
   "LCA": {
@@ -1602,7 +1602,7 @@
     "iso2": "LC",
     "continent": "North America",
     "capital": "Кастри",
-    "population": 180251,
+    "population": 179744,
     "area": 616
   },
   "SRB": {
@@ -1613,7 +1613,7 @@
     "iso2": "RS",
     "continent": "Europe",
     "capital": "Белград",
-    "population": 6641197,
+    "population": 6736216,
     "area": 77474
   },
   "SGP": {
@@ -1624,7 +1624,7 @@
     "iso2": "SG",
     "continent": "Asia",
     "capital": "Сингапур",
-    "population": 6014723,
+    "population": 5832387,
     "area": 728
   },
   "SYR": {
@@ -1635,7 +1635,7 @@
     "iso2": "SY",
     "continent": "Asia",
     "capital": "Дамаск",
-    "population": 23227014,
+    "population": 24672760,
     "area": 185180
   },
   "SVK": {
@@ -1646,7 +1646,7 @@
     "iso2": "SK",
     "continent": "Europe",
     "capital": "Братислава",
-    "population": 5795199,
+    "population": 5506760,
     "area": 49037
   },
   "SVN": {
@@ -1657,7 +1657,7 @@
     "iso2": "SI",
     "continent": "Europe",
     "capital": "Любляна",
-    "population": 2119675,
+    "population": 2118697,
     "area": 20273
   },
   "USA": {
@@ -1668,7 +1668,7 @@
     "iso2": "US",
     "continent": "North America",
     "capital": "Вашингтон",
-    "population": 339996563,
+    "population": 345426571,
     "area": 9833520
   },
   "SLB": {
@@ -1679,7 +1679,7 @@
     "iso2": "SB",
     "continent": "Oceania",
     "capital": "Хониара",
-    "population": 740424,
+    "population": 819198,
     "area": 28896
   },
   "SOM": {
@@ -1690,7 +1690,7 @@
     "iso2": "SO",
     "continent": "Africa",
     "capital": "Могадишо",
-    "population": 18143378,
+    "population": 19009151,
     "area": 637657
   },
   "SDN": {
@@ -1701,7 +1701,7 @@
     "iso2": "SD",
     "continent": "Africa",
     "capital": "Хартум",
-    "population": 48109006,
+    "population": 50448963,
     "area": 1861484
   },
   "SUR": {
@@ -1712,7 +1712,7 @@
     "iso2": "SR",
     "continent": "South America",
     "capital": "Парамарибо",
-    "population": 623236,
+    "population": 634431,
     "area": 163820
   },
   "SLE": {
@@ -1723,7 +1723,7 @@
     "iso2": "SL",
     "continent": "Africa",
     "capital": "Фритаун",
-    "population": 8791092,
+    "population": 8642022,
     "area": 71740
   },
   "TJK": {
@@ -1734,7 +1734,7 @@
     "iso2": "TJ",
     "continent": "Asia",
     "capital": "Душанбе",
-    "population": 10143543,
+    "population": 10590927,
     "area": 143100
   },
   "THA": {
@@ -1745,7 +1745,7 @@
     "iso2": "TH",
     "continent": "Asia",
     "capital": "Бангкок",
-    "population": 71801279,
+    "population": 71668011,
     "area": 513120
   },
   "TZA": {
@@ -1756,7 +1756,7 @@
     "iso2": "TZ",
     "continent": "Africa",
     "capital": "Додома",
-    "population": 67438106,
+    "population": 68560157,
     "area": 945087
   },
   "TGO": {
@@ -1767,7 +1767,7 @@
     "iso2": "TG",
     "continent": "Africa",
     "capital": "Ломе",
-    "population": 9053799,
+    "population": 9515236,
     "area": 56785
   },
   "TON": {
@@ -1778,7 +1778,7 @@
     "iso2": "TO",
     "continent": "Oceania",
     "capital": "Нукуалофа",
-    "population": 107773,
+    "population": 104175,
     "area": 747
   },
   "TTO": {
@@ -1789,7 +1789,7 @@
     "iso2": "TT",
     "continent": "North America",
     "capital": "Порт-оф-Спейн",
-    "population": 1534937,
+    "population": 1507782,
     "area": 5130
   },
   "TUV": {
@@ -1800,7 +1800,7 @@
     "iso2": "TV",
     "continent": "Oceania",
     "capital": "Фунафути",
-    "population": 11396,
+    "population": 9646,
     "area": 26
   },
   "TUN": {
@@ -1811,7 +1811,7 @@
     "iso2": "TN",
     "continent": "Africa",
     "capital": "Тунис",
-    "population": 12458223,
+    "population": 12277109,
     "area": 163610
   },
   "TKM": {
@@ -1822,7 +1822,7 @@
     "iso2": "TM",
     "continent": "Asia",
     "capital": "Ашхабад",
-    "population": 6516100,
+    "population": 7494498,
     "area": 488100
   },
   "TUR": {
@@ -1833,7 +1833,7 @@
     "iso2": "TR",
     "continent": "Asia",
     "capital": "Анкара",
-    "population": 85816199,
+    "population": 87473805,
     "area": 783562
   },
   "UGA": {
@@ -1844,7 +1844,7 @@
     "iso2": "UG",
     "continent": "Africa",
     "capital": "Кампала",
-    "population": 48582334,
+    "population": 50015092,
     "area": 241038
   },
   "UZB": {
@@ -1855,7 +1855,7 @@
     "iso2": "UZ",
     "continent": "Asia",
     "capital": "Ташкент",
-    "population": 35163944,
+    "population": 36361859,
     "area": 447400
   },
   "UKR": {
@@ -1866,7 +1866,7 @@
     "iso2": "UA",
     "continent": "Europe",
     "capital": "Киев",
-    "population": 37000000,
+    "population": 37860221,
     "area": 603500
   },
   "URY": {
@@ -1877,7 +1877,7 @@
     "iso2": "UY",
     "continent": "South America",
     "capital": "Монтевидео",
-    "population": 3423108,
+    "population": 3386588,
     "area": 176215
   },
   "FJI": {
@@ -1888,7 +1888,7 @@
     "iso2": "FJ",
     "continent": "Oceania",
     "capital": "Сува",
-    "population": 936375,
+    "population": 928784,
     "area": 18274
   },
   "PHL": {
@@ -1899,7 +1899,7 @@
     "iso2": "PH",
     "continent": "Asia",
     "capital": "Манила",
-    "population": 117337368,
+    "population": 115843670,
     "area": 300000
   },
   "FIN": {
@@ -1910,7 +1910,7 @@
     "iso2": "FI",
     "continent": "Europe",
     "capital": "Хельсинки",
-    "population": 5541274,
+    "population": 5617310,
     "area": 338424
   },
   "FRA": {
@@ -1921,7 +1921,7 @@
     "iso2": "FR",
     "continent": "Europe",
     "capital": "Париж",
-    "population": 64756584,
+    "population": 66548530,
     "area": 551695
   },
   "HRV": {
@@ -1932,7 +1932,7 @@
     "iso2": "HR",
     "continent": "Europe",
     "capital": "Загреб",
-    "population": 4008617,
+    "population": 3875325,
     "area": 56594
   },
   "CAF": {
@@ -1943,7 +1943,7 @@
     "iso2": "CF",
     "continent": "Africa",
     "capital": "Банги",
-    "population": 5742315,
+    "population": 5330690,
     "area": 622984
   },
   "TCD": {
@@ -1954,7 +1954,7 @@
     "iso2": "TD",
     "continent": "Africa",
     "capital": "Нджамена",
-    "population": 18278568,
+    "population": 20299123,
     "area": 1284000
   },
   "MNE": {
@@ -1965,7 +1965,7 @@
     "iso2": "ME",
     "continent": "Europe",
     "capital": "Подгорица",
-    "population": 626485,
+    "population": 638479,
     "area": 13812
   },
   "CZE": {
@@ -1976,7 +1976,7 @@
     "iso2": "CZ",
     "continent": "Europe",
     "capital": "Прага",
-    "population": 10827529,
+    "population": 10735859,
     "area": 78865
   },
   "CHL": {
@@ -1987,7 +1987,7 @@
     "iso2": "CL",
     "continent": "South America",
     "capital": "Сантьяго",
-    "population": 19629590,
+    "population": 19764771,
     "area": 756102
   },
   "CHE": {
@@ -1998,7 +1998,7 @@
     "iso2": "CH",
     "continent": "Europe",
     "capital": "Берн",
-    "population": 8796669,
+    "population": 8921981,
     "area": 41284
   },
   "SWE": {
@@ -2009,7 +2009,7 @@
     "iso2": "SE",
     "continent": "Europe",
     "capital": "Стокгольм",
-    "population": 10612086,
+    "population": 10606999,
     "area": 450295
   },
   "LKA": {
@@ -2020,7 +2020,7 @@
     "iso2": "LK",
     "continent": "Asia",
     "capital": "Шри-Джаяварденепура-Котте",
-    "population": 21893579,
+    "population": 23103565,
     "area": 65610
   },
   "ECU": {
@@ -2031,7 +2031,7 @@
     "iso2": "EC",
     "continent": "South America",
     "capital": "Кито",
-    "population": 18190484,
+    "population": 18135478,
     "area": 283561
   },
   "GNQ": {
@@ -2042,7 +2042,7 @@
     "iso2": "GQ",
     "continent": "Africa",
     "capital": "Малабо",
-    "population": 1714671,
+    "population": 1892516,
     "area": 28051
   },
   "ERI": {
@@ -2053,7 +2053,7 @@
     "iso2": "ER",
     "continent": "Africa",
     "capital": "Асмэра",
-    "population": 3748901,
+    "population": 3535603,
     "area": 117600
   },
   "SWZ": {
@@ -2064,7 +2064,7 @@
     "iso2": "SZ",
     "continent": "Africa",
     "capital": "Мбабане",
-    "population": 1210822,
+    "population": 1242822,
     "area": 17364
   },
   "EST": {
@@ -2075,7 +2075,7 @@
     "iso2": "EE",
     "continent": "Europe",
     "capital": "Таллин",
-    "population": 1322765,
+    "population": 1360546,
     "area": 45228
   },
   "ETH": {
@@ -2086,7 +2086,7 @@
     "iso2": "ET",
     "continent": "Africa",
     "capital": "Аддис-Абеба",
-    "population": 126527060,
+    "population": 132059767,
     "area": 1104300
   },
   "ZAF": {
@@ -2097,7 +2097,7 @@
     "iso2": "ZA",
     "continent": "Africa",
     "capital": "Претория",
-    "population": 60414495,
+    "population": 64007187,
     "area": 1221037
   },
   "KOR": {
@@ -2108,7 +2108,7 @@
     "iso2": "KR",
     "continent": "Asia",
     "capital": "Сеул",
-    "population": 51784059,
+    "population": 51717590,
     "area": 100210
   },
   "SSD": {
@@ -2119,7 +2119,7 @@
     "iso2": "SS",
     "continent": "Africa",
     "capital": "Джуба",
-    "population": 11088796,
+    "population": 11943408,
     "area": 644329
   },
   "JAM": {
@@ -2130,7 +2130,7 @@
     "iso2": "JM",
     "continent": "North America",
     "capital": "Кингстон",
-    "population": 2825544,
+    "population": 2839175,
     "area": 10991
   },
   "JPN": {
@@ -2141,7 +2141,7 @@
     "iso2": "JP",
     "continent": "Asia",
     "capital": "Токио",
-    "population": 123294513,
+    "population": 123753041,
     "area": 377975
   }
 }

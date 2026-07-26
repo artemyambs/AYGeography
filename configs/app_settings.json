@@ -5,8 +5,13 @@
   },
   "gameplay": {
     "question_time_seconds": 60,
-    "correct_answer_feedback_seconds": 1.0,
-    "incorrect_answer_feedback_seconds": 1.5
+    "answer_feedback_seconds_by_mode": {
+      "flags": {"correct": 1.0, "incorrect": 1.5},
+      "capitals": {"correct": 1.0, "incorrect": 1.5},
+      "population": {"correct": 3.0, "incorrect": 4.0},
+      "countries": {"correct": 1.0, "incorrect": 1.5},
+      "waters": {"correct": 1.0, "incorrect": 1.5}
+    }
   },
   "colors": {
     "background": "#020d14",

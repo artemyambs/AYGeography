@@ -10,11 +10,10 @@ import pygame_gui
 from pygame_gui.elements import UIButton, UITextEntryLine
 
 from ..config import (
+    ANSWER_FEEDBACK_SECONDS,
     ASSETS_DIR,
     CONTINENT_NAMES,
-    CORRECT_ANSWER_FEEDBACK_SECONDS,
     DIFFICULTY_NAMES,
-    INCORRECT_ANSWER_FEEDBACK_SECONDS,
     MODE_NAMES,
     QUESTION_TIME_SECONDS,
 )
@@ -66,6 +65,9 @@ from .components import (
 CONTENT = pygame.Rect(SIDEBAR_WIDTH, 0, LOGICAL_SIZE[0] - SIDEBAR_WIDTH, LOGICAL_SIZE[1] - FOOTER_HEIGHT)
 PRIMARY_ACTION_SIZE = (280, 60)
 PRIMARY_ACTION_FONT_SIZE = 19
+QUESTION_FLAG_IMAGE_SIZE = (280, 180)
+QUESTION_FLAG_PANEL_SIZE = (300, 200)
+CAPITAL_LABEL_FONT_SIZE = 26
 
 
 def primary_action_rect(center_x: int, top: int) -> pygame.Rect:
@@ -89,6 +91,90 @@ def blit_centered(
     rect = pygame.Rect((0, 0), size)
     rect.center = center
     return blit_image(surface, image, rect)
+
+
+def draw_question_flag(
+    surface: pygame.Surface,
+    app,
+    iso3: str,
+    center: tuple[int, int],
+) -> pygame.Rect:
+    """Draws the shared framed flag used by all flag-based questions."""
+    flag_panel = pygame.Rect((0, 0), QUESTION_FLAG_PANEL_SIZE)
+    flag_panel.center = center
+    panel(
+        surface,
+        flag_panel,
+        fill=PANEL,
+        border=CYAN_DARK,
+        radius=7,
+    )
+    flag_path = ASSETS_DIR / "flags_png" / f"{iso3}.png"
+    flag = app.assets.image(flag_path)
+    blit_centered(surface, flag, flag_panel.center, QUESTION_FLAG_IMAGE_SIZE)
+    return flag_panel
+
+
+class PopulationComparisonPresenter:
+    """Owns the layout and rendering of two-country population questions."""
+
+    key = "country_comparison"
+    CARD_TOP = 175
+    CARD_WIDTH = 430
+    CARD_HEIGHT = 320
+    CARD_GAP = 40
+    ANSWER_TOP = 520
+
+    @classmethod
+    def answer_rects(cls) -> list[pygame.Rect]:
+        total_width = cls.CARD_WIDTH * 2 + cls.CARD_GAP
+        start_x = CONTENT.centerx - total_width // 2
+        return [
+            pygame.Rect(
+                start_x + index * (cls.CARD_WIDTH + cls.CARD_GAP),
+                cls.ANSWER_TOP,
+                cls.CARD_WIDTH,
+                58,
+            )
+            for index in range(2)
+        ]
+
+    @classmethod
+    def draw(cls, surface: pygame.Surface, app, question) -> None:
+        countries_by_name = {
+            app.catalog.get(iso3).name: app.catalog.get(iso3)
+            for iso3 in question.subjects
+        }
+        for option, answer_rect in zip(question.options, cls.answer_rects()):
+            country = countries_by_name.get(option)
+            if country is None:
+                continue
+            card = pygame.Rect(
+                answer_rect.left,
+                cls.CARD_TOP,
+                cls.CARD_WIDTH,
+                cls.CARD_HEIGHT,
+            )
+            draw_text(
+                surface,
+                country.name,
+                (card.centerx, card.top + 35),
+                24,
+                TEXT,
+                bold=True,
+                anchor="center",
+            )
+            draw_question_flag(
+                surface,
+                app,
+                country.iso3,
+                (card.centerx, card.top + 178),
+            )
+
+
+QUESTION_PRESENTERS = {
+    PopulationComparisonPresenter.key: PopulationComparisonPresenter(),
+}
 
 
 class BaseView:
@@ -711,6 +797,17 @@ class GameView(BaseView):
             self._build_map_actions()
         if not question.options:
             return
+        presenter = QUESTION_PRESENTERS.get(
+            str(question.metadata.get("presentation", ""))
+        )
+        if presenter is not None:
+            for value, rect in zip(question.options, presenter.answer_rects()):
+                button = self.add_action(
+                    rect,
+                    lambda answer=value: self._answer(answer),
+                )
+                self.answer_buttons[button] = value
+            return
         columns = 3 if len(question.options) > 4 else 2
         width = 390 if columns == 3 else 590
         gap = 18
@@ -828,25 +925,38 @@ class GameView(BaseView):
         elapsed = min(QUESTION_TIME_SECONDS, self.app.clock() - self.question_started)
         question = self.active_question
         record = self.session.answer(value, elapsed)
-        population = question.metadata.get("population")
-        if record.is_correct and population is not None:
-            self.feedback = f"Верно! Население {format_population(population)} человек"
-            self.feedback_colour = GREEN
+        population_values = question.metadata.get("population_values")
+        if isinstance(population_values, dict):
+            countries_by_name = {
+                self.app.catalog.get(iso3).name: self.app.catalog.get(iso3)
+                for iso3 in question.subjects
+            }
+            values = []
+            for option in question.options:
+                country = countries_by_name.get(option)
+                if country is None:
+                    continue
+                population = int(
+                    population_values.get(country.iso3, country.population)
+                )
+                values.append(
+                    f"{country.name} — {format_population(population)}"
+                )
+            prefix = "Верно!" if record.is_correct else "Неверно."
+            self.feedback = f"{prefix} {' • '.join(values)} человек"
+            self.feedback_colour = GREEN if record.is_correct else RED
         elif record.is_correct:
             self.feedback = f"Верно!  +{record.points} очков"
             self.feedback_colour = GREEN
         else:
-            if population is not None:
-                correct = f"{format_population(population)} человек"
-            else:
-                correct = question.correct_answer
-            self.feedback = f"Неверно. Правильный ответ: {correct}"
+            self.feedback = (
+                f"Неверно. Правильный ответ: {question.correct_answer}"
+            )
             self.feedback_colour = RED
-        feedback_seconds = (
-            CORRECT_ANSWER_FEEDBACK_SECONDS
-            if record.is_correct
-            else INCORRECT_ANSWER_FEEDBACK_SECONDS
-        )
+        feedback_kind = "correct" if record.is_correct else "incorrect"
+        feedback_seconds = ANSWER_FEEDBACK_SECONDS[question.mode][
+            feedback_kind
+        ]
         self.advance_at = self.app.clock() + feedback_seconds
 
     def _next(self) -> None:
@@ -1031,23 +1141,24 @@ class GameView(BaseView):
         question = self.active_question
         draw_text(
             surface,
-            question.prompt.upper(),
+            question.prompt,
             (CONTENT.centerx, 142),
             28,
             TEXT,
             bold=True,
             anchor="midtop",
         )
-        flag_path = ASSETS_DIR / "flags_png" / f"{question.visual}.png"
-        flag = self.app.assets.image(flag_path)
-        flag_panel = pygame.Rect(CONTENT.centerx - 88, 205, 176, 124)
-        panel(surface, flag_panel, fill=PANEL, border=CYAN_DARK, radius=7)
-        blit_centered(surface, flag, flag_panel.center, (156, 104))
+        draw_question_flag(
+            surface,
+            self.app,
+            question.visual,
+            (CONTENT.centerx, 300),
+        )
         draw_text(
             surface,
             "столица",
-            (CONTENT.centerx, 360),
-            19,
+            (CONTENT.centerx, 435),
+            CAPITAL_LABEL_FONT_SIZE,
             MUTED,
             anchor="center",
         )
@@ -1088,12 +1199,18 @@ class GameView(BaseView):
                 MUTED,
                 anchor="midbottom",
             )
+        presenter = QUESTION_PRESENTERS.get(
+            str(question.metadata.get("presentation", ""))
+        )
+        if presenter is not None:
+            presenter.draw(surface, self.app, question)
         if question.visual and not capital_layout:
-            flag_path = ASSETS_DIR / "flags_png" / f"{question.visual}.png"
-            flag = self.app.assets.image(flag_path)
-            shadow = pygame.Rect(CONTENT.centerx - 158, 205, 316, 216)
-            panel(surface, shadow, fill=PANEL, border=CYAN_DARK, radius=7)
-            blit_centered(surface, flag, shadow.center, (300, 200))
+            draw_question_flag(
+                surface,
+                self.app,
+                question.visual,
+                (CONTENT.centerx, 305),
+            )
         if question.options:
             for button, value in self.answer_buttons.items():
                 index = question.options.index(value) + 1
