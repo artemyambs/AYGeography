@@ -67,6 +67,7 @@ class ProgressionTests(unittest.TestCase):
         )
 
     def test_mastery_requires_every_configured_mode(self):
+        self.assertIn("wonders", self.catalog.mastery_modes)
         self._save_mastery_round(
             3,
             self.catalog.mastery_modes[:-1],

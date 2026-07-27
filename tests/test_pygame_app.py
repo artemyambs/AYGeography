@@ -1,4 +1,5 @@
 import os
+import random
 import tempfile
 import unittest
 from pathlib import Path
@@ -13,7 +14,7 @@ from aygeography.app import AYGeographyApp
 from aygeography.config import ANSWER_FEEDBACK_SECONDS, ASSETS_DIR
 from aygeography.models import GameConfig
 from aygeography.formatting import format_population
-from aygeography.quiz import GameSession
+from aygeography.quiz import GameSession, WaterQuestionStrategy
 from aygeography.storage import GameRepository
 from aygeography.ui.components import (
     GREEN,
@@ -53,6 +54,20 @@ class PygameAppTests(unittest.TestCase):
     def tearDownClass(cls):
         pygame.quit()
         cls.temp_directory.cleanup()
+
+    def _show_water_question(self, kind: str) -> GameView:
+        area = self.app.water_catalog.by_kind(kind)[0]
+        country = self.app.catalog.all()[0]
+        question = WaterQuestionStrategy(self.app.water_catalog).create(
+            country,
+            self.app.catalog.all(),
+            0,
+            random.Random(1),
+            eligible_water_keys=frozenset({area.key}),
+        )
+        self.app.manager.clear_and_reset()
+        self.app.view = GameView(self.app, GameSession([question]))
+        return self.app.view
 
     def test_all_static_views_render_at_design_resolution(self):
         for name in (
@@ -95,8 +110,8 @@ class PygameAppTests(unittest.TestCase):
     def test_selection_rows_are_centered_in_content_area(self):
         self.app.show("modes")
         mode_view = self.app.view
-        first_row = [mode_view.cards[key] for key, _, _ in mode_view.ITEMS[:3]]
-        second_row = [mode_view.cards[key] for key, _, _ in mode_view.ITEMS[3:]]
+        first_row = [mode_view.cards[key] for key, _ in mode_view.ITEMS[:3]]
+        second_row = [mode_view.cards[key] for key, _ in mode_view.ITEMS[3:]]
         self.assertEqual(CONTENT.centerx, first_row[0].unionall(first_row).centerx)
         self.assertEqual(CONTENT.centerx, second_row[0].unionall(second_row).centerx)
 
@@ -270,7 +285,7 @@ class PygameAppTests(unittest.TestCase):
             self.app.catalog,
             seed=55,
         )
-        for category in ("landmark", "peak", "river", "fact"):
+        for category in ("landmark", "peak", "fact"):
             question = next(
                 item
                 for item in questions
@@ -353,34 +368,46 @@ class PygameAppTests(unittest.TestCase):
                 ],
             )
 
-    def test_wonder_feedback_delay_and_keyboard_advance(self):
+    def test_feedback_keyboard_advance_in_every_mode(self):
         previous_clock = self.app.clock_source
         now = [100.0]
         self.app.clock_source = lambda: now[0]
         try:
-            for key in (pygame.K_RETURN, pygame.K_SPACE):
-                with self.subTest(key=key):
-                    self.app.start_game(
-                        GameConfig(
-                            ["wonders"],
-                            list(self.app.catalog.continents),
-                            10,
+            for mode in (
+                "flags",
+                "capitals",
+                "population",
+                "countries",
+                "waters",
+                "wonders",
+            ):
+                for key in (
+                    pygame.K_RETURN,
+                    pygame.K_KP_ENTER,
+                    pygame.K_SPACE,
+                ):
+                    with self.subTest(mode=mode, key=key):
+                        self.app.start_game(
+                            GameConfig(
+                                [mode],
+                                list(self.app.catalog.continents),
+                                10,
+                            )
                         )
-                    )
-                    view = self.app.view
-                    view._answer(view.active_question.correct_answer)
-                    self.assertEqual(
-                        100.0
-                        + ANSWER_FEEDBACK_SECONDS["wonders"]["correct"],
-                        view.advance_at,
-                    )
-                    view.handle_event(
-                        pygame.event.Event(
-                            pygame.KEYDOWN,
-                            {"key": key},
+                        view = self.app.view
+                        view._answer(view.active_question.correct_answer)
+                        self.assertEqual(
+                            100.0
+                            + ANSWER_FEEDBACK_SECONDS[mode]["correct"],
+                            view.advance_at,
                         )
-                    )
-                    self.assertEqual(2, view.active_question_number)
+                        view.handle_event(
+                            pygame.event.Event(
+                                pygame.KEYDOWN,
+                                {"key": key},
+                            )
+                        )
+                        self.assertEqual(2, view.active_question_number)
         finally:
             self.app.clock_source = previous_clock
 
@@ -469,8 +496,7 @@ class PygameAppTests(unittest.TestCase):
         self.assertTrue(view.session.answers[0].is_correct)
 
     def test_water_choice_draws_only_the_question_region(self):
-        self.app.start_game(GameConfig(["waters"], ["Europe"], 10))
-        view = self.app.view
+        view = self._show_water_question("sea")
         self.assertEqual("choices", view.active_question.interaction)
         self.assertEqual(6, len(view.active_question.options))
         self.assertEqual(6, len(view.answer_buttons))
@@ -486,7 +512,10 @@ class PygameAppTests(unittest.TestCase):
 
     def test_country_and_water_use_the_shared_region_selection(self):
         for mode in ("countries", "waters"):
-            self.app.start_game(GameConfig([mode], ["Europe", "Asia"], 10))
+            if mode == "waters":
+                self._show_water_question("sea")
+            else:
+                self.app.start_game(GameConfig([mode], ["Europe", "Asia"], 10))
             self.app.map_renderer._view_cache_key = None
             with patch.object(
                 self.app.map_renderer,
@@ -820,8 +849,7 @@ class PygameAppTests(unittest.TestCase):
         self.assertLessEqual(abs(projected[1] - view.map_rect.centery), 2)
 
     def test_water_region_starts_centered_at_three_x_zoom(self):
-        self.app.start_game(GameConfig(["waters"], ["Europe"], 10))
-        view = self.app.view
+        view = self._show_water_question("sea")
         region = view._question_water_region(view.active_question)
         self.assertIsNotNone(region)
         self.assertEqual(3.0, view.map_camera.zoom)

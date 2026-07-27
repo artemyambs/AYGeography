@@ -20,7 +20,6 @@ from ..config import (
 from ..formatting import format_population
 from ..models import GameConfig, RoundResult
 from ..quiz import GameSession
-from ..waters import WATER_REGIONS
 from .components import (
     BG,
     BORDER,
@@ -45,7 +44,6 @@ from .components import (
     draw_earth_hero,
     draw_footer,
     draw_logo,
-    draw_mode_icon,
     draw_question_count_icon,
     draw_multiline,
     draw_native_arc,
@@ -360,12 +358,12 @@ class ModeSelectionView(SelectionView):
     title = "Выберите режимы"
     subtitle = "Можно выбрать один, несколько или все режимы"
     ITEMS = [
-        ("flags", "Флаги", "⚑"),
-        ("capitals", "Столицы", "▥"),
-        ("population", "Население", "●●●"),
-        ("countries", "Страны", "◎"),
-        ("waters", "Моря и океаны", "≈"),
-        ("wonders", "Чудеса света", "✦"),
+        ("flags", "Флаги"),
+        ("capitals", "Столицы"),
+        ("population", "Население"),
+        ("countries", "Страны"),
+        ("waters", "Акватория"),
+        ("wonders", "Чудеса света"),
     ]
 
     def __init__(self, app) -> None:
@@ -373,7 +371,7 @@ class ModeSelectionView(SelectionView):
         self.selected = set(app.pending_modes)
         self.cards: dict[str, pygame.Rect] = {}
         card_w, gap = 235, 24
-        for index, (key, _, _) in enumerate(self.ITEMS):
+        for index, (key, _) in enumerate(self.ITEMS):
             row, column = divmod(index, 3)
             columns = min(3, len(self.ITEMS) - row * 3)
             row_width = columns * card_w + (columns - 1) * gap
@@ -396,7 +394,9 @@ class ModeSelectionView(SelectionView):
 
     def _next(self) -> None:
         if self.selected:
-            self.app.pending_modes = [key for key, _, _ in self.ITEMS if key in self.selected]
+            self.app.pending_modes = [
+                key for key, _ in self.ITEMS if key in self.selected
+            ]
             self.app.show("continents")
         else:
             self.app.toast("Выберите хотя бы один режим", RED)
@@ -406,7 +406,7 @@ class ModeSelectionView(SelectionView):
         draw_button(surface, self.back_rect, "", size=28)
         icon = self.app.assets.icon("back", (27, 27))
         blit_centered(surface, icon, self.back_rect.center)
-        for key, label, symbol in self.ITEMS:
+        for key, label in self.ITEMS:
             rect = self.cards[key]
             selected = key in self.selected
             panel(
@@ -963,13 +963,9 @@ class GameView(BaseView):
             or bool(question.metadata.get("map_overlay"))
         )
 
-    @staticmethod
-    def _question_water_region(question):
+    def _question_water_region(self, question):
         water_key = question.metadata.get("water_highlight")
-        return next(
-            (region for region in WATER_REGIONS if region.key == water_key),
-            None,
-        )
+        return self.app.water_catalog.get(water_key) if water_key else None
 
     def _zoom_target_position(self) -> tuple[float, float] | None:
         highlighted = self.active_question.metadata.get("highlight")
@@ -1233,10 +1229,11 @@ class GameView(BaseView):
         event: pygame.event.Event,
     ) -> bool:
         if event.type == pygame.KEYDOWN:
-            keys = {pygame.K_RETURN, pygame.K_KP_ENTER}
-            if self.active_question.mode == "wonders":
-                keys.add(pygame.K_SPACE)
-            return event.key in keys
+            return event.key in {
+                pygame.K_RETURN,
+                pygame.K_KP_ENTER,
+                pygame.K_SPACE,
+            }
         return (
             event.type == pygame.MOUSEBUTTONDOWN
             and event.button == 1

@@ -1,0 +1,14 @@
+{
+  "kind": "ocean",
+  "label": "Океан",
+  "prompt": "Какой океан выделен?",
+  "shape": "ellipse",
+  "items": [
+    {"id": "atlantic", "name": "Атлантический океан", "difficulty": "easy", "center": [-35, 5], "radius": [28, 38]},
+    {"id": "pacific_w", "name": "Тихий океан", "difficulty": "easy", "center": [165, 0], "radius": [30, 38]},
+    {"id": "pacific_e", "name": "Тихий океан", "difficulty": "easy", "center": [-135, 0], "radius": [30, 38]},
+    {"id": "indian", "name": "Индийский океан", "difficulty": "easy", "center": [80, -25], "radius": [27, 25]},
+    {"id": "arctic", "name": "Северный Ледовитый океан", "difficulty": "easy", "center": [20, 76], "radius": [60, 11]},
+    {"id": "southern", "name": "Южный океан", "difficulty": "easy", "center": [20, -67], "radius": [100, 10]}
+  ]
+}

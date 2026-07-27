@@ -31,7 +31,7 @@ from aygeography.quiz import (
 )
 from aygeography.scoring import DEFAULT_SCORE_RULES, ScoreRules
 from aygeography.storage import GameRepository
-from aygeography.waters import WATER_REGIONS
+from aygeography.waters import WaterCatalog
 from aygeography.wonders import (
     EXPECTED_COUNTS,
     WonderCatalog,
@@ -51,20 +51,24 @@ class QuizTests(unittest.TestCase):
             cls.catalog.all(),
             BASE_DIR / "assets",
         )
+        cls.waters = WaterCatalog(
+            CONFIGS_DIR / "water_area",
+            cls.catalog.all(),
+        )
 
     def test_wonders_catalog_has_exact_content_distribution(self):
         items = self.wonders.all()
-        self.assertEqual(250, len(items))
+        self.assertEqual(220, len(items))
         self.assertEqual(
             Counter(EXPECTED_COUNTS),
             Counter(item.category for item in items),
         )
         self.assertEqual(
-            {"easy": 84, "medium": 83, "hard": 83},
+            {"easy": 74, "medium": 73, "hard": 73},
             dict(Counter(item.difficulty for item in items)),
         )
         self.assertEqual(
-            {"landmark": 3, "peak": 1, "river": 2, "fact": 2},
+            {"landmark": 3, "peak": 1, "fact": 2},
             WONDER_CATEGORY_WEIGHTS,
         )
         self.assertEqual("Чудеса света", MODE_NAMES["wonders"])
@@ -84,7 +88,7 @@ class QuizTests(unittest.TestCase):
         )
         self.assertEqual(100, len({question.key for question in questions}))
         self.assertEqual(
-            {"landmark": 38, "peak": 12, "river": 25, "fact": 25},
+            {"landmark": 51, "peak": 15, "fact": 34},
             dict(Counter(
                 question.metadata["wonder_category"]
                 for question in questions
@@ -95,6 +99,15 @@ class QuizTests(unittest.TestCase):
             self.assertEqual(6, len(set(question.options)))
             self.assertIn(question.correct_answer, question.options)
             self.assertTrue(question.explanation)
+
+    def test_every_wonder_explanation_names_all_related_countries(self):
+        for item in self.wonders.all():
+            for iso3 in item.country_isos:
+                self.assertIn(
+                    self.wonders.country_name(iso3),
+                    item.explanation,
+                    item.key,
+                )
 
     def test_wonders_extension_has_requested_content_and_image_sizes(self):
         facts = self.wonders.by_category(WonderCategory.FACT)[-100:]
@@ -173,10 +186,17 @@ class QuizTests(unittest.TestCase):
         self.assertTrue((CONFIGS_DIR / "scoring.json").is_file())
         self.assertTrue((CONFIGS_DIR / "wonders_settings.json").is_file())
         self.assertEqual(
-            {"fact.json", "river.json", "landmark.json", "peak.json"},
+            {"fact.json", "landmark.json", "peak.json"},
             {
                 path.name
                 for path in (CONFIGS_DIR / "wonders").glob("*.json")
+            },
+        )
+        self.assertEqual(
+            {"oceans.json", "seas.json", "rivers.json"},
+            {
+                path.name
+                for path in (CONFIGS_DIR / "water_area").glob("*.json")
             },
         )
         self.assertFalse((BASE_DIR / "data").exists())
@@ -221,12 +241,48 @@ class QuizTests(unittest.TestCase):
             ]
             self.assertLess(abs(alternatives[0] - alternatives[1]), 300)
 
-    def test_difficulty_file_partitions_every_water_region(self):
-        levels = DifficultyCatalog(CONFIGS_DIR / "difficulty_levels.json")
-        levels.validate_water_keys({region.key for region in WATER_REGIONS})
+    def test_water_catalog_contains_separate_configured_types(self):
+        self.assertEqual(
+            {"sea": 44, "ocean": 6, "river": 30},
+            {
+                kind: len(self.waters.by_kind(kind))
+                for kind in ("sea", "ocean", "river")
+            },
+        )
+
+    def test_water_catalog_accepts_future_point_type_without_code_changes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            (path / "waterfalls.json").write_text(
+                json.dumps(
+                    {
+                        "kind": "waterfall",
+                        "label": "Водопад",
+                        "prompt": "Какой водопад отмечен?",
+                        "shape": "point",
+                        "items": [
+                            {
+                                "id": "future_fall",
+                                "name": "Новый водопад",
+                                "difficulty": "easy",
+                                "center": [10, 20],
+                            }
+                        ],
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+
+            item = WaterCatalog(path).all()[0]
+
+        self.assertEqual("waterfall", item.kind)
+        self.assertEqual(
+            {"kind": "point", "point": [10.0, 20.0]},
+            item.map_overlay,
+        )
 
     def test_water_questions_follow_their_sampled_difficulty(self):
-        levels = DifficultyCatalog(CONFIGS_DIR / "difficulty_levels.json")
         questions = QuestionFactory().build(
             GameConfig(
                 ["waters"],
@@ -238,13 +294,11 @@ class QuizTests(unittest.TestCase):
             seed=31,
         )
         for question in questions:
-            region_key = question.metadata.get(
-                "water_highlight",
-                question.correct_answer,
-            )
-            self.assertIn(
-                region_key,
-                levels.water_keys(question.metadata["difficulty"]),
+            water_area = self.waters.get(question.metadata["water_area"])
+            self.assertIsNotNone(water_area)
+            self.assertEqual(
+                water_area.difficulty,
+                question.metadata["difficulty"],
             )
 
     def test_factory_creates_unique_mixed_questions(self):
@@ -278,7 +332,7 @@ class QuizTests(unittest.TestCase):
                 question for question in questions if question.mode == mode
             ]
             identities = [
-                question.metadata["water_highlight"]
+                question.metadata["water_area"]
                 if mode == "waters"
                 else question.country_iso
                 for question in mode_questions
@@ -298,16 +352,16 @@ class QuizTests(unittest.TestCase):
             )
             self.assertEqual(100, len({question.key for question in questions}), mode)
 
-    def test_water_mode_rejects_more_than_its_50_unique_regions(self):
+    def test_water_mode_rejects_more_than_its_80_unique_areas(self):
         with self.assertRaisesRegex(
             ValueError,
-            "доступно 50 уникальных вопросов",
+            "доступно 80 уникальных вопросов",
         ):
             QuestionFactory().build(
                 GameConfig(
                     ["waters"],
                     list(self.catalog.continents),
-                    51,
+                    81,
                 ),
                 self.catalog,
                 seed=11,
@@ -522,13 +576,13 @@ class QuizTests(unittest.TestCase):
         self.assertTrue(set(question.options) <= european_names)
 
     def test_water_questions_always_use_six_answer_choices(self):
-        strategy = WaterQuestionStrategy()
+        strategy = WaterQuestionStrategy(self.waters)
         country = self.catalog.get("DEU")
         pool = self.catalog.all()
         sea_serial = next(
             index
-            for index, region in enumerate(WATER_REGIONS)
-            if region.kind == "Море"
+            for index, region in enumerate(self.waters.all())
+            if region.kind == "sea"
         )
         questions = (
             strategy.create(country, pool, 0, random.Random(3)),
@@ -540,24 +594,19 @@ class QuizTests(unittest.TestCase):
             self.assertEqual(6, len(question.options))
             self.assertEqual(6, len(set(question.options)))
             self.assertIn(question.correct_answer, question.options)
-            highlighted = question.metadata["water_highlight"]
-            expected_kind = next(
-                region.kind
-                for region in WATER_REGIONS
-                if region.key == highlighted
-            )
-            kind_by_name = {region.name: region.kind for region in WATER_REGIONS}
+            area = self.waters.get(question.metadata["water_area"])
+            self.assertIsNotNone(area)
+            expected_kind = area.kind
+            kind_by_name = {
+                region.name: region.kind
+                for region in self.waters.all()
+            }
             matching_kind_count = sum(
                 kind_by_name[option] == expected_kind
                 for option in question.options
             )
             self.assertGreaterEqual(matching_kind_count, 5)
-            expected_prompt = (
-                "Какое море выделено?"
-                if expected_kind == "Море"
-                else "Какой океан выделен?"
-            )
-            self.assertEqual(expected_prompt, question.prompt)
+            self.assertEqual(area.prompt, question.prompt)
 
     def test_water_questions_never_require_clicking_the_map(self):
         questions = QuestionFactory().build(
@@ -572,8 +621,13 @@ class QuizTests(unittest.TestCase):
 
         self.assertTrue(all(question.interaction == "choices" for question in questions))
         self.assertTrue(all(len(question.options) == 6 for question in questions))
+        self.assertTrue(all("water_area" in question.metadata for question in questions))
         self.assertTrue(
-            all("water_highlight" in question.metadata for question in questions)
+            all(
+                "water_highlight" in question.metadata
+                or "map_overlay" in question.metadata
+                for question in questions
+            )
         )
 
     def test_country_questions_only_use_highlighted_map_choices(self):

@@ -302,8 +302,8 @@
   {
     "id": "waters_50",
     "category": "Режимы",
-    "title": "Повелитель морей",
-    "description": "Дать 50 правильных ответов в режиме «Моря и океаны»",
+    "title": "Знаток акватории",
+    "description": "Дать 50 правильных ответов в режиме «Акватория»",
     "icon": "achievement_waters_50",
     "rule": {
       "type": "mode_correct_count",

@@ -17,7 +17,7 @@ from .config import (
 from .difficulty import DIFFICULTY_KEYS, DifficultyCatalog
 from .models import AnswerRecord, Country, GameConfig, Question, RoundResult
 from .scoring import DEFAULT_SCORE_RULES, ScoreRules
-from .waters import WATER_REGIONS, WaterRegion
+from .waters import WaterArea, WaterCatalog
 from .wonders import WonderCatalog, WonderCategory, WonderItem
 
 
@@ -324,16 +324,19 @@ class CountryMapQuestionStrategy(QuestionStrategy):
 class WaterQuestionStrategy(QuestionStrategy):
     mode = "waters"
 
-    @staticmethod
+    def __init__(self, catalog: WaterCatalog) -> None:
+        self.catalog = catalog
+
     def _options(
-        correct_region: WaterRegion,
+        self,
+        correct_region: WaterArea,
         rng: random.Random,
         count: int = 6,
     ) -> list[str]:
         same_kind = list(
             dict.fromkeys(
                 region.name
-                for region in WATER_REGIONS
+                for region in self.catalog.all()
                 if region.kind == correct_region.kind
                 and region.name != correct_region.name
             )
@@ -343,7 +346,7 @@ class WaterQuestionStrategy(QuestionStrategy):
             fallback = list(
                 dict.fromkeys(
                     region.name
-                    for region in WATER_REGIONS
+                    for region in self.catalog.all()
                     if region.name != correct_region.name
                     and region.name not in distractors
                 )
@@ -366,25 +369,31 @@ class WaterQuestionStrategy(QuestionStrategy):
     ) -> Question:
         regions = [
             region
-            for region in WATER_REGIONS
+            for region in self.catalog.all()
             if eligible_water_keys is None or region.key in eligible_water_keys
         ]
         if not regions:
-            regions = WATER_REGIONS
+            regions = self.catalog.all()
         region = regions[serial % len(regions)]
+        metadata: dict[str, Any] = {
+            "water_area": region.key,
+            "water_area_kind": region.kind,
+        }
+        if region.shape == "ellipse":
+            metadata["water_highlight"] = region.key
+        elif region.map_overlay is not None:
+            metadata["map_overlay"] = region.map_overlay
         return Question(
             key=f"waters:choice:{region.key}",
             mode=self.mode,
-            prompt=(
-                "Какое море выделено?"
-                if region.kind == "Море"
-                else "Какой океан выделен?"
-            ),
-            country_iso=country.iso3,
+            prompt=region.prompt,
+            country_iso=region.country_iso or country.iso3,
+            country_isos=region.country_isos,
             options=self._options(region, rng),
             correct_answer=region.name,
             interaction="choices",
-            metadata={"water_highlight": region.key},
+            explanation=region.explanation,
+            metadata=metadata,
         )
 
     def prepare(
@@ -431,9 +440,7 @@ class WonderQuestionStrategy(QuestionStrategy):
         if item.category == WonderCategory.LANDMARK:
             return self._landmark(item, eligible_items, countries, rng)
         if item.category == WonderCategory.PEAK:
-            return self._named_map_item(item, eligible_items, rng, "point")
-        if item.category == WonderCategory.RIVER:
-            return self._named_map_item(item, eligible_items, rng, "line")
+            return self._peak(item, eligible_items, rng)
         return self._fact(item, countries, rng)
 
     def _landmark(
@@ -472,31 +479,22 @@ class WonderQuestionStrategy(QuestionStrategy):
             explanation=item.explanation,
         )
 
-    def _named_map_item(
+    def _peak(
         self,
         item: WonderItem,
         eligible_items: list[WonderItem],
         rng: random.Random,
-        overlay_kind: str,
     ) -> Question:
         metadata: dict[str, Any] = {
             "map_overlay": {
-                "kind": overlay_kind,
+                "kind": "point",
                 "point": list(item.point) if item.point else None,
-                "lines": [
-                    [list(point) for point in line] for line in item.lines
-                ],
             }
         }
-        prompt = (
-            "Какая горная вершина отмечена на карте?"
-            if item.category == WonderCategory.PEAK
-            else "Какая река выделена на карте?"
-        )
         return Question(
             key=f"wonders:{item.key}",
             mode=self.mode,
-            prompt=prompt,
+            prompt="Какая горная вершина отмечена на карте?",
             country_iso=item.country_iso,
             country_isos=item.country_isos,
             options=self._item_options(item, eligible_items, rng),
@@ -723,13 +721,13 @@ class WaterPreparedQuestionPool(PreparedQuestionPool):
         self.context = context
         self.rng = rng
         queues = (
-            {"all": list(WATER_REGIONS)}
+            {"all": strategy.catalog.all()}
             if context.difficulty is None
             else {
                 level: [
                     region
-                    for region in WATER_REGIONS
-                    if region.key in difficulty.water_keys(level)
+                    for region in strategy.catalog.all()
+                    if region.difficulty == level
                 ]
                 for level in DIFFICULTY_KEYS
             }
@@ -887,18 +885,22 @@ class QuestionFactory:
         self,
         strategies: list[QuestionStrategy] | None = None,
         difficulty_catalog: DifficultyCatalog | None = None,
+        water_catalog: WaterCatalog | None = None,
         wonder_catalog: WonderCatalog | None = None,
     ) -> None:
         self._difficulty = difficulty_catalog or DifficultyCatalog(
             CONFIGS_DIR / "difficulty_levels.json"
         )
         if strategies is None:
+            water_catalog = water_catalog or WaterCatalog(
+                CONFIGS_DIR / "water_area"
+            )
             strategies = [
                 FlagQuestionStrategy(),
                 CapitalQuestionStrategy(),
                 PopulationQuestionStrategy(),
                 CountryMapQuestionStrategy(),
-                WaterQuestionStrategy(),
+                WaterQuestionStrategy(water_catalog),
             ]
             if wonder_catalog is not None:
                 strategies.append(WonderQuestionStrategy(wonder_catalog))
@@ -929,9 +931,6 @@ class QuestionFactory:
         if config.difficulty is not None and config.difficulty not in DIFFICULTY_KEYS:
             raise ValueError(f"Неизвестный уровень сложности: {config.difficulty}")
         self._difficulty.validate_countries(catalog.all())
-        self._difficulty.validate_water_keys(
-            {region.key for region in WATER_REGIONS}
-        )
         context = QuestionBuildContext(
             catalog=catalog,
             candidate_pool=candidate_pool,

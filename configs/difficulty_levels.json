@@ -10,11 +10,6 @@
       "TUR", "ISR", "ARE", "SAU", "IRN", "IRQ", "KAZ", "AUS", "NZL", "EGY",
       "ZAF", "MAR", "DZA", "TUN", "ETH", "KEN", "NGA", "GHA", "MDG", "VAT",
       "MCO", "SGP"
-    ],
-    "waters": [
-      "atlantic", "pacific_w", "pacific_e", "indian", "arctic", "southern",
-      "mediterranean", "black", "baltic", "red", "arabian", "caribbean",
-      "bering", "north", "japan", "south_china"
     ]
   },
   "medium": {
@@ -27,11 +22,6 @@
       "TJK", "TGO", "SLE", "LAO", "NIC", "LBY", "PRY", "KGZ", "TKM", "SLV",
       "COG", "SVK", "CAF", "PSE", "LBR", "LBN", "CRI", "MRT", "OMN", "PAN",
       "KWT", "ERI"
-    ],
-    "waters": [
-      "okhotsk", "coral", "adriatic", "aegean", "azov", "barents",
-      "beaufort", "chukchi", "east_siberian", "laptev", "kara", "norwegian",
-      "greenland", "labrador", "sargasso", "scotia", "weddell"
     ]
   },
   "hard": {
@@ -44,11 +34,6 @@
       "VUT", "BRB", "STP", "WSM", "LCA", "KIR", "GRD", "FSM", "TON", "SYC",
       "VCT", "ATG", "AND", "DMA", "KNA", "MHL", "LIE", "SMR", "PLW", "NRU",
       "TUV"
-    ],
-    "waters": [
-      "ross", "tasman", "timor", "arafura", "java", "banda", "celebes",
-      "sulu", "philippine", "yellow", "east_china", "andaman", "irish",
-      "marmara", "ionian", "ligurian", "tyrrhenian"
     ]
   }
 }

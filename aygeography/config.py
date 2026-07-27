@@ -1,14 +1,22 @@
 from __future__ import annotations
 
 import json
+import os
+import sys
 from pathlib import Path
 from typing import Any
 
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(
+    getattr(sys, "_MEIPASS", Path(__file__).resolve().parent.parent)
+)
 CONFIGS_DIR = BASE_DIR / "configs"
 ASSETS_DIR = BASE_DIR / "assets"
-SAVE_DIR = BASE_DIR / "save"
+SAVE_DIR = (
+    Path(os.environ.get("LOCALAPPDATA", Path.home())) / "AYGeography" / "save"
+    if getattr(sys, "frozen", False)
+    else BASE_DIR / "save"
+)
 DATABASE_PATH = SAVE_DIR / "aygeography.db"
 
 
@@ -77,7 +85,7 @@ def _load_wonder_category_weights() -> dict[str, int]:
             f"Не удалось загрузить настройки: {path}"
         ) from error
     raw = settings.get("category_weights")
-    expected = {"landmark", "peak", "river", "fact"}
+    expected = {"landmark", "peak", "fact"}
     if not isinstance(raw, dict) or set(raw) != expected:
         raise ValueError(
             "Веса wonders должны быть заданы для каждой категории"

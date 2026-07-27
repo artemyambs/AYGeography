@@ -1,6 +1,6 @@
 {
   "country_mastery": {
-    "modes": ["flags", "capitals", "population", "countries"],
+    "modes": ["flags", "capitals", "population", "countries", "wonders"],
     "levels": [
       {"stars": 1, "correct_per_mode": 1},
       {"stars": 2, "correct_per_mode": 2},

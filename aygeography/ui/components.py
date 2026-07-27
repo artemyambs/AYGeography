@@ -10,6 +10,7 @@ from typing import Iterable
 import pygame
 
 from ..config import COLORS
+from ..waters import WaterCatalog
 
 LOGICAL_SIZE = (1600, 900)
 SIDEBAR_WIDTH = 205
@@ -348,52 +349,6 @@ def draw_button(
         MUTED if disabled else TEXT,
         bold=primary or selected,
     )
-
-
-def draw_mode_icon(
-    surface: pygame.Surface,
-    key: str,
-    center: tuple[int, int],
-    colour: pygame.Color = CYAN,
-    scale: float = 1.0,
-) -> None:
-    x, y = physical_point(surface, center)
-    scale *= render_scale(surface)
-    width = max(2, round(3 * scale))
-    if key == "flags":
-        pygame.draw.line(surface, colour, (x - 22 * scale, y - 28 * scale), (x - 22 * scale, y + 30 * scale), width)
-        pygame.draw.polygon(
-            surface,
-            colour,
-            [(x - 19 * scale, y - 25 * scale), (x + 25 * scale, y - 17 * scale), (x + 8 * scale, y + 3 * scale), (x - 19 * scale, y - 3 * scale)],
-        )
-    elif key == "capitals":
-        pygame.draw.polygon(surface, colour, [(x - 32 * scale, y - 16 * scale), (x, y - 35 * scale), (x + 32 * scale, y - 16 * scale)])
-        pygame.draw.rect(surface, colour, (x - 37 * scale, y + 22 * scale, 74 * scale, 7 * scale))
-        for dx in (-24, -8, 8, 24):
-            pygame.draw.rect(surface, colour, (x + dx * scale - 3 * scale, y - 12 * scale, 6 * scale, 34 * scale))
-    elif key == "population":
-        for dx, dy, radius in ((-27, -5, 11), (0, -14, 13), (27, -5, 11)):
-            pygame.draw.circle(surface, colour, (round(x + dx * scale), round(y + dy * scale)), round(radius * scale))
-        for dx, w in ((-29, 28), (0, 34), (29, 28)):
-            rect = pygame.Rect(0, 0, w * scale, 25 * scale)
-            rect.midtop = (x + dx * scale, y + 8 * scale)
-            pygame.draw.rect(surface, colour, rect, border_radius=round(10 * scale))
-    elif key == "countries":
-        pygame.draw.circle(surface, colour, (x, y), round(34 * scale), width)
-        pygame.draw.ellipse(surface, colour, (x - 17 * scale, y - 34 * scale, 34 * scale, 68 * scale), width)
-        pygame.draw.line(surface, colour, (x - 32 * scale, y), (x + 32 * scale, y), width)
-        pygame.draw.arc(surface, colour, (x - 31 * scale, y - 19 * scale, 62 * scale, 38 * scale), 0, math.pi, width)
-    else:
-        for offset in (-17, 0, 17):
-            points = [
-                (x - 34 * scale, y + offset * scale),
-                (x - 19 * scale, y + (offset - 7) * scale),
-                (x - 4 * scale, y + offset * scale),
-                (x + 11 * scale, y + (offset + 7) * scale),
-                (x + 28 * scale, y + offset * scale),
-            ]
-            pygame.draw.lines(surface, colour, False, points, width + 1)
 
 
 def draw_document_icon(
@@ -845,7 +800,12 @@ class MapCamera:
 
 
 class MapRenderer:
-    def __init__(self, geometry_path: Path) -> None:
+    def __init__(
+        self,
+        geometry_path: Path,
+        water_catalog: WaterCatalog,
+    ) -> None:
+        self.water_catalog = water_catalog
         self.geometry: dict[str, list[list[list[float]]]] = json.loads(
             geometry_path.read_text(encoding="utf-8")
         )
@@ -1125,12 +1085,7 @@ class MapRenderer:
             highlight_country=highlight_country,
         )
         if highlight_water:
-            from ..waters import WATER_REGIONS
-
-            region = next(
-                (item for item in WATER_REGIONS if item.key == highlight_water),
-                None,
-            )
+            region = self.water_catalog.get(highlight_water)
             if region is not None:
                 points = self._water_polygon(region, local_rect, render_camera)
                 self._draw_region_selection(

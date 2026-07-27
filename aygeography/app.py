@@ -54,6 +54,7 @@ from .ui.components import (
 from .ui.modals import ConfirmationModal
 from .ui.screens import GameView, HomeView, ResultView, VIEW_TYPES
 from .wonders import WonderCatalog
+from .waters import WaterCatalog
 
 
 class AssetStore:
@@ -152,6 +153,10 @@ class AYGeographyApp:
             self.catalog.all(),
             ASSETS_DIR,
         )
+        self.water_catalog = WaterCatalog(
+            CONFIGS_DIR / "water_area",
+            self.catalog.all(),
+        )
         self.repository = repository or GameRepository(DATABASE_PATH)
         self.progression_catalog = ProgressionCatalog(
             CONFIGS_DIR / "progression.json",
@@ -164,9 +169,13 @@ class AYGeographyApp:
         )
         self.progression.sync()
         self.question_factory = QuestionFactory(
-            wonder_catalog=self.wonder_catalog
+            water_catalog=self.water_catalog,
+            wonder_catalog=self.wonder_catalog,
         )
-        self.map_renderer = MapRenderer(ASSETS_DIR / "maps/world_geometry.json")
+        self.map_renderer = MapRenderer(
+            ASSETS_DIR / "maps/world_geometry.json",
+            self.water_catalog,
+        )
         self.assets = AssetStore()
         self.manager = LogicalUIManager(
             LOGICAL_SIZE,

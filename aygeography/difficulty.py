@@ -16,7 +16,6 @@ class DifficultyLevel:
     key: str
     chance: float
     countries: frozenset[str]
-    waters: frozenset[str]
 
 
 class DifficultyCatalog:
@@ -31,12 +30,10 @@ class DifficultyCatalog:
                 key=key,
                 chance=self._parse_chance(raw[key]["chance_falling_out"]),
                 countries=frozenset(raw[key]["countries"]),
-                waters=frozenset(raw[key].get("waters", [])),
             )
             for key in DIFFICULTY_KEYS
         }
         self._validate_unique("countries")
-        self._validate_unique("waters")
 
     @staticmethod
     def _parse_chance(value: str) -> float:
@@ -66,16 +63,6 @@ class DifficultyCatalog:
                 f"Некорректное распределение стран: missing={missing}, unknown={unknown}"
             )
 
-    def validate_water_keys(self, expected: set[str]) -> None:
-        actual = set().union(*(level.waters for level in self._levels.values()))
-        if actual != expected:
-            missing = sorted(expected - actual)
-            unknown = sorted(actual - expected)
-            raise ValueError(
-                f"Некорректное распределение водных объектов: "
-                f"missing={missing}, unknown={unknown}"
-            )
-
     def choose(self, selected: str, rng: random.Random) -> str:
         if selected not in self._levels:
             raise ValueError(f"Неизвестный уровень сложности: {selected}")
@@ -101,9 +88,6 @@ class DifficultyCatalog:
     def countries(self, level: str, pool: list[Country]) -> list[Country]:
         allowed = self._levels[level].countries
         return [country for country in pool if country.iso3 in allowed]
-
-    def water_keys(self, level: str) -> frozenset[str]:
-        return self._levels[level].waters
 
     def chance(self, level: str) -> float:
         return self._levels[level].chance

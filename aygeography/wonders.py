@@ -16,14 +16,12 @@ from .models import Country
 class WonderCategory(StrEnum):
     LANDMARK = "landmark"
     PEAK = "peak"
-    RIVER = "river"
     FACT = "fact"
 
 
 EXPECTED_COUNTS = {
     WonderCategory.LANDMARK: 75,
     WonderCategory.PEAK: 15,
-    WonderCategory.RIVER: 30,
     WonderCategory.FACT: 130,
 }
 
@@ -38,11 +36,6 @@ EXPECTED_DIFFICULTY_COUNTS = {
         "medium": 5,
         "hard": 5,
     },
-    WonderCategory.RIVER: {
-        "easy": 10,
-        "medium": 10,
-        "hard": 10,
-    },
     WonderCategory.FACT: {
         "easy": 44,
         "medium": 43,
@@ -52,7 +45,6 @@ EXPECTED_DIFFICULTY_COUNTS = {
 
 CONTENT_FILES = {
     WonderCategory.FACT: "fact.json",
-    WonderCategory.RIVER: "river.json",
     WonderCategory.LANDMARK: "landmark.json",
     WonderCategory.PEAK: "peak.json",
 }
@@ -70,7 +62,6 @@ class WonderItem:
     image: str = ""
     prompt: str = ""
     point: tuple[float, float] | None = None
-    lines: tuple[tuple[tuple[float, float], ...], ...] = ()
 
     @property
     def country_iso(self) -> str:
@@ -150,10 +141,6 @@ class WonderCatalog:
         parsed_point = (
             (float(point[0]), float(point[1])) if point is not None else None
         )
-        lines = tuple(
-            tuple((float(point[0]), float(point[1])) for point in line)
-            for line in raw.get("lines", ())
-        )
         return WonderItem(
             key=str(raw["id"]),
             category=category,
@@ -161,11 +148,13 @@ class WonderCatalog:
             country_isos=tuple(str(value) for value in raw["country_isos"]),
             continents=tuple(str(value) for value in raw["continents"]),
             difficulty=str(raw["difficulty"]),
-            explanation=str(raw["explanation"]).strip(),
+            explanation=self._with_country_context(
+                str(raw["explanation"]).strip(),
+                tuple(str(value) for value in raw["country_isos"]),
+            ),
             image=str(raw.get("image", "")),
             prompt=str(raw.get("prompt", "")).strip(),
             point=parsed_point,
-            lines=lines,
         )
 
     def _validate(self) -> None:
@@ -251,10 +240,20 @@ class WonderCatalog:
             self._validate_image(item)
         elif item.category == WonderCategory.PEAK:
             self._validate_point(item)
-        elif item.category == WonderCategory.RIVER:
-            self._validate_lines(item)
         elif item.category == WonderCategory.FACT and not item.prompt:
             raise ValueError(f"Для факта отсутствует текст: {item.key}")
+
+    def _with_country_context(
+        self,
+        explanation: str,
+        country_isos: tuple[str, ...],
+    ) -> str:
+        country_names = [self.country_name(iso3) for iso3 in country_isos]
+        missing = [name for name in country_names if name not in explanation]
+        if not missing:
+            return explanation
+        label = "Страна" if len(country_names) == 1 else "Страны"
+        return f"{label}: {', '.join(country_names)}. {explanation}"
 
     def _validate_image(self, item: WonderItem) -> None:
         path = self.assets_dir / item.image
@@ -275,10 +274,3 @@ class WonderCatalog:
         if item.point is None:
             raise ValueError(f"Для вершины нет точки: {item.key}")
         self._validate_coordinate(item.point)
-
-    def _validate_lines(self, item: WonderItem) -> None:
-        if not item.lines or any(len(line) < 2 for line in item.lines):
-            raise ValueError(f"Для реки нет корректной линии: {item.key}")
-        for line in item.lines:
-            for point in line:
-                self._validate_coordinate(point)
