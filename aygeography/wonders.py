@@ -21,17 +21,33 @@ class WonderCategory(StrEnum):
 
 
 EXPECTED_COUNTS = {
-    WonderCategory.LANDMARK: 45,
+    WonderCategory.LANDMARK: 75,
     WonderCategory.PEAK: 15,
     WonderCategory.RIVER: 30,
-    WonderCategory.FACT: 30,
+    WonderCategory.FACT: 130,
 }
 
 EXPECTED_DIFFICULTY_COUNTS = {
-    WonderCategory.LANDMARK: 15,
-    WonderCategory.PEAK: 5,
-    WonderCategory.RIVER: 10,
-    WonderCategory.FACT: 10,
+    WonderCategory.LANDMARK: {
+        "easy": 25,
+        "medium": 25,
+        "hard": 25,
+    },
+    WonderCategory.PEAK: {
+        "easy": 5,
+        "medium": 5,
+        "hard": 5,
+    },
+    WonderCategory.RIVER: {
+        "easy": 10,
+        "medium": 10,
+        "hard": 10,
+    },
+    WonderCategory.FACT: {
+        "easy": 44,
+        "medium": 43,
+        "hard": 43,
+    },
 }
 
 CONTENT_FILES = {
@@ -165,9 +181,7 @@ class WonderCatalog:
                 for item in self._items
                 if item.category == category
             )
-            if category_counts != Counter(
-                {level: expected for level in DIFFICULTY_KEYS}
-            ):
+            if category_counts != Counter(expected):
                 raise ValueError(
                     f"Некорректная сложность {category}: {dict(category_counts)}"
                 )
@@ -182,10 +196,24 @@ class WonderCatalog:
                 for item in self._items
                 if item.category == category
             }
+            if (
+                category != WonderCategory.FACT
+                and len(answers) != counts[category]
+            ):
+                raise ValueError(
+                    f"Названия объектов должны быть уникальны: {category}"
+                )
             if len(answers) < 6:
                 raise ValueError(
                     f"Недостаточно уникальных ответов: {category}"
                 )
+        fact_prompts = {
+            item.prompt
+            for item in self._items
+            if item.category == WonderCategory.FACT
+        }
+        if len(fact_prompts) != counts[WonderCategory.FACT]:
+            raise ValueError("Тексты фактов должны быть уникальны")
         for continent in valid_continents:
             available = [
                 item for item in self._items if continent in item.continents

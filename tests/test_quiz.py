@@ -6,6 +6,8 @@ from collections import Counter
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
+import pygame
+
 from aygeography.catalog import CountryCatalog
 from aygeography.config import (
     ANSWER_FEEDBACK_SECONDS,
@@ -13,6 +15,7 @@ from aygeography.config import (
     CONFIGS_DIR,
     MODE_NAMES,
     QUESTION_TIME_SECONDS,
+    WONDER_CATEGORY_WEIGHTS,
 )
 from aygeography.difficulty import DIFFICULTY_KEYS, DifficultyCatalog
 from aygeography.formatting import format_population
@@ -51,15 +54,20 @@ class QuizTests(unittest.TestCase):
 
     def test_wonders_catalog_has_exact_content_distribution(self):
         items = self.wonders.all()
-        self.assertEqual(120, len(items))
+        self.assertEqual(250, len(items))
         self.assertEqual(
             Counter(EXPECTED_COUNTS),
             Counter(item.category for item in items),
         )
         self.assertEqual(
-            {"easy": 40, "medium": 40, "hard": 40},
+            {"easy": 84, "medium": 83, "hard": 83},
             dict(Counter(item.difficulty for item in items)),
         )
+        self.assertEqual(
+            {"landmark": 3, "peak": 1, "river": 2, "fact": 2},
+            WONDER_CATEGORY_WEIGHTS,
+        )
+        self.assertEqual("Чудеса света", MODE_NAMES["wonders"])
 
     def test_wonders_builds_unique_weighted_round_with_six_options(self):
         questions = QuestionFactory(
@@ -87,6 +95,27 @@ class QuizTests(unittest.TestCase):
             self.assertEqual(6, len(set(question.options)))
             self.assertIn(question.correct_answer, question.options)
             self.assertTrue(question.explanation)
+
+    def test_wonders_extension_has_requested_content_and_image_sizes(self):
+        facts = self.wonders.by_category(WonderCategory.FACT)[-100:]
+        landmarks = self.wonders.by_category(WonderCategory.LANDMARK)[-30:]
+
+        self.assertEqual(100, len({item.prompt for item in facts}))
+        self.assertEqual(
+            {"easy": 34, "medium": 33, "hard": 33},
+            dict(Counter(item.difficulty for item in facts)),
+        )
+        self.assertEqual(
+            {"easy": 10, "medium": 10, "hard": 10},
+            dict(Counter(item.difficulty for item in landmarks)),
+        )
+        self.assertEqual(
+            {(960, 540)},
+            {
+                pygame.image.load(BASE_DIR / "assets" / item.image).get_size()
+                for item in landmarks
+            },
+        )
 
     def test_landmark_format_is_seeded_per_round(self):
         factory = QuestionFactory(wonder_catalog=self.wonders)
@@ -142,6 +171,7 @@ class QuizTests(unittest.TestCase):
     def test_configs_directory_replaces_data_directory(self):
         self.assertTrue((CONFIGS_DIR / "app_settings.json").is_file())
         self.assertTrue((CONFIGS_DIR / "scoring.json").is_file())
+        self.assertTrue((CONFIGS_DIR / "wonders_settings.json").is_file())
         self.assertEqual(
             {"fact.json", "river.json", "landmark.json", "peak.json"},
             {

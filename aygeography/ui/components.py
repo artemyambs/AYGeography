@@ -34,6 +34,10 @@ MAP_FILL = pygame.Color(COLORS["map"])
 MAP_BORDER = pygame.Color(COLORS["map_border"])
 MAP_SELECTION_FILL = (171, 211, 42, 150)
 MAP_SELECTION_BORDER = (239, 255, 104, 255)
+RIVER_BORDER_WIDTH = 12
+RIVER_FILL_WIDTH = 10
+RIVER_CURVE_SAMPLES = 8
+RIVER_RENDER_SCALE = 2
 
 _SCALED_IMAGE_CACHE: dict[
     tuple[int, tuple[int, int]],
@@ -1163,39 +1167,92 @@ class MapRenderer:
             return
         if kind != "line":
             return
-        layer = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+        layer_size = (
+            surface.get_width() * RIVER_RENDER_SCALE,
+            surface.get_height() * RIVER_RENDER_SCALE,
+        )
+        layer = pygame.Surface(layer_size, pygame.SRCALPHA)
         for line in overlay.get("lines", ()):
             points = [self.project(point, rect, camera) for point in line]
             if len(points) < 2:
                 continue
-            pygame.draw.lines(
+            smooth_points = self._smooth_polyline(points)
+            render_points = [
+                (
+                    round(point[0] * RIVER_RENDER_SCALE),
+                    round(point[1] * RIVER_RENDER_SCALE),
+                )
+                for point in smooth_points
+            ]
+            self._draw_rounded_polyline(
                 layer,
                 MAP_SELECTION_BORDER,
-                False,
-                points,
-                10,
+                render_points,
+                RIVER_BORDER_WIDTH * RIVER_RENDER_SCALE,
             )
-            pygame.draw.lines(
+            self._draw_rounded_polyline(
                 layer,
                 MAP_SELECTION_FILL,
-                False,
-                points,
-                7,
+                render_points,
+                RIVER_FILL_WIDTH * RIVER_RENDER_SCALE,
             )
-            for center in (points[0], points[-1]):
-                pygame.draw.circle(
-                    layer,
-                    MAP_SELECTION_BORDER,
-                    center,
-                    5,
+        surface.blit(
+            pygame.transform.smoothscale(layer, surface.get_size()),
+            (0, 0),
+        )
+
+    @staticmethod
+    def _smooth_polyline(
+        points: list[tuple[int, int]],
+        samples_per_segment: int = RIVER_CURVE_SAMPLES,
+    ) -> list[tuple[float, float]]:
+        """Interpolate a river through its control points without sharp joints."""
+        if len(points) < 3:
+            return [(float(x), float(y)) for x, y in points]
+        controls = [pygame.Vector2(point) for point in points]
+        result = [tuple(controls[0])]
+        samples = max(1, samples_per_segment)
+        for index in range(len(controls) - 1):
+            previous = controls[max(0, index - 1)]
+            start = controls[index]
+            end = controls[index + 1]
+            following = controls[min(len(controls) - 1, index + 2)]
+            for step in range(1, samples + 1):
+                time = step / samples
+                time_squared = time * time
+                time_cubed = time_squared * time
+                point = 0.5 * (
+                    2 * start
+                    + (end - previous) * time
+                    + (
+                        2 * previous
+                        - 5 * start
+                        + 4 * end
+                        - following
+                    )
+                    * time_squared
+                    + (
+                        -previous
+                        + 3 * start
+                        - 3 * end
+                        + following
+                    )
+                    * time_cubed
                 )
-                pygame.draw.circle(
-                    layer,
-                    MAP_SELECTION_FILL,
-                    center,
-                    3,
-                )
-        surface.blit(layer, (0, 0))
+                result.append((point.x, point.y))
+        return result
+
+    @staticmethod
+    def _draw_rounded_polyline(
+        surface: pygame.Surface,
+        colour: tuple[int, int, int, int],
+        points: list[tuple[int, int]],
+        width: int,
+    ) -> None:
+        pygame.draw.lines(surface, colour, False, points, width)
+        radius = width // 2
+        pygame.draw.circle(surface, colour, points[0], radius)
+        pygame.draw.circle(surface, colour, points[-1], radius)
 
     def draw_mastery_map(
         self,

@@ -21,6 +21,9 @@ from aygeography.ui.components import (
     MAP_SELECTION_BORDER,
     MAP_SELECTION_FILL,
     RED,
+    RIVER_BORDER_WIDTH,
+    RIVER_FILL_WIDTH,
+    RIVER_RENDER_SCALE,
     MapCamera,
     MapRenderer,
 )
@@ -350,31 +353,34 @@ class PygameAppTests(unittest.TestCase):
                 ],
             )
 
-    def test_wonder_feedback_delay_and_enter_advance(self):
+    def test_wonder_feedback_delay_and_keyboard_advance(self):
         previous_clock = self.app.clock_source
         now = [100.0]
         self.app.clock_source = lambda: now[0]
         try:
-            self.app.start_game(
-                GameConfig(
-                    ["wonders"],
-                    list(self.app.catalog.continents),
-                    10,
-                )
-            )
-            view = self.app.view
-            view._answer(view.active_question.correct_answer)
-            self.assertEqual(
-                100.0 + ANSWER_FEEDBACK_SECONDS["wonders"]["correct"],
-                view.advance_at,
-            )
-            view.handle_event(
-                pygame.event.Event(
-                    pygame.KEYDOWN,
-                    {"key": pygame.K_RETURN},
-                )
-            )
-            self.assertEqual(2, view.active_question_number)
+            for key in (pygame.K_RETURN, pygame.K_SPACE):
+                with self.subTest(key=key):
+                    self.app.start_game(
+                        GameConfig(
+                            ["wonders"],
+                            list(self.app.catalog.continents),
+                            10,
+                        )
+                    )
+                    view = self.app.view
+                    view._answer(view.active_question.correct_answer)
+                    self.assertEqual(
+                        100.0
+                        + ANSWER_FEEDBACK_SECONDS["wonders"]["correct"],
+                        view.advance_at,
+                    )
+                    view.handle_event(
+                        pygame.event.Event(
+                            pygame.KEYDOWN,
+                            {"key": key},
+                        )
+                    )
+                    self.assertEqual(2, view.active_question_number)
         finally:
             self.app.clock_source = previous_clock
 
@@ -529,8 +535,32 @@ class PygameAppTests(unittest.TestCase):
                 },
             )
         line_colours = {call.args[1] for call in lines.call_args_list}
-        self.assertIn(MAP_SELECTION_FILL, line_colours)
-        self.assertIn(MAP_SELECTION_BORDER, line_colours)
+        line_widths = {call.args[4] for call in lines.call_args_list}
+        self.assertEqual(
+            {MAP_SELECTION_FILL, MAP_SELECTION_BORDER},
+            line_colours,
+        )
+        self.assertEqual(
+            {
+                RIVER_FILL_WIDTH * RIVER_RENDER_SCALE,
+                RIVER_BORDER_WIDTH * RIVER_RENDER_SCALE,
+            },
+            line_widths,
+        )
+
+    def test_river_overlay_interpolates_angular_control_points(self):
+        points = [(0, 0), (50, 50), (100, 0)]
+
+        smoothed = MapRenderer._smooth_polyline(points)
+
+        self.assertEqual((0.0, 0.0), smoothed[0])
+        self.assertEqual((100.0, 0.0), smoothed[-1])
+        self.assertGreater(len(smoothed), len(points))
+        corner_index = smoothed.index((50.0, 50.0))
+        corner = pygame.Vector2(smoothed[corner_index])
+        incoming = corner - pygame.Vector2(smoothed[corner_index - 1])
+        outgoing = pygame.Vector2(smoothed[corner_index + 1]) - corner
+        self.assertGreater(incoming.normalize().dot(outgoing.normalize()), 0.8)
 
     def test_capital_question_uses_compact_flag_layout(self):
         self.app.start_game(GameConfig(["capitals"], ["Europe"], 10))

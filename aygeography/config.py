@@ -66,3 +66,26 @@ def _load_feedback_seconds() -> dict[str, dict[str, float]]:
 
 
 ANSWER_FEEDBACK_SECONDS = _load_feedback_seconds()
+
+
+def _load_wonder_category_weights() -> dict[str, int]:
+    path = CONFIGS_DIR / "wonders_settings.json"
+    try:
+        settings = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise RuntimeError(
+            f"Не удалось загрузить настройки: {path}"
+        ) from error
+    raw = settings.get("category_weights")
+    expected = {"landmark", "peak", "river", "fact"}
+    if not isinstance(raw, dict) or set(raw) != expected:
+        raise ValueError(
+            "Веса wonders должны быть заданы для каждой категории"
+        )
+    weights = {str(key): int(value) for key, value in raw.items()}
+    if any(value <= 0 for value in weights.values()):
+        raise ValueError("Веса категорий wonders должны быть положительными")
+    return weights
+
+
+WONDER_CATEGORY_WEIGHTS = _load_wonder_category_weights()

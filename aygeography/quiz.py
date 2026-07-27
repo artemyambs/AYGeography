@@ -8,7 +8,12 @@ from datetime import datetime
 from typing import Any, Generic, TypeVar
 
 from .catalog import CountryCatalog
-from .config import CONFIGS_DIR, MODE_NAMES, QUESTION_TIME_SECONDS
+from .config import (
+    CONFIGS_DIR,
+    MODE_NAMES,
+    QUESTION_TIME_SECONDS,
+    WONDER_CATEGORY_WEIGHTS,
+)
 from .difficulty import DIFFICULTY_KEYS, DifficultyCatalog
 from .models import AnswerRecord, Country, GameConfig, Question, RoundResult
 from .scoring import DEFAULT_SCORE_RULES, ScoreRules
@@ -760,17 +765,6 @@ class WaterPreparedQuestionPool(PreparedQuestionPool):
 
 
 class WonderPreparedQuestionPool(PreparedQuestionPool):
-    CATEGORY_CYCLE = (
-        WonderCategory.LANDMARK,
-        WonderCategory.RIVER,
-        WonderCategory.FACT,
-        WonderCategory.LANDMARK,
-        WonderCategory.PEAK,
-        WonderCategory.RIVER,
-        WonderCategory.FACT,
-        WonderCategory.LANDMARK,
-    )
-
     def __init__(
         self,
         strategy: WonderQuestionStrategy,
@@ -804,7 +798,26 @@ class WonderPreparedQuestionPool(PreparedQuestionPool):
         for levels in self.queues.values():
             for queue in levels.values():
                 rng.shuffle(queue)
+        self.category_cycle = self._build_category_cycle()
         self.schedule: list[WonderCategory] = []
+
+    @staticmethod
+    def _build_category_cycle() -> tuple[WonderCategory, ...]:
+        weights = {
+            WonderCategory(key): value
+            for key, value in WONDER_CATEGORY_WEIGHTS.items()
+        }
+        categories = tuple(weights)
+        current = dict.fromkeys(categories, 0)
+        total = sum(weights.values())
+        cycle: list[WonderCategory] = []
+        for _ in range(total):
+            for category in categories:
+                current[category] += weights[category]
+            selected = max(categories, key=current.__getitem__)
+            current[selected] -= total
+            cycle.append(selected)
+        return tuple(cycle)
 
     @property
     def capacity(self) -> int:
@@ -819,12 +832,12 @@ class WonderPreparedQuestionPool(PreparedQuestionPool):
         schedule: list[WonderCategory] = []
         cycle_index = 0
         while len(schedule) < count:
-            category = self.CATEGORY_CYCLE[
-                cycle_index % len(self.CATEGORY_CYCLE)
+            category = self.category_cycle[
+                cycle_index % len(self.category_cycle)
             ]
             cycle_index += 1
             if remaining[category] <= 0:
-                if cycle_index > count * len(self.CATEGORY_CYCLE) * 2:
+                if cycle_index > count * len(self.category_cycle) * 2:
                     break
                 continue
             schedule.append(category)

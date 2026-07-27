@@ -630,5 +630,425 @@
         "difficulty":  "hard",
         "image":  "wonders/landmarks/kotor.jpg",
         "explanation":  "Средневековый город окружён стенами у Которского залива."
+    },
+    {
+        "id":  "leaning_tower",
+        "category":  "landmark",
+        "name":  "Пизанская башня",
+        "country_isos":  [
+                             "ITA"
+                         ],
+        "continents":  [
+                           "Europe"
+                       ],
+        "difficulty":  "easy",
+        "image":  "wonders/landmarks/leaning_tower.jpg",
+        "explanation":  "Колокольня собора в Пизе известна заметным наклоном, возникшим из-за мягкого грунта."
+    },
+    {
+        "id":  "louvre",
+        "category":  "landmark",
+        "name":  "Лувр",
+        "country_isos":  [
+                             "FRA"
+                         ],
+        "continents":  [
+                           "Europe"
+                       ],
+        "difficulty":  "easy",
+        "image":  "wonders/landmarks/louvre.jpg",
+        "explanation":  "Парижский Лувр расположен в бывшем королевском дворце и является одним из крупнейших музеев мира."
+    },
+    {
+        "id":  "brandenburg_gate",
+        "category":  "landmark",
+        "name":  "Бранденбургские ворота",
+        "country_isos":  [
+                             "DEU"
+                         ],
+        "continents":  [
+                           "Europe"
+                       ],
+        "difficulty":  "easy",
+        "image":  "wonders/landmarks/brandenburg_gate.jpg",
+        "explanation":  "Бранденбургские ворота XVIII века стали одним из главных символов Берлина и объединения Германии."
+    },
+    {
+        "id":  "stonehenge",
+        "category":  "landmark",
+        "name":  "Стоунхендж",
+        "country_isos":  [
+                             "GBR"
+                         ],
+        "continents":  [
+                           "Europe"
+                       ],
+        "difficulty":  "easy",
+        "image":  "wonders/landmarks/stonehenge.jpg",
+        "explanation":  "Каменный круг Стоунхенджа создавался в несколько этапов в доисторическую эпоху."
+    },
+    {
+        "id":  "mount_rushmore",
+        "category":  "landmark",
+        "name":  "Гора Рашмор",
+        "country_isos":  [
+                             "USA"
+                         ],
+        "continents":  [
+                           "North America"
+                       ],
+        "difficulty":  "easy",
+        "image":  "wonders/landmarks/mount_rushmore.jpg",
+        "explanation":  "В гранитной скале горы Рашмор высечены портреты четырёх президентов США."
+    },
+    {
+        "id":  "empire_state",
+        "category":  "landmark",
+        "name":  "Эмпайр-стейт-билдинг",
+        "country_isos":  [
+                             "USA"
+                         ],
+        "continents":  [
+                           "North America"
+                       ],
+        "difficulty":  "easy",
+        "image":  "wonders/landmarks/empire_state.jpg",
+        "explanation":  "Нью-йоркский небоскрёб в стиле ар-деко был самым высоким зданием мира после открытия в 1931 году."
+    },
+    {
+        "id":  "panama_canal",
+        "category":  "landmark",
+        "name":  "Панамский канал",
+        "country_isos":  [
+                             "PAN"
+                         ],
+        "continents":  [
+                           "North America"
+                       ],
+        "difficulty":  "easy",
+        "image":  "wonders/landmarks/panama_canal.jpg",
+        "explanation":  "Канал пересекает Панамский перешеек и сокращает морской путь между Атлантическим и Тихим океанами."
+    },
+    {
+        "id":  "temple_of_heaven",
+        "category":  "landmark",
+        "name":  "Храм Неба",
+        "country_isos":  [
+                             "CHN"
+                         ],
+        "continents":  [
+                           "Asia"
+                       ],
+        "difficulty":  "easy",
+        "image":  "wonders/landmarks/temple_of_heaven.jpg",
+        "explanation":  "Пекинский Храм Неба служил местом императорских церемоний и молитв об урожае."
+    },
+    {
+        "id":  "marina_bay_sands",
+        "category":  "landmark",
+        "name":  "Марина-Бэй-Сэндс",
+        "country_isos":  [
+                             "SGP"
+                         ],
+        "continents":  [
+                           "Asia"
+                       ],
+        "difficulty":  "easy",
+        "image":  "wonders/landmarks/marina_bay_sands.jpg",
+        "explanation":  "Три башни комплекса объединены на крыше длинной площадкой SkyPark."
+    },
+    {
+        "id":  "abu_simbel",
+        "category":  "landmark",
+        "name":  "Абу-Симбел",
+        "country_isos":  [
+                             "EGY"
+                         ],
+        "continents":  [
+                           "Africa"
+                       ],
+        "difficulty":  "easy",
+        "image":  "wonders/landmarks/abu_simbel.jpg",
+        "explanation":  "Скальные храмы Рамсеса II были перенесены выше при строительстве Асуанской плотины."
+    },
+    {
+        "id":  "charles_bridge",
+        "category":  "landmark",
+        "name":  "Карлов мост",
+        "country_isos":  [
+                             "CZE"
+                         ],
+        "continents":  [
+                           "Europe"
+                       ],
+        "difficulty":  "medium",
+        "image":  "wonders/landmarks/charles_bridge.jpg",
+        "explanation":  "Средневековый Карлов мост соединяет берега Влтавы в историческом центре Праги."
+    },
+    {
+        "id":  "versailles",
+        "category":  "landmark",
+        "name":  "Версальский дворец",
+        "country_isos":  [
+                             "FRA"
+                         ],
+        "continents":  [
+                           "Europe"
+                       ],
+        "difficulty":  "medium",
+        "image":  "wonders/landmarks/versailles.jpg",
+        "explanation":  "Версаль превратился при Людовике XIV в роскошную королевскую резиденцию."
+    },
+    {
+        "id":  "teotihuacan",
+        "category":  "landmark",
+        "name":  "Теотиуакан",
+        "country_isos":  [
+                             "MEX"
+                         ],
+        "continents":  [
+                           "North America"
+                       ],
+        "difficulty":  "medium",
+        "image":  "wonders/landmarks/teotihuacan.jpg",
+        "explanation":  "Древний город Теотиуакан известен пирамидами Солнца и Луны."
+    },
+    {
+        "id":  "old_havana",
+        "category":  "landmark",
+        "name":  "Старая Гавана",
+        "country_isos":  [
+                             "CUB"
+                         ],
+        "continents":  [
+                           "North America"
+                       ],
+        "difficulty":  "medium",
+        "image":  "wonders/landmarks/old_havana.jpg",
+        "explanation":  "Исторический центр Гаваны сохранил колониальные площади, крепости и яркую архитектуру."
+    },
+    {
+        "id":  "angel_falls",
+        "category":  "landmark",
+        "name":  "Водопад Анхель",
+        "country_isos":  [
+                             "VEN"
+                         ],
+        "continents":  [
+                           "South America"
+                       ],
+        "difficulty":  "medium",
+        "image":  "wonders/landmarks/angel_falls.jpg",
+        "explanation":  "Анхель падает с вершины Ауянтепуи и считается самым высоким непрерывным водопадом мира."
+    },
+    {
+        "id":  "cartagena_walled_city",
+        "category":  "landmark",
+        "name":  "Крепостной город Картахена",
+        "country_isos":  [
+                             "COL"
+                         ],
+        "continents":  [
+                           "South America"
+                       ],
+        "difficulty":  "medium",
+        "image":  "wonders/landmarks/cartagena_walled_city.jpg",
+        "explanation":  "Исторический центр Картахены окружён мощными стенами колониальной эпохи."
+    },
+    {
+        "id":  "fushimi_inari",
+        "category":  "landmark",
+        "name":  "Фусими Инари",
+        "country_isos":  [
+                             "JPN"
+                         ],
+        "continents":  [
+                           "Asia"
+                       ],
+        "difficulty":  "medium",
+        "image":  "wonders/landmarks/fushimi_inari.jpg",
+        "explanation":  "Святилище в Киото известно длинными проходами из тысяч красных ворот тории."
+    },
+    {
+        "id":  "gyeongbokgung",
+        "category":  "landmark",
+        "name":  "Дворец Кёнбоккун",
+        "country_isos":  [
+                             "KOR"
+                         ],
+        "continents":  [
+                           "Asia"
+                       ],
+        "difficulty":  "medium",
+        "image":  "wonders/landmarks/gyeongbokgung.jpg",
+        "explanation":  "Кёнбоккун был главным королевским дворцом династии Чосон в Сеуле."
+    },
+    {
+        "id":  "grand_palace_bangkok",
+        "category":  "landmark",
+        "name":  "Большой дворец Бангкока",
+        "country_isos":  [
+                             "THA"
+                         ],
+        "continents":  [
+                           "Asia"
+                       ],
+        "difficulty":  "medium",
+        "image":  "wonders/landmarks/grand_palace_bangkok.jpg",
+        "explanation":  "Комплекс служил официальной резиденцией королей Сиама и включает храм Изумрудного Будды."
+    },
+    {
+        "id":  "sheikh_zayed_mosque",
+        "category":  "landmark",
+        "name":  "Мечеть шейха Зайда",
+        "country_isos":  [
+                             "ARE"
+                         ],
+        "continents":  [
+                           "Asia"
+                       ],
+        "difficulty":  "medium",
+        "image":  "wonders/landmarks/sheikh_zayed_mosque.jpg",
+        "explanation":  "Беломраморная мечеть в Абу-Даби названа в честь основателя ОАЭ шейха Зайда."
+    },
+    {
+        "id":  "atomium",
+        "category":  "landmark",
+        "name":  "Атомиум",
+        "country_isos":  [
+                             "BEL"
+                         ],
+        "continents":  [
+                           "Europe"
+                       ],
+        "difficulty":  "hard",
+        "image":  "wonders/landmarks/atomium.jpg",
+        "explanation":  "Брюссельский Атомиум изображает увеличенную кристаллическую решётку железа."
+    },
+    {
+        "id":  "perito_moreno",
+        "category":  "landmark",
+        "name":  "Ледник Перито-Морено",
+        "country_isos":  [
+                             "ARG"
+                         ],
+        "continents":  [
+                           "South America"
+                       ],
+        "difficulty":  "hard",
+        "image":  "wonders/landmarks/perito_moreno.jpg",
+        "explanation":  "Перито-Морено — один из самых известных ледников Патагонии."
+    },
+    {
+        "id":  "historic_quito",
+        "category":  "landmark",
+        "name":  "Исторический центр Кито",
+        "country_isos":  [
+                             "ECU"
+                         ],
+        "continents":  [
+                           "South America"
+                       ],
+        "difficulty":  "hard",
+        "image":  "wonders/landmarks/historic_quito.jpg",
+        "explanation":  "Высокогорный Кито сохранил один из крупнейших исторических центров Латинской Америки."
+    },
+    {
+        "id":  "banaue_terraces",
+        "category":  "landmark",
+        "name":  "Рисовые террасы Банауэ",
+        "country_isos":  [
+                             "PHL"
+                         ],
+        "continents":  [
+                           "Asia"
+                       ],
+        "difficulty":  "hard",
+        "image":  "wonders/landmarks/banaue_terraces.jpg",
+        "explanation":  "Горные рисовые террасы создавались поколениями народа ифугао."
+    },
+    {
+        "id":  "himeji_castle",
+        "category":  "landmark",
+        "name":  "Замок Химэдзи",
+        "country_isos":  [
+                             "JPN"
+                         ],
+        "continents":  [
+                           "Asia"
+                       ],
+        "difficulty":  "hard",
+        "image":  "wonders/landmarks/himeji_castle.jpg",
+        "explanation":  "Белоснежный замок Химэдзи называют Замком белой цапли."
+    },
+    {
+        "id":  "hassan_ii_mosque",
+        "category":  "landmark",
+        "name":  "Мечеть Хасана II",
+        "country_isos":  [
+                             "MAR"
+                         ],
+        "continents":  [
+                           "Africa"
+                       ],
+        "difficulty":  "hard",
+        "image":  "wonders/landmarks/hassan_ii_mosque.jpg",
+        "explanation":  "Крупная мечеть Касабланки стоит на берегу Атлантического океана."
+    },
+    {
+        "id":  "great_zimbabwe",
+        "category":  "landmark",
+        "name":  "Большой Зимбабве",
+        "country_isos":  [
+                             "ZWE"
+                         ],
+        "continents":  [
+                           "Africa"
+                       ],
+        "difficulty":  "hard",
+        "image":  "wonders/landmarks/great_zimbabwe.jpg",
+        "explanation":  "Каменный город был столицей средневекового государства и дал имя современной стране."
+    },
+    {
+        "id":  "avenue_baobabs",
+        "category":  "landmark",
+        "name":  "Аллея баобабов",
+        "country_isos":  [
+                             "MDG"
+                         ],
+        "continents":  [
+                           "Africa"
+                       ],
+        "difficulty":  "hard",
+        "image":  "wonders/landmarks/avenue_baobabs.jpg",
+        "explanation":  "Группа древних баобабов образует знаменитую аллею на западе Мадагаскара."
+    },
+    {
+        "id":  "twelve_apostles",
+        "category":  "landmark",
+        "name":  "Двенадцать апостолов",
+        "country_isos":  [
+                             "AUS"
+                         ],
+        "continents":  [
+                           "Oceania"
+                       ],
+        "difficulty":  "hard",
+        "image":  "wonders/landmarks/twelve_apostles.jpg",
+        "explanation":  "Известняковые скалы возвышаются у Великой океанской дороги на юге Австралии."
+    },
+    {
+        "id":  "waitomo_caves",
+        "category":  "landmark",
+        "name":  "Пещеры Вайтомо",
+        "country_isos":  [
+                             "NZL"
+                         ],
+        "continents":  [
+                           "Oceania"
+                       ],
+        "difficulty":  "hard",
+        "image":  "wonders/landmarks/waitomo_caves.jpg",
+        "explanation":  "Пещеры Вайтомо известны светящимися личинками, покрывающими своды словно звёзды."
     }
 ]

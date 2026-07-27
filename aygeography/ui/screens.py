@@ -365,7 +365,7 @@ class ModeSelectionView(SelectionView):
         ("population", "Население", "●●●"),
         ("countries", "Страны", "◎"),
         ("waters", "Моря и океаны", "≈"),
-        ("wonders", "Чудеса мира", "✦"),
+        ("wonders", "Чудеса света", "✦"),
     ]
 
     def __init__(self, app) -> None:
@@ -1228,10 +1228,15 @@ class GameView(BaseView):
         if event.type == pygame.MOUSEBUTTONUP and event.button == self._drag_button:
             self._drag_button = None
 
-    @staticmethod
-    def _is_feedback_advance_event(event: pygame.event.Event) -> bool:
+    def _is_feedback_advance_event(
+        self,
+        event: pygame.event.Event,
+    ) -> bool:
         if event.type == pygame.KEYDOWN:
-            return event.key in (pygame.K_RETURN, pygame.K_KP_ENTER)
+            keys = {pygame.K_RETURN, pygame.K_KP_ENTER}
+            if self.active_question.mode == "wonders":
+                keys.add(pygame.K_SPACE)
+            return event.key in keys
         return (
             event.type == pygame.MOUSEBUTTONDOWN
             and event.button == 1
