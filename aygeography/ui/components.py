@@ -10,6 +10,7 @@ from typing import Iterable
 import pygame
 
 from ..config import COLORS
+from ..domain.questions import MapOverlay
 from ..waters import WaterCatalog
 
 LOGICAL_SIZE = (1600, 900)
@@ -1051,7 +1052,7 @@ class MapRenderer:
         *,
         highlight_country: str | None = None,
         highlight_water: str | None = None,
-        overlay: dict | None = None,
+        overlay: MapOverlay | None = None,
         camera: MapCamera | None = None,
     ) -> None:
         camera = camera or MapCamera()
@@ -1065,7 +1066,7 @@ class MapRenderer:
             round(render_camera.offset.y, 2),
             highlight_country,
             highlight_water,
-            json.dumps(overlay, sort_keys=True) if overlay else "",
+            overlay,
         )
         if cache_key == self._view_cache_key and self._view_cache is not None:
             surface.blit(self._view_cache, target_rect)
@@ -1110,12 +1111,12 @@ class MapRenderer:
         surface: pygame.Surface,
         rect: pygame.Rect,
         camera: MapCamera,
-        overlay: dict,
+        overlay: MapOverlay,
     ) -> None:
-        kind = overlay.get("kind")
-        if kind == "point" and overlay.get("point"):
+        kind = overlay.kind
+        if kind == "point" and overlay.point:
             layer = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
-            center = self.project(overlay["point"], rect, camera)
+            center = self.project(overlay.point, rect, camera)
             pygame.draw.circle(layer, MAP_SELECTION_BORDER, center, 13)
             pygame.draw.circle(layer, MAP_SELECTION_FILL, center, 11)
             surface.blit(layer, (0, 0))
@@ -1127,7 +1128,7 @@ class MapRenderer:
             surface.get_height() * RIVER_RENDER_SCALE,
         )
         layer = pygame.Surface(layer_size, pygame.SRCALPHA)
-        for line in overlay.get("lines", ()):
+        for line in overlay.lines:
             points = [self.project(point, rect, camera) for point in line]
             if len(points) < 2:
                 continue

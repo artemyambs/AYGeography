@@ -8,7 +8,8 @@ from pathlib import Path
 from typing import Any, Callable
 
 from .catalog import CountryCatalog
-from .config import MODE_NAMES
+from .config import MODE_FEEDBACK_SETTINGS, MODE_NAMES
+from .modes import ModeRegistry
 from .storage import GameRepository
 
 
@@ -164,10 +165,15 @@ class ProgressionService:
         repository: GameRepository,
         countries: CountryCatalog,
         catalog: ProgressionCatalog,
+        mode_registry: ModeRegistry | None = None,
     ) -> None:
         self.repository = repository
         self.countries = countries
         self.catalog = catalog
+        self.mode_registry = mode_registry or ModeRegistry.from_settings(
+            MODE_NAMES,
+            MODE_FEEDBACK_SETTINGS,
+        )
         self._evaluators: dict[
             str,
             Callable[[dict[str, Any], _LifetimeSnapshot, dict[str, CountryMastery]], tuple[int, int]],
@@ -279,7 +285,8 @@ class ProgressionService:
 
     def _all_modes_played(self, rule, snapshot, mastery):
         played = {str(row["mode"]) for row in snapshot.answers}
-        return len(played & set(MODE_NAMES)), len(MODE_NAMES)
+        modes = set(self.mode_registry.keys)
+        return len(played & modes), len(modes)
 
     def _round_size(self, rule, snapshot, mastery):
         target = self._target(rule)

@@ -165,16 +165,18 @@ class AYGeographyApp:
             CONFIGS_DIR / "progression.json",
             CONFIGS_DIR / "achievements.json",
         )
-        self.progression = ProgressionService(
-            self.repository,
-            self.catalog,
-            self.progression_catalog,
-        )
-        self.progression.sync()
         self.question_factory = QuestionFactory(
             water_catalog=self.water_catalog,
             wonder_catalog=self.wonder_catalog,
         )
+        self.mode_registry = self.question_factory.registry
+        self.progression = ProgressionService(
+            self.repository,
+            self.catalog,
+            self.progression_catalog,
+            self.mode_registry,
+        )
+        self.progression.sync()
         self.map_renderer = MapRenderer(
             ASSETS_DIR / "maps/world_geometry.json",
             self.water_catalog,

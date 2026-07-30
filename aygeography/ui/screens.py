@@ -10,12 +10,16 @@ import pygame_gui
 from pygame_gui.elements import UIButton, UITextEntryLine
 
 from ..config import (
-    ANSWER_FEEDBACK_SECONDS,
     ASSETS_DIR,
     CONTINENT_NAMES,
     DIFFICULTY_NAMES,
-    MODE_NAMES,
     QUESTION_TIME_SECONDS,
+)
+from ..domain.questions import (
+    FlagContent,
+    MapContent,
+    PopulationContent,
+    WonderContent,
 )
 from ..formatting import format_population
 from ..models import GameConfig, RoundResult
@@ -59,200 +63,19 @@ from .components import (
     physical_rect,
     render_scale,
 )
-
-CONTENT = pygame.Rect(SIDEBAR_WIDTH, 0, LOGICAL_SIZE[0] - SIDEBAR_WIDTH, LOGICAL_SIZE[1] - FOOTER_HEIGHT)
-GAMEPLAY_AREA = pygame.Rect(
-    CONTENT.left,
-    70,
-    CONTENT.width,
-    CONTENT.height - 70,
+from .layout import (
+    CAPITAL_LABEL_FONT_SIZE,
+    CONTENT,
+    GAMEPLAY_AREA,
+    PRIMARY_ACTION_FONT_SIZE,
+    PRIMARY_ACTION_SIZE,
+    QUESTION_FLAG_IMAGE_SIZE,
+    QUESTION_FLAG_PANEL_SIZE,
+    blit_centered,
+    draw_question_flag,
+    primary_action_rect,
 )
-PRIMARY_ACTION_SIZE = (280, 60)
-PRIMARY_ACTION_FONT_SIZE = 19
-QUESTION_FLAG_IMAGE_SIZE = (280, 180)
-QUESTION_FLAG_PANEL_SIZE = (300, 200)
-CAPITAL_LABEL_FONT_SIZE = 26
-
-
-def primary_action_rect(center_x: int, top: int) -> pygame.Rect:
-    rect = pygame.Rect((0, top), PRIMARY_ACTION_SIZE)
-    rect.centerx = center_x
-    return rect
-
-
-def blit_centered(
-    surface: pygame.Surface,
-    image: pygame.Surface,
-    center: tuple[int, int],
-    size: tuple[int, int] | None = None,
-) -> pygame.Rect:
-    if size is None:
-        scale = render_scale(surface)
-        size = (
-            max(1, round(image.get_width() / scale)),
-            max(1, round(image.get_height() / scale)),
-        )
-    rect = pygame.Rect((0, 0), size)
-    rect.center = center
-    return blit_image(surface, image, rect)
-
-
-def draw_question_flag(
-    surface: pygame.Surface,
-    app,
-    iso3: str,
-    center: tuple[int, int],
-) -> pygame.Rect:
-    """Draws the shared framed flag used by all flag-based questions."""
-    flag_panel = pygame.Rect((0, 0), QUESTION_FLAG_PANEL_SIZE)
-    flag_panel.center = center
-    panel(
-        surface,
-        flag_panel,
-        fill=PANEL,
-        border=CYAN_DARK,
-        radius=7,
-    )
-    flag_path = ASSETS_DIR / "flags_png" / f"{iso3}.png"
-    flag = app.assets.image(flag_path)
-    blit_centered(surface, flag, flag_panel.center, QUESTION_FLAG_IMAGE_SIZE)
-    return flag_panel
-
-
-class PopulationComparisonPresenter:
-    """Owns the layout and rendering of two-country population questions."""
-
-    key = "country_comparison"
-    CARD_TOP = 175
-    CARD_WIDTH = 430
-    CARD_HEIGHT = 320
-    CARD_GAP = 40
-    ANSWER_TOP = 520
-
-    @classmethod
-    def answer_rects(cls) -> list[pygame.Rect]:
-        total_width = cls.CARD_WIDTH * 2 + cls.CARD_GAP
-        start_x = CONTENT.centerx - total_width // 2
-        return [
-            pygame.Rect(
-                start_x + index * (cls.CARD_WIDTH + cls.CARD_GAP),
-                cls.ANSWER_TOP,
-                cls.CARD_WIDTH,
-                58,
-            )
-            for index in range(2)
-        ]
-
-    @classmethod
-    def draw(cls, surface: pygame.Surface, app, question) -> None:
-        countries_by_name = {
-            app.catalog.get(iso3).name: app.catalog.get(iso3)
-            for iso3 in question.subjects
-        }
-        for option, answer_rect in zip(question.options, cls.answer_rects()):
-            country = countries_by_name.get(option)
-            if country is None:
-                continue
-            card = pygame.Rect(
-                answer_rect.left,
-                cls.CARD_TOP,
-                cls.CARD_WIDTH,
-                cls.CARD_HEIGHT,
-            )
-            draw_text(
-                surface,
-                country.name,
-                (card.centerx, card.top + 35),
-                24,
-                TEXT,
-                bold=True,
-                anchor="center",
-            )
-            draw_question_flag(
-                surface,
-                app,
-                country.iso3,
-                (card.centerx, card.top + 178),
-            )
-
-
-class WonderPresenter:
-    owns_prompt = False
-    ANSWER_WIDTH = 390
-    ANSWER_GAP = 18
-
-    @classmethod
-    def answer_rects(cls) -> list[pygame.Rect]:
-        columns = 3
-        total_width = columns * cls.ANSWER_WIDTH + (columns - 1) * cls.ANSWER_GAP
-        start_x = SIDEBAR_WIDTH + (CONTENT.width - total_width) // 2
-        return [
-            pygame.Rect(
-                start_x + (index % columns) * (cls.ANSWER_WIDTH + cls.ANSWER_GAP),
-                cls.answer_top + (index // columns) * 62,
-                cls.ANSWER_WIDTH,
-                50,
-            )
-            for index in range(6)
-        ]
-
-
-class WonderPhotoPresenter(WonderPresenter):
-    answer_top = 610
-
-    @classmethod
-    def draw(cls, surface: pygame.Surface, app, question) -> None:
-        target = pygame.Rect(535, 150, 730, 420)
-        panel(surface, target, fill=PANEL, border=CYAN_DARK)
-        image = app.assets.image(ASSETS_DIR / question.visual)
-        scale = min(
-            (target.width - 18) / image.get_width(),
-            (target.height - 18) / image.get_height(),
-        )
-        size = (
-            max(1, round(image.get_width() * scale)),
-            max(1, round(image.get_height() * scale)),
-        )
-        rect = pygame.Rect((0, 0), size)
-        rect.center = target.center
-        blit_image(surface, image, rect)
-
-
-class WonderMapPresenter(WonderPresenter):
-    answer_top = 710
-
-    @classmethod
-    def draw(cls, surface: pygame.Surface, app, question) -> None:
-        return
-
-
-class WonderFactPresenter(WonderPresenter):
-    owns_prompt = True
-    answer_top = 540
-
-    @classmethod
-    def draw(cls, surface: pygame.Surface, app, question) -> None:
-        fact_rect = pygame.Rect(450, 180, 940, 270)
-        panel(surface, fact_rect, fill=PANEL_ALT, border=CYAN_DARK)
-        wrapped = "\n".join(textwrap.wrap(question.prompt, width=58))
-        draw_multiline(
-            surface,
-            wrapped,
-            fact_rect.inflate(-70, -45),
-            25,
-            TEXT,
-            bold=True,
-            line_gap=10,
-        )
-
-
-QUESTION_PRESENTERS = {
-    PopulationComparisonPresenter.key: PopulationComparisonPresenter(),
-    "wonder_landmark_name": WonderPhotoPresenter(),
-    "wonder_landmark_country": WonderPhotoPresenter(),
-    "wonder_map": WonderMapPresenter(),
-    "wonder_fact": WonderFactPresenter(),
-}
+from .presenters import QUESTION_PRESENTERS
 
 
 class BaseView:
@@ -357,23 +180,19 @@ class SelectionView(BaseView):
 class ModeSelectionView(SelectionView):
     title = "Выберите режимы"
     subtitle = "Можно выбрать один, несколько или все режимы"
-    ITEMS = [
-        ("flags", "Флаги"),
-        ("capitals", "Столицы"),
-        ("population", "Население"),
-        ("countries", "Страны"),
-        ("waters", "Акватория"),
-        ("wonders", "Чудеса света"),
-    ]
 
     def __init__(self, app) -> None:
         super().__init__(app)
+        self.items = [
+            (item.key, item.title)
+            for item in app.mode_registry.definitions
+        ]
         self.selected = set(app.pending_modes)
         self.cards: dict[str, pygame.Rect] = {}
         card_w, gap = 235, 24
-        for index, (key, _) in enumerate(self.ITEMS):
+        for index, (key, _) in enumerate(self.items):
             row, column = divmod(index, 3)
-            columns = min(3, len(self.ITEMS) - row * 3)
+            columns = min(3, len(self.items) - row * 3)
             row_width = columns * card_w + (columns - 1) * gap
             start_x = CONTENT.centerx - row_width // 2
             rect = pygame.Rect(
@@ -395,7 +214,7 @@ class ModeSelectionView(SelectionView):
     def _next(self) -> None:
         if self.selected:
             self.app.pending_modes = [
-                key for key, _ in self.ITEMS if key in self.selected
+                key for key, _ in self.items if key in self.selected
             ]
             self.app.show("continents")
         else:
@@ -406,7 +225,7 @@ class ModeSelectionView(SelectionView):
         draw_button(surface, self.back_rect, "", size=28)
         icon = self.app.assets.icon("back", (27, 27))
         blit_centered(surface, icon, self.back_rect.center)
-        for key, label in self.ITEMS:
+        for key, label in self.items:
             rect = self.cards[key]
             selected = key in self.selected
             panel(
@@ -820,7 +639,8 @@ class QuestionCountView(SelectionView):
 
 
 class GameView(BaseView):
-    STATE_VERSION = 3
+    STATE_VERSION = 4
+    LEGACY_STATE_VERSIONS = frozenset({3})
     ANSWER_KEY_INDEX = {
         pygame.K_1: 0,
         pygame.K_2: 1,
@@ -889,7 +709,8 @@ class GameView(BaseView):
 
     @classmethod
     def from_state(cls, app, state: dict[str, Any]) -> GameView:
-        if int(state.get("version", 0)) != cls.STATE_VERSION:
+        version = int(state.get("version", 0))
+        if version != cls.STATE_VERSION and version not in cls.LEGACY_STATE_VERSIONS:
             raise ValueError("Неподдерживаемая версия сохранённой игры")
         session = GameSession.from_state(state["session"])
         return cls(app, session, restored_state=state["view"])
@@ -927,11 +748,7 @@ class GameView(BaseView):
             self._build_map_actions()
         if not question.options:
             return
-        presenter = QUESTION_PRESENTERS.get(
-            question.presentation
-            if question.presentation != "default"
-            else str(question.metadata.get("presentation", ""))
-        )
+        presenter = QUESTION_PRESENTERS.get(question.presenter_key)
         if presenter is not None:
             for value, rect in zip(question.options, presenter.answer_rects()):
                 button = self.add_action(
@@ -946,7 +763,10 @@ class GameView(BaseView):
         total_width = columns * width + (columns - 1) * gap
         start_x = SIDEBAR_WIDTH + (CONTENT.width - total_width) // 2
         start_y = 710 if self._has_map(question) else 590
-        if question.metadata.get("capital_layout"):
+        if (
+            isinstance(question.content, FlagContent)
+            and question.content.capital_layout
+        ):
             start_y = 530
         elif question.visual:
             start_y = 590
@@ -957,18 +777,32 @@ class GameView(BaseView):
 
     @staticmethod
     def _has_map(question) -> bool:
+        if isinstance(question.content, MapContent):
+            return bool(
+                question.content.highlight_country
+                or question.content.water_highlight
+                or question.content.overlay
+            )
         return (
-            bool(question.metadata.get("highlight"))
-            or bool(question.metadata.get("water_highlight"))
-            or bool(question.metadata.get("map_overlay"))
+            isinstance(question.content, WonderContent)
+            and question.content.overlay is not None
         )
 
     def _question_water_region(self, question):
-        water_key = question.metadata.get("water_highlight")
+        water_key = (
+            question.content.water_highlight
+            if isinstance(question.content, MapContent)
+            else ""
+        )
         return self.app.water_catalog.get(water_key) if water_key else None
 
     def _zoom_target_position(self) -> tuple[float, float] | None:
-        highlighted = self.active_question.metadata.get("highlight")
+        content = self.active_question.content
+        highlighted = (
+            content.highlight_country
+            if isinstance(content, MapContent)
+            else ""
+        )
         if highlighted:
             center = self.app.map_renderer.centers.get(highlighted)
             if center is not None:
@@ -976,14 +810,14 @@ class GameView(BaseView):
         water_region = self._question_water_region(self.active_question)
         if water_region is not None:
             return water_region.longitude, water_region.latitude
-        overlay = self.active_question.metadata.get("map_overlay")
-        if isinstance(overlay, dict):
-            point = overlay.get("point")
+        overlay = self.active_question.map_overlay
+        if overlay is not None:
+            point = overlay.point
             if point:
                 return float(point[0]), float(point[1])
             points = [
                 point
-                for line in overlay.get("lines", ())
+                for line in overlay.lines
                 for point in line
             ]
             if points:
@@ -1019,7 +853,12 @@ class GameView(BaseView):
 
     def _reset_map_camera(self) -> None:
         self.map_camera.reset()
-        highlighted = self.active_question.metadata.get("highlight")
+        content = self.active_question.content
+        highlighted = (
+            content.highlight_country
+            if isinstance(content, MapContent)
+            else ""
+        )
         if highlighted:
             self.app.map_renderer.focus_country(
                 self.map_camera,
@@ -1037,14 +876,14 @@ class GameView(BaseView):
                 zoom=3.0,
             )
             return
-        overlay = self.active_question.metadata.get("map_overlay")
+        overlay = self.active_question.map_overlay
         target = self._zoom_target_position()
-        if isinstance(overlay, dict) and target is not None:
+        if overlay is not None and target is not None:
             self.app.map_renderer.focus_position(
                 self.map_camera,
                 target,
                 self.map_rect,
-                zoom=4.5 if overlay.get("kind") == "point" else 2.2,
+                zoom=4.5 if overlay.kind == "point" else 2.2,
             )
 
     def _build_map_actions(self) -> None:
@@ -1087,8 +926,12 @@ class GameView(BaseView):
         elapsed = min(QUESTION_TIME_SECONDS, self.app.clock() - self.question_started)
         question = self.active_question
         record = self.session.answer(value, elapsed)
-        population_values = question.metadata.get("population_values")
-        if isinstance(population_values, dict):
+        population_values = (
+            question.content.values
+            if isinstance(question.content, PopulationContent)
+            else None
+        )
+        if population_values is not None:
             countries_by_name = {
                 self.app.catalog.get(iso3).name: self.app.catalog.get(iso3)
                 for iso3 in question.subjects
@@ -1115,10 +958,10 @@ class GameView(BaseView):
                 f"Неверно. Правильный ответ: {question.correct_answer}"
             )
             self.feedback_colour = RED
-        feedback_kind = "correct" if record.is_correct else "incorrect"
-        feedback_seconds = ANSWER_FEEDBACK_SECONDS[question.mode][
-            feedback_kind
-        ]
+        feedback_seconds = self.app.mode_registry.feedback_seconds(
+            question.mode,
+            record.is_correct,
+        )
         self.advance_at = self.app.clock() + feedback_seconds
 
     def _next(self) -> None:
@@ -1349,12 +1192,11 @@ class GameView(BaseView):
         super().draw(surface)
         self._draw_header(surface)
         question = self.active_question
-        capital_layout = bool(question.metadata.get("capital_layout"))
-        presenter = QUESTION_PRESENTERS.get(
-            question.presentation
-            if question.presentation != "default"
-            else str(question.metadata.get("presentation", ""))
+        capital_layout = (
+            isinstance(question.content, FlagContent)
+            and question.content.capital_layout
         )
+        presenter = QUESTION_PRESENTERS.get(question.presenter_key)
         if capital_layout:
             self._draw_capital_question(surface)
         elif presenter is None or not getattr(presenter, "owns_prompt", False):
@@ -1373,9 +1215,17 @@ class GameView(BaseView):
             self.app.map_renderer.draw(
                 surface,
                 self.map_rect,
-                highlight_country=question.metadata.get("highlight"),
-                highlight_water=question.metadata.get("water_highlight"),
-                overlay=question.metadata.get("map_overlay"),
+                highlight_country=(
+                    question.content.highlight_country
+                    if isinstance(question.content, MapContent)
+                    else None
+                ),
+                highlight_water=(
+                    question.content.water_highlight
+                    if isinstance(question.content, MapContent)
+                    else None
+                ),
+                overlay=question.map_overlay,
                 camera=self.map_camera,
             )
             self._draw_map_controls(surface)
@@ -1392,7 +1242,7 @@ class GameView(BaseView):
         if (
             question.visual
             and not capital_layout
-            and not question.presentation.startswith("wonder_")
+            and not isinstance(question.content, WonderContent)
         ):
             draw_question_flag(
                 surface,
@@ -1489,7 +1339,7 @@ class ResultView(BaseView):
         wrong = self.app.repository.wrong_country_isos()
         self.app.start_game(
             GameConfig(
-                list(MODE_NAMES),
+                list(self.app.mode_registry.keys),
                 list(CONTINENT_NAMES),
                 min(25, max(10, len(wrong))),
                 wrong_only=True,
@@ -1632,7 +1482,10 @@ class StatisticsView(BaseView):
         ]
         start = -math.pi / 2
         total_attempts = max(1, sum(item["total"] for item in mode_stats.values()))
-        for index, (mode, label) in enumerate(MODE_NAMES.items()):
+        for index, definition in enumerate(
+            self.app.mode_registry.definitions
+        ):
+            mode, label = definition.key, definition.title
             mode_stat = mode_stats.get(
                 mode,
                 {"total": 0, "correct": 0},
@@ -1973,7 +1826,7 @@ class MasteryView(BaseView):
         for index, (mode, correct) in enumerate(item.correct_by_mode.items()):
             draw_text(
                 surface,
-                MODE_NAMES.get(mode, mode),
+                self.app.mode_registry.names.get(mode, mode),
                 (tooltip.left + 14, tooltip.top + 38 + index * 22),
                 11,
                 MUTED,
@@ -2059,8 +1912,6 @@ class SettingsView(BaseView):
     ITEMS = [
         ("fullscreen", "Полноэкранный режим", "Запускать игру в полноэкранном режиме"),
         ("confirm_exit", "Подтверждение выхода", "Показывать диалог подтверждения при выходе"),
-        ("show_correct", "Показывать правильный ответ", "Показывать ответ после ошибки"),
-        ("animations", "Анимации интерфейса", "Включить плавные анимации элементов интерфейса"),
     ]
 
     def __init__(self, app) -> None:
@@ -2074,7 +1925,7 @@ class SettingsView(BaseView):
                 pygame.Rect(rect.right - 100, rect.centery - 25, 70, 50),
                 lambda item=key: self._toggle(item),
             )
-        self.reset_answers_rect = pygame.Rect(330, 730, 1145, 110)
+        self.reset_answers_rect = pygame.Rect(330, 470, 1145, 110)
         self.reset_answers_button = self.add_action(
             self.reset_answers_rect,
             app.request_answer_statistics_reset,
@@ -2089,7 +1940,7 @@ class SettingsView(BaseView):
     def draw(self, surface: pygame.Surface) -> None:
         super().draw(surface)
         draw_text(surface, "Настройки", (CONTENT.centerx, 72), 28, TEXT, bold=True, anchor="center")
-        icons = ("fullscreen", "confirm", "correct", "animations")
+        icons = ("fullscreen", "confirm")
         for index, (key, title, subtitle) in enumerate(self.ITEMS):
             rect = self.rows[key]
             panel(surface, rect)

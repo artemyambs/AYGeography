@@ -44,36 +44,11 @@ COLORS = dict(APP_SETTINGS["colors"])
 CONTINENT_NAMES = dict(APP_SETTINGS["labels"]["continents"])
 MODE_NAMES = dict(APP_SETTINGS["labels"]["modes"])
 DIFFICULTY_NAMES = dict(APP_SETTINGS["labels"]["difficulty"])
-
-
-def _load_feedback_seconds() -> dict[str, dict[str, float]]:
-    raw = APP_SETTINGS["gameplay"]["answer_feedback_seconds_by_mode"]
-    if not isinstance(raw, dict) or set(raw) != set(MODE_NAMES):
-        raise ValueError(
-            "Задержки ответов должны быть заданы для каждого режима"
-        )
-    result: dict[str, dict[str, float]] = {}
-    for mode, values in raw.items():
-        if not isinstance(values, dict) or set(values) != {
-            "correct",
-            "incorrect",
-        }:
-            raise ValueError(
-                f"Некорректные задержки ответов для режима: {mode}"
-            )
-        parsed = {
-            answer: float(seconds)
-            for answer, seconds in values.items()
-        }
-        if any(seconds <= 0 for seconds in parsed.values()):
-            raise ValueError(
-                f"Задержка ответа должна быть положительной: {mode}"
-            )
-        result[mode] = parsed
-    return result
-
-
-ANSWER_FEEDBACK_SECONDS = _load_feedback_seconds()
+MODE_FEEDBACK_SETTINGS = dict(
+    APP_SETTINGS["gameplay"]["answer_feedback_seconds_by_mode"]
+)
+# Deprecated compatibility alias; runtime behavior is owned by ModeRegistry.
+ANSWER_FEEDBACK_SECONDS = MODE_FEEDBACK_SETTINGS
 
 
 def _load_wonder_category_weights() -> dict[str, int]:

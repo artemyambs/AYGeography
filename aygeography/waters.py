@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from .difficulty import DIFFICULTY_KEYS
+from .domain.questions import MapOverlay
 from .models import Country
 
 
@@ -42,17 +43,14 @@ class WaterArea:
         return self.country_isos[0] if self.country_isos else None
 
     @property
-    def map_overlay(self) -> dict[str, Any] | None:
+    def map_overlay(self) -> MapOverlay | None:
         if self.shape == "point":
-            return {"kind": "point", "point": [self.longitude, self.latitude]}
+            return MapOverlay(
+                kind="point",
+                point=(self.longitude, self.latitude),
+            )
         if self.shape == "line":
-            return {
-                "kind": "line",
-                "lines": [
-                    [list(point) for point in line]
-                    for line in self.lines
-                ],
-            }
+            return MapOverlay(kind="line", lines=self.lines)
         return None
 
 

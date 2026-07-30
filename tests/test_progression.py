@@ -36,6 +36,29 @@ class ProgressionTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.temporary.cleanup()
 
+    def test_database_enables_integrity_and_versioned_migrations(self):
+        with closing(self.repository._connect()) as db:
+            version = db.execute("PRAGMA user_version").fetchone()[0]
+            foreign_keys = db.execute("PRAGMA foreign_keys").fetchone()[0]
+            indexes = {
+                row[0]
+                for row in db.execute(
+                    """
+                    SELECT name FROM sqlite_master
+                    WHERE type='index' AND name LIKE 'idx_%'
+                    """
+                ).fetchall()
+            }
+
+        self.assertEqual(2, version)
+        self.assertEqual(1, foreign_keys)
+        self.assertIn("idx_rounds_started_at", indexes)
+        self.assertIn("idx_answers_round_id", indexes)
+        self.assertEqual(
+            {"fullscreen", "confirm_exit"},
+            set(self.repository.settings()),
+        )
+
     @staticmethod
     def _answer(mode: str, iso3: str = "RUS") -> AnswerRecord:
         return AnswerRecord(

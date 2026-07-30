@@ -3,20 +3,27 @@ from __future__ import annotations
 import random
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from dataclasses import asdict, dataclass
-from datetime import datetime
+from dataclasses import dataclass
 from typing import Any, Generic, TypeVar
 
 from .catalog import CountryCatalog
 from .config import (
     CONFIGS_DIR,
+    MODE_FEEDBACK_SETTINGS,
     MODE_NAMES,
-    QUESTION_TIME_SECONDS,
     WONDER_CATEGORY_WEIGHTS,
 )
 from .difficulty import DIFFICULTY_KEYS, DifficultyCatalog
+from .domain.questions import (
+    FlagContent,
+    MapContent,
+    MapOverlay,
+    PopulationContent,
+    WonderContent,
+)
+from .domain.session import GameSession
+from .modes import ModeRegistry
 from .models import AnswerRecord, Country, GameConfig, Question, RoundResult
-from .scoring import DEFAULT_SCORE_RULES, ScoreRules
 from .waters import WaterArea, WaterCatalog
 from .wonders import WonderCatalog, WonderCategory, WonderItem
 
@@ -209,7 +216,7 @@ class FlagQuestionStrategy(QuestionStrategy):
                 rng,
             ),
             correct_answer=country.name,
-            visual=country.iso3,
+            content=FlagContent(country.iso3),
         )
 
 
@@ -237,8 +244,7 @@ class CapitalQuestionStrategy(QuestionStrategy):
                 rng,
             ),
             correct_answer=country.capital,
-            visual=country.iso3,
-            metadata={"capital_layout": True},
+            content=FlagContent(country.iso3, capital_layout=True),
         )
 
 
@@ -282,13 +288,12 @@ class PopulationQuestionStrategy(QuestionStrategy):
             country_isos=(country.iso3, comparison.iso3),
             options=[item.name for item in countries],
             correct_answer=correct_country.name,
-            metadata={
-                "presentation": "country_comparison",
-                "pair_kind": pair_kind,
-                "population_values": {
+            content=PopulationContent(
+                values={
                     item.iso3: item.population for item in countries
                 },
-            },
+                pair_kind=pair_kind,
+            ),
         )
 
 
@@ -317,7 +322,7 @@ class CountryMapQuestionStrategy(QuestionStrategy):
             ),
             correct_answer=country.name,
             interaction="choices",
-            metadata={"highlight": country.iso3},
+            content=MapContent(highlight_country=country.iso3),
         )
 
 
@@ -375,14 +380,8 @@ class WaterQuestionStrategy(QuestionStrategy):
         if not regions:
             regions = self.catalog.all()
         region = regions[serial % len(regions)]
-        metadata: dict[str, Any] = {
-            "water_area": region.key,
-            "water_area_kind": region.kind,
-        }
-        if region.shape == "ellipse":
-            metadata["water_highlight"] = region.key
-        elif region.map_overlay is not None:
-            metadata["map_overlay"] = region.map_overlay
+        water_highlight = region.key if region.shape == "ellipse" else ""
+        overlay = region.map_overlay if region.shape != "ellipse" else None
         return Question(
             key=f"waters:choice:{region.key}",
             mode=self.mode,
@@ -393,7 +392,12 @@ class WaterQuestionStrategy(QuestionStrategy):
             correct_answer=region.name,
             interaction="choices",
             explanation=region.explanation,
-            metadata=metadata,
+            content=MapContent(
+                water_area_key=region.key,
+                water_area_kind=region.kind,
+                water_highlight=water_highlight,
+                overlay=overlay,
+            ),
         )
 
     def prepare(
@@ -474,8 +478,11 @@ class WonderQuestionStrategy(QuestionStrategy):
             country_isos=item.country_isos,
             options=options,
             correct_answer=correct,
-            visual=item.image,
-            presentation=presentation,
+            content=WonderContent(
+                category=item.category.value,
+                style=presentation,
+                image=item.image,
+            ),
             explanation=item.explanation,
         )
 
@@ -485,12 +492,10 @@ class WonderQuestionStrategy(QuestionStrategy):
         eligible_items: list[WonderItem],
         rng: random.Random,
     ) -> Question:
-        metadata: dict[str, Any] = {
-            "map_overlay": {
-                "kind": "point",
-                "point": list(item.point) if item.point else None,
-            }
-        }
+        overlay = MapOverlay(
+            kind="point",
+            point=item.point,
+        )
         return Question(
             key=f"wonders:{item.key}",
             mode=self.mode,
@@ -499,9 +504,12 @@ class WonderQuestionStrategy(QuestionStrategy):
             country_isos=item.country_isos,
             options=self._item_options(item, eligible_items, rng),
             correct_answer=item.name,
-            presentation="wonder_map",
+            content=WonderContent(
+                category=item.category.value,
+                style="wonder_map",
+                overlay=overlay,
+            ),
             explanation=item.explanation,
-            metadata=metadata,
         )
 
     def _fact(
@@ -519,7 +527,10 @@ class WonderQuestionStrategy(QuestionStrategy):
             country_isos=item.country_isos,
             options=self._country_options(correct, item, countries, rng),
             correct_answer=correct,
-            presentation="wonder_fact",
+            content=WonderContent(
+                category=item.category.value,
+                style="wonder_fact",
+            ),
             explanation=item.explanation,
         )
 
@@ -705,7 +716,7 @@ class CountryPreparedQuestionPool(PreparedQuestionPool):
             self.rng,
         )
         if level is not None:
-            question.metadata["difficulty"] = level
+            question.sampled_difficulty = level
         return question
 
 
@@ -758,7 +769,7 @@ class WaterPreparedQuestionPool(PreparedQuestionPool):
             eligible_water_keys=frozenset({region.key}),
         )
         if level is not None:
-            question.metadata["difficulty"] = level
+            question.sampled_difficulty = level
         return question
 
 
@@ -873,8 +884,7 @@ class WonderPreparedQuestionPool(PreparedQuestionPool):
             self.rng,
         )
         if sampled_level is not None:
-            question.metadata["difficulty"] = sampled_level
-        question.metadata["wonder_category"] = category.value
+            question.sampled_difficulty = sampled_level
         return question
 
 
@@ -887,6 +897,7 @@ class QuestionFactory:
         difficulty_catalog: DifficultyCatalog | None = None,
         water_catalog: WaterCatalog | None = None,
         wonder_catalog: WonderCatalog | None = None,
+        mode_registry: ModeRegistry | None = None,
     ) -> None:
         self._difficulty = difficulty_catalog or DifficultyCatalog(
             CONFIGS_DIR / "difficulty_levels.json"
@@ -904,7 +915,11 @@ class QuestionFactory:
             ]
             if wonder_catalog is not None:
                 strategies.append(WonderQuestionStrategy(wonder_catalog))
-        self._strategies = {item.mode: item for item in strategies}
+        self.registry = mode_registry or ModeRegistry.from_settings(
+            MODE_NAMES,
+            MODE_FEEDBACK_SETTINGS,
+            strategies,
+        )
 
     def build(
         self,
@@ -917,7 +932,7 @@ class QuestionFactory:
         candidate_pool = catalog.by_continents(config.continents)
         if not config.modes:
             raise ValueError("Выберите хотя бы один режим")
-        unknown_modes = set(config.modes) - set(self._strategies)
+        unknown_modes = set(config.modes) - set(self.registry.keys)
         if unknown_modes:
             raise ValueError(f"Неизвестные режимы: {sorted(unknown_modes)}")
         if not candidate_pool:
@@ -940,7 +955,7 @@ class QuestionFactory:
             difficulty=config.difficulty,
         )
         prepared = {
-            mode: self._strategies[mode].prepare(
+            mode: self.registry.strategy(mode).prepare(
                 context,
                 self._difficulty,
                 rng,
@@ -986,7 +1001,7 @@ class QuestionFactory:
             difficulty=config.difficulty,
         )
         return {
-            mode: self._strategies[mode]
+            mode: self.registry.strategy(mode)
             .prepare(context, self._difficulty, random.Random(0))
             .capacity
             for mode in dict.fromkeys(config.modes)
@@ -1021,114 +1036,16 @@ class QuestionFactory:
             required[mode] += 1
         return required
 
-    @staticmethod
     def _ensure_capacity(
+        self,
         required: dict[str, int],
         capacities: dict[str, int],
     ) -> None:
         for mode, count in required.items():
             available = capacities[mode]
             if count > available:
-                name = MODE_NAMES.get(mode, mode)
+                name = self.registry.definition(mode).title
                 raise ValueError(
                     f"Для режима «{name}» доступно {available} уникальных "
                     f"вопросов, требуется {count}"
                 )
-
-
-class GameSession:
-    def __init__(
-        self,
-        questions: list[Question],
-        difficulty: str = "medium",
-        score_rules: ScoreRules = DEFAULT_SCORE_RULES,
-    ) -> None:
-        if difficulty not in DIFFICULTY_KEYS:
-            raise ValueError(f"Неизвестный уровень сложности: {difficulty}")
-        self.questions = questions
-        self.difficulty = difficulty
-        self._score_rules = score_rules
-        self.index = 0
-        self.score = 0
-        self.streak = 0
-        self.answers: list[AnswerRecord] = []
-        self.started_at = datetime.now()
-
-    @property
-    def current(self) -> Question:
-        return self.questions[self.index]
-
-    @property
-    def finished(self) -> bool:
-        return self.index >= len(self.questions)
-
-    def answer(self, value: str, elapsed_seconds: float) -> AnswerRecord:
-        question = self.current
-        correct = value == question.correct_answer
-        remaining = max(0, QUESTION_TIME_SECONDS - elapsed_seconds)
-        points = (
-            self._score_rules.points(self.difficulty, remaining)
-            if correct
-            else 0
-        )
-        self.score += points
-        self.streak = self.streak + 1 if correct else 0
-        record = AnswerRecord(
-            mode=question.mode,
-            country_iso=question.country_iso,
-            prompt=question.prompt,
-            answer=value,
-            correct_answer=question.correct_answer,
-            is_correct=correct,
-            seconds=elapsed_seconds,
-            points=points,
-            country_isos=question.subjects,
-        )
-        self.answers.append(record)
-        self.index += 1
-        return record
-
-    def result(self) -> RoundResult:
-        duration = sum(answer.seconds for answer in self.answers)
-        return RoundResult(
-            started_at=self.started_at.isoformat(timespec="seconds"),
-            duration_seconds=duration,
-            score=self.score,
-            answers=self.answers.copy(),
-            difficulty=self.difficulty,
-        )
-
-    def to_state(self) -> dict[str, Any]:
-        return {
-            "questions": [asdict(question) for question in self.questions],
-            "difficulty": self.difficulty,
-            "index": self.index,
-            "score": self.score,
-            "streak": self.streak,
-            "answers": [asdict(answer) for answer in self.answers],
-            "started_at": self.started_at.isoformat(),
-        }
-
-    @classmethod
-    def from_state(cls, state: dict[str, Any]) -> GameSession:
-        questions = []
-        for raw_question in state["questions"]:
-            item = dict(raw_question)
-            item["country_isos"] = tuple(item.get("country_isos", ()))
-            questions.append(Question(**item))
-        session = cls(
-            questions,
-            difficulty=str(state.get("difficulty", "medium")),
-        )
-        session.index = int(state["index"])
-        if not 0 <= session.index <= len(questions):
-            raise ValueError("Некорректный индекс сохранённого вопроса")
-        session.score = int(state["score"])
-        session.streak = int(state["streak"])
-        session.answers = []
-        for raw_answer in state["answers"]:
-            item = dict(raw_answer)
-            item["country_isos"] = tuple(item.get("country_isos", ()))
-            session.answers.append(AnswerRecord(**item))
-        session.started_at = datetime.fromisoformat(state["started_at"])
-        return session

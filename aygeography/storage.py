@@ -7,6 +7,7 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from .models import RoundResult
+from .persistence import SQLiteDatabase
 
 
 class GameRepository:
@@ -17,127 +18,26 @@ class GameRepository:
     DEFAULT_SETTINGS = {
         "fullscreen": False,
         "confirm_exit": True,
-        "show_correct": True,
-        "animations": True,
     }
 
     def __init__(self, database_path: Path) -> None:
-        database_path.parent.mkdir(parents=True, exist_ok=True)
-        self._path = database_path
-        self._initialize()
+        self._database = SQLiteDatabase(
+            database_path,
+            self.DEFAULT_SETTINGS,
+        )
+        self._database.initialize()
+        self._profile_cache: dict[str, int | str] | None = None
 
     def _connect(self) -> sqlite3.Connection:
-        connection = sqlite3.connect(self._path)
-        connection.row_factory = sqlite3.Row
-        return connection
-
-    def _initialize(self) -> None:
-        with closing(self._connect()) as db:
-            db.executescript(
-                """
-                CREATE TABLE IF NOT EXISTS profile (
-                    id INTEGER PRIMARY KEY CHECK (id = 1),
-                    nickname TEXT NOT NULL,
-                    avatar INTEGER NOT NULL DEFAULT 0,
-                    xp INTEGER NOT NULL DEFAULT 0
-                );
-                CREATE TABLE IF NOT EXISTS settings (
-                    key TEXT PRIMARY KEY,
-                    value TEXT NOT NULL
-                );
-                CREATE TABLE IF NOT EXISTS rounds (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    started_at TEXT NOT NULL,
-                    duration REAL NOT NULL,
-                    score INTEGER NOT NULL,
-                    correct_count INTEGER NOT NULL,
-                    question_count INTEGER NOT NULL,
-                    difficulty TEXT NOT NULL DEFAULT 'medium'
-                );
-                CREATE TABLE IF NOT EXISTS answers (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    round_id INTEGER NOT NULL,
-                    mode TEXT NOT NULL,
-                    country_iso TEXT NOT NULL,
-                    prompt TEXT NOT NULL,
-                    answer TEXT NOT NULL,
-                    correct_answer TEXT NOT NULL,
-                    is_correct INTEGER NOT NULL,
-                    seconds REAL NOT NULL,
-                    points INTEGER NOT NULL,
-                    FOREIGN KEY(round_id) REFERENCES rounds(id)
-                );
-                CREATE TABLE IF NOT EXISTS answer_countries (
-                    answer_id INTEGER NOT NULL,
-                    country_iso TEXT NOT NULL,
-                    PRIMARY KEY(answer_id, country_iso),
-                    FOREIGN KEY(answer_id) REFERENCES answers(id)
-                );
-                CREATE TABLE IF NOT EXISTS active_game (
-                    id INTEGER PRIMARY KEY CHECK (id = 1),
-                    payload TEXT NOT NULL
-                );
-                CREATE TABLE IF NOT EXISTS statistics_state (
-                    id INTEGER PRIMARY KEY CHECK (id = 1),
-                    reset_after_round_id INTEGER NOT NULL DEFAULT 0,
-                    reset_at TEXT NOT NULL DEFAULT ''
-                );
-                CREATE TABLE IF NOT EXISTS achievements (
-                    achievement_id TEXT PRIMARY KEY,
-                    unlocked_at TEXT NOT NULL
-                );
-                """
-            )
-            self._ensure_column(
-                db,
-                "rounds",
-                "difficulty",
-                "TEXT NOT NULL DEFAULT 'medium'",
-            )
-            db.execute(
-                """
-                INSERT OR IGNORE INTO answer_countries(answer_id, country_iso)
-                SELECT id, country_iso FROM answers
-                """
-            )
-            db.execute(
-                "INSERT OR IGNORE INTO profile(id, nickname, avatar, xp) VALUES(1, ?, 0, 0)",
-                ("ExplorerAY",),
-            )
-            for key, value in self.DEFAULT_SETTINGS.items():
-                db.execute(
-                    "INSERT OR IGNORE INTO settings(key, value) VALUES(?, ?)",
-                    (key, json.dumps(value)),
-                )
-            db.execute(
-                """
-                INSERT OR IGNORE INTO statistics_state(
-                    id, reset_after_round_id, reset_at
-                ) VALUES(1, 0, '')
-                """
-            )
-            db.commit()
-
-    @staticmethod
-    def _ensure_column(
-        db: sqlite3.Connection,
-        table: str,
-        column: str,
-        declaration: str,
-    ) -> None:
-        columns = {
-            row["name"]
-            for row in db.execute(f"PRAGMA table_info({table})").fetchall()
-        }
-        if column not in columns:
-            db.execute(
-                f"ALTER TABLE {table} ADD COLUMN {column} {declaration}"
-            )
+        return self._database.connect()
 
     def profile(self) -> dict[str, int | str]:
+        if self._profile_cache is not None:
+            return self._profile_cache.copy()
         with closing(self._connect()) as db:
             row = db.execute("SELECT nickname, avatar, xp FROM profile WHERE id=1").fetchone()
-        return dict(row)
+        self._profile_cache = dict(row)
+        return self._profile_cache.copy()
 
     def update_profile(self, nickname: str, avatar: int) -> None:
         with closing(self._connect()) as db:
@@ -146,6 +46,7 @@ class GameRepository:
                 (nickname.strip()[:24] or "ExplorerAY", avatar),
             )
             db.commit()
+        self._profile_cache = None
 
     def settings(self) -> dict[str, bool | str]:
         with closing(self._connect()) as db:
@@ -226,6 +127,7 @@ class GameRepository:
                 )
             db.execute("UPDATE profile SET xp = xp + ? WHERE id=1", (result.score,))
             db.commit()
+        self._profile_cache = None
 
     def lifetime_rounds(self) -> list[dict[str, object]]:
         """All rounds, including data hidden by a statistics reset."""

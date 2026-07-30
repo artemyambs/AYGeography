@@ -18,6 +18,13 @@ from aygeography.config import (
     WONDER_CATEGORY_WEIGHTS,
 )
 from aygeography.difficulty import DIFFICULTY_KEYS, DifficultyCatalog
+from aygeography.domain.questions import (
+    FlagContent,
+    MapContent,
+    MapOverlay,
+    PopulationContent,
+    WonderContent,
+)
 from aygeography.formatting import format_population
 from aygeography.models import AnswerRecord, GameConfig, RoundResult
 from aygeography.quiz import (
@@ -56,6 +63,36 @@ class QuizTests(unittest.TestCase):
             cls.catalog.all(),
         )
 
+    def test_mode_registry_is_the_runtime_source_of_mode_definitions(self):
+        factory = QuestionFactory(
+            water_catalog=self.waters,
+            wonder_catalog=self.wonders,
+        )
+
+        self.assertEqual(tuple(MODE_NAMES), factory.registry.keys)
+        self.assertEqual(
+            MODE_NAMES,
+            dict(factory.registry.names),
+        )
+        self.assertEqual(
+            ANSWER_FEEDBACK_SECONDS["flags"]["correct"],
+            factory.registry.feedback_seconds("flags", True),
+        )
+
+    def test_new_questions_have_typed_content_without_metadata(self):
+        factory = QuestionFactory(
+            water_catalog=self.waters,
+            wonder_catalog=self.wonders,
+        )
+        questions = factory.build(
+            GameConfig(list(MODE_NAMES), ["Europe", "Asia"], 12),
+            self.catalog,
+            seed=41,
+        )
+
+        self.assertTrue(questions)
+        self.assertTrue(all(not hasattr(question, "metadata") for question in questions))
+
     def test_wonders_catalog_has_exact_content_distribution(self):
         items = self.wonders.all()
         self.assertEqual(220, len(items))
@@ -90,7 +127,7 @@ class QuizTests(unittest.TestCase):
         self.assertEqual(
             {"landmark": 51, "peak": 15, "fact": 34},
             dict(Counter(
-                question.metadata["wonder_category"]
+                question.content.category
                 for question in questions
             )),
         )
@@ -142,24 +179,27 @@ class QuizTests(unittest.TestCase):
         repeated = factory.build(config, self.catalog, seed=11)
         changed = factory.build(config, self.catalog, seed=12)
         first_formats = {
-            question.key: question.presentation
+            question.key: question.presenter_key
             for question in first
-            if question.metadata["wonder_category"] == "landmark"
+            if isinstance(question.content, WonderContent)
+            and question.content.category == "landmark"
         }
         self.assertEqual(
             first_formats,
             {
-                question.key: question.presentation
+                question.key: question.presenter_key
                 for question in repeated
-                if question.metadata["wonder_category"] == "landmark"
+                if isinstance(question.content, WonderContent)
+                and question.content.category == "landmark"
             },
         )
         self.assertNotEqual(
             first_formats,
             {
-                question.key: question.presentation
+                question.key: question.presenter_key
                 for question in changed
-                if question.metadata["wonder_category"] == "landmark"
+                if isinstance(question.content, WonderContent)
+                and question.content.category == "landmark"
             },
         )
         self.assertEqual(
@@ -278,7 +318,7 @@ class QuizTests(unittest.TestCase):
 
         self.assertEqual("waterfall", item.kind)
         self.assertEqual(
-            {"kind": "point", "point": [10.0, 20.0]},
+            MapOverlay(kind="point", point=(10.0, 20.0)),
             item.map_overlay,
         )
 
@@ -294,11 +334,12 @@ class QuizTests(unittest.TestCase):
             seed=31,
         )
         for question in questions:
-            water_area = self.waters.get(question.metadata["water_area"])
+            self.assertIsInstance(question.content, MapContent)
+            water_area = self.waters.get(question.content.water_area_key)
             self.assertIsNotNone(water_area)
             self.assertEqual(
                 water_area.difficulty,
-                question.metadata["difficulty"],
+                question.sampled_difficulty,
             )
 
     def test_factory_creates_unique_mixed_questions(self):
@@ -332,7 +373,7 @@ class QuizTests(unittest.TestCase):
                 question for question in questions if question.mode == mode
             ]
             identities = [
-                question.metadata["water_area"]
+                question.content.water_area_key
                 if mode == "waters"
                 else question.country_iso
                 for question in mode_questions
@@ -395,7 +436,7 @@ class QuizTests(unittest.TestCase):
         hard_capacity = len(
             levels.countries("hard", self.catalog.all())
         )
-        counts = Counter(question.metadata["difficulty"] for question in questions)
+        counts = Counter(question.sampled_difficulty for question in questions)
         self.assertEqual(hard_capacity, counts["hard"])
         self.assertEqual(100, len({question.country_iso for question in questions}))
         self.assertEqual(
@@ -440,7 +481,8 @@ class QuizTests(unittest.TestCase):
             self.assertEqual(country.name, question.prompt)
             self.assertEqual(country.capital, question.correct_answer)
             self.assertEqual(country.iso3, question.visual)
-            self.assertTrue(question.metadata["capital_layout"])
+            self.assertIsInstance(question.content, FlagContent)
+            self.assertTrue(question.content.capital_layout)
 
     def test_scoring_and_round_result(self):
         questions = QuestionFactory().build(
@@ -473,11 +515,11 @@ class QuizTests(unittest.TestCase):
         )
         self.assertEqual(
             {country.iso3: country.population for country in countries},
-            question.metadata["population_values"],
+            question.content.values,
         )
         self.assertEqual(
             "country_comparison",
-            question.metadata["presentation"],
+            question.presenter_key,
         )
 
     def test_population_pairs_are_unique_and_balanced(self):
@@ -490,7 +532,7 @@ class QuizTests(unittest.TestCase):
             tuple(sorted(question.country_isos)) for question in questions
         }
         kinds = Counter(
-            question.metadata["pair_kind"] for question in questions
+            question.content.pair_kind for question in questions
         )
         self.assertEqual(30, len(pairs))
         self.assertEqual({"close": 15, "contrast": 15}, dict(kinds))
@@ -499,7 +541,7 @@ class QuizTests(unittest.TestCase):
                 self.catalog.get(iso3) for iso3 in question.country_isos
             )
             ratio = PopulationPairSelector.ratio(first, second)
-            if question.metadata["pair_kind"] == "close":
+            if question.content.pair_kind == "close":
                 self.assertGreaterEqual(ratio, 1.15)
                 self.assertLess(ratio, 2.0)
             else:
@@ -519,7 +561,7 @@ class QuizTests(unittest.TestCase):
             seed=17,
         )
         for question in questions:
-            sampled_level = question.metadata["difficulty"]
+            sampled_level = question.sampled_difficulty
             allowed_primary = {
                 country.iso3
                 for country in levels.countries(
@@ -594,7 +636,8 @@ class QuizTests(unittest.TestCase):
             self.assertEqual(6, len(question.options))
             self.assertEqual(6, len(set(question.options)))
             self.assertIn(question.correct_answer, question.options)
-            area = self.waters.get(question.metadata["water_area"])
+            self.assertIsInstance(question.content, MapContent)
+            area = self.waters.get(question.content.water_area_key)
             self.assertIsNotNone(area)
             expected_kind = area.kind
             kind_by_name = {
@@ -621,11 +664,17 @@ class QuizTests(unittest.TestCase):
 
         self.assertTrue(all(question.interaction == "choices" for question in questions))
         self.assertTrue(all(len(question.options) == 6 for question in questions))
-        self.assertTrue(all("water_area" in question.metadata for question in questions))
         self.assertTrue(
             all(
-                "water_highlight" in question.metadata
-                or "map_overlay" in question.metadata
+                isinstance(question.content, MapContent)
+                and bool(question.content.water_area_key)
+                for question in questions
+            )
+        )
+        self.assertTrue(
+            all(
+                bool(question.content.water_highlight)
+                or question.content.overlay is not None
                 for question in questions
             )
         )
@@ -645,7 +694,13 @@ class QuizTests(unittest.TestCase):
         self.assertEqual(100, len({question.country_iso for question in questions}))
         self.assertTrue(all(question.interaction == "choices" for question in questions))
         self.assertTrue(all(len(question.options) == 6 for question in questions))
-        self.assertTrue(all("highlight" in question.metadata for question in questions))
+        self.assertTrue(
+            all(
+                isinstance(question.content, MapContent)
+                and bool(question.content.highlight_country)
+                for question in questions
+            )
+        )
 
     def test_scoring_boundaries_match_configuration(self):
         expected = {
@@ -712,7 +767,7 @@ class QuizTests(unittest.TestCase):
             self.catalog,
             seed=18,
         )[0]
-        question.metadata["difficulty"] = "hard"
+        question.sampled_difficulty = "hard"
         session = GameSession([question], difficulty="easy")
 
         answer = session.answer(question.correct_answer, 2)
@@ -941,6 +996,29 @@ class QuizTests(unittest.TestCase):
             (restored.answers[0].country_iso,),
             restored.answers[0].subjects,
         )
+
+    def test_legacy_metadata_is_migrated_to_typed_question_content(self):
+        question = QuestionFactory().build(
+            GameConfig(["capitals"], ["Europe"], 1),
+            self.catalog,
+            seed=8,
+        )[0]
+        state = GameSession([question]).to_state()
+        raw_question = state["questions"][0]
+        raw_question.pop("content")
+        raw_question.pop("sampled_difficulty")
+        raw_question["visual"] = question.country_iso
+        raw_question["presentation"] = "default"
+        raw_question["metadata"] = {
+            "capital_layout": True,
+            "difficulty": "medium",
+        }
+
+        restored = GameSession.from_state(state).current
+
+        self.assertIsInstance(restored.content, FlagContent)
+        self.assertTrue(restored.content.capital_layout)
+        self.assertEqual("medium", restored.sampled_difficulty)
 
     def test_repository_persists_and_clears_active_game(self):
         with tempfile.TemporaryDirectory() as directory:

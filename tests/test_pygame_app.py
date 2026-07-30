@@ -12,6 +12,13 @@ import pygame
 
 from aygeography.app import AYGeographyApp
 from aygeography.config import ANSWER_FEEDBACK_SECONDS, ASSETS_DIR
+from aygeography.domain.questions import (
+    FlagContent,
+    MapContent,
+    MapOverlay,
+    PopulationContent,
+    WonderContent,
+)
 from aygeography.models import GameConfig
 from aygeography.formatting import format_population
 from aygeography.quiz import GameSession, WaterQuestionStrategy
@@ -110,8 +117,8 @@ class PygameAppTests(unittest.TestCase):
     def test_selection_rows_are_centered_in_content_area(self):
         self.app.show("modes")
         mode_view = self.app.view
-        first_row = [mode_view.cards[key] for key, _ in mode_view.ITEMS[:3]]
-        second_row = [mode_view.cards[key] for key, _ in mode_view.ITEMS[3:]]
+        first_row = [mode_view.cards[key] for key, _ in mode_view.items[:3]]
+        second_row = [mode_view.cards[key] for key, _ in mode_view.items[3:]]
         self.assertEqual(CONTENT.centerx, first_row[0].unionall(first_row).centerx)
         self.assertEqual(CONTENT.centerx, second_row[0].unionall(second_row).centerx)
 
@@ -223,8 +230,6 @@ class PygameAppTests(unittest.TestCase):
             "wonders",
             "fullscreen",
             "confirm",
-            "correct",
-            "animations",
             "trophy",
             "timer",
             "streak",
@@ -289,7 +294,8 @@ class PygameAppTests(unittest.TestCase):
             question = next(
                 item
                 for item in questions
-                if item.metadata["wonder_category"] == category
+                if isinstance(item.content, WonderContent)
+                and item.content.category == category
             )
             self.app.manager.clear_and_reset()
             self.app.view = GameView(
@@ -500,7 +506,8 @@ class PygameAppTests(unittest.TestCase):
         self.assertEqual("choices", view.active_question.interaction)
         self.assertEqual(6, len(view.active_question.options))
         self.assertEqual(6, len(view.answer_buttons))
-        self.assertIn("water_highlight", view.active_question.metadata)
+        self.assertIsInstance(view.active_question.content, MapContent)
+        self.assertTrue(view.active_question.content.water_highlight)
         self.app.map_renderer._view_cache_key = None
         with patch.object(
             self.app.map_renderer,
@@ -513,7 +520,8 @@ class PygameAppTests(unittest.TestCase):
     def test_river_answers_are_placed_below_the_map(self):
         view = self._show_water_question("river")
 
-        self.assertIn("map_overlay", view.active_question.metadata)
+        self.assertIsInstance(view.active_question.content, MapContent)
+        self.assertIsNotNone(view.active_question.content.overlay)
         self.assertEqual(
             710,
             min(button.rect.top for button in view.answer_buttons),
@@ -562,7 +570,7 @@ class PygameAppTests(unittest.TestCase):
                 surface,
                 rect,
                 MapCamera(),
-                {"kind": "point", "point": [0, 0]},
+                MapOverlay(kind="point", point=(0, 0)),
             )
         point_colours = {call.args[1] for call in circle.call_args_list}
         self.assertIn(MAP_SELECTION_FILL, point_colours)
@@ -573,10 +581,10 @@ class PygameAppTests(unittest.TestCase):
                 surface,
                 rect,
                 MapCamera(),
-                {
-                    "kind": "line",
-                    "lines": [[[-10, 0], [0, 5], [10, 0]]],
-                },
+                MapOverlay(
+                    kind="line",
+                    lines=(((-10, 0), (0, 5), (10, 0)),),
+                ),
             )
         line_colours = {call.args[1] for call in lines.call_args_list}
         line_widths = {call.args[4] for call in lines.call_args_list}
@@ -610,7 +618,8 @@ class PygameAppTests(unittest.TestCase):
         self.app.start_game(GameConfig(["capitals"], ["Europe"], 10))
         view = self.app.view
         answers_top = min(button.rect.top for button in view.answer_buttons)
-        self.assertTrue(view.active_question.metadata["capital_layout"])
+        self.assertIsInstance(view.active_question.content, FlagContent)
+        self.assertTrue(view.active_question.content.capital_layout)
         self.assertEqual(view.active_question.country_iso, view.active_question.visual)
         self.assertEqual(530, answers_top)
 
@@ -639,9 +648,16 @@ class PygameAppTests(unittest.TestCase):
             with patch(
                 "aygeography.ui.screens.draw_question_flag",
                 wraps=draw_question_flag,
-            ) as framed_flag:
+            ) as screen_flag, patch(
+                "aygeography.ui.presenters.draw_question_flag",
+                wraps=draw_question_flag,
+            ) as presenter_flag:
                 self.app.render()
-            self.assertEqual(expected_flags, framed_flag.call_count, mode)
+            self.assertEqual(
+                expected_flags,
+                screen_flag.call_count + presenter_flag.call_count,
+                mode,
+            )
 
     def test_answer_feedback_does_not_mix_two_questions(self):
         for mode in ("flags", "capitals", "population", "countries", "waters"):
@@ -659,7 +675,7 @@ class PygameAppTests(unittest.TestCase):
         view = self.app.view
         self.assertEqual(
             "country_comparison",
-            view.active_question.metadata["presentation"],
+            view.active_question.presenter_key,
         )
         self.assertEqual(2, len(view.active_question.country_isos))
         self.assertEqual(2, len(view.answer_buttons))
@@ -824,9 +840,10 @@ class PygameAppTests(unittest.TestCase):
     def test_country_highlight_starts_at_nine_x_zoom(self):
         self.app.start_game(GameConfig(["countries"], ["Europe"], 10))
         view = self.app.view
-        self.assertIn("highlight", view.active_question.metadata)
+        self.assertIsInstance(view.active_question.content, MapContent)
+        self.assertTrue(view.active_question.content.highlight_country)
         self.assertEqual(9.0, view.map_camera.zoom)
-        highlighted = view.active_question.metadata["highlight"]
+        highlighted = view.active_question.content.highlight_country
         centre = self.app.map_renderer.centers[highlighted]
         projected = self.app.map_renderer.project(centre, view.map_rect, view.map_camera)
         self.assertLessEqual(abs(projected[0] - view.map_rect.centerx), 2)
@@ -835,7 +852,7 @@ class PygameAppTests(unittest.TestCase):
     def test_map_buttons_and_keyboard_zoom_toward_highlight(self):
         self.app.start_game(GameConfig(["countries"], ["Europe"], 10))
         view = self.app.view
-        highlighted = view.active_question.metadata["highlight"]
+        highlighted = view.active_question.content.highlight_country
         centre = self.app.map_renderer.centers[highlighted]
         view.map_camera.pan(130, -70)
 

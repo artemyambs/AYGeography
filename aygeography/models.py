@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+
+from .domain.questions import Question
 
 
 @dataclass(frozen=True, slots=True)
@@ -22,27 +23,6 @@ class GameConfig:
     question_count: int
     wrong_only: bool = False
     difficulty: str | None = None
-
-
-@dataclass(slots=True)
-class Question:
-    key: str
-    mode: str
-    prompt: str
-    country_iso: str
-    options: list[str] = field(default_factory=list)
-    correct_answer: str = ""
-    visual: str = ""
-    presentation: str = "default"
-    explanation: str = ""
-    interaction: str = "choices"
-    metadata: dict[str, Any] = field(default_factory=dict)
-    country_isos: tuple[str, ...] = field(default_factory=tuple)
-
-    @property
-    def subjects(self) -> tuple[str, ...]:
-        """All countries whose mastery is affected by this question."""
-        return self.country_isos or (self.country_iso,)
 
 
 @dataclass(slots=True)
