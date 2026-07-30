@@ -134,6 +134,9 @@ class AYGeographyApp:
             os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
             os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
         pygame.init()
+        pygame.display.set_icon(
+            pygame.image.load(ASSETS_DIR / "app_icon.png")
+        )
         pygame.display.set_caption(f"{APP_NAME} {APP_VERSION}")
         self._headless = headless
         self._fullscreen = False

@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 setlocal
 cd /d "%~dp0"
 
@@ -17,20 +18,27 @@ if not exist ".venv-build\Scripts\python.exe" (
 ".venv-build\Scripts\python.exe" -m pip install --disable-pip-version-check -r requirements-build.txt
 if errorlevel 1 goto :error
 
+".venv-build\Scripts\python.exe" tools\build_app_icon.py
+if errorlevel 1 goto :error
+
 ".venv-build\Scripts\python.exe" -m PyInstaller ^
     --noconfirm ^
     --clean ^
     --onefile ^
     --windowed ^
     --name AYGeography ^
+    --distpath "." ^
+    --workpath "build" ^
+    --specpath "build" ^
+    --icon "%CD%\assets\app_icon.ico" ^
     --collect-all pygame_gui ^
-    --add-data "assets;assets" ^
-    --add-data "configs;configs" ^
+    --add-data "%CD%\assets;assets" ^
+    --add-data "%CD%\configs;configs" ^
     main.py
 if errorlevel 1 goto :error
 
 echo.
-echo Готово: dist\AYGeography.exe
+echo Готово: AYGeography.exe
 exit /b 0
 
 :error

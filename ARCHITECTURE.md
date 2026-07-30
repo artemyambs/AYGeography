@@ -54,6 +54,7 @@ UI не читает JSON и не работает с SQLite напрямую. `
 
 ## Сборка и данные
 
-`build_exe.bat` создаёт автономный `dist\AYGeography.exe` через PyInstaller.
+`build_exe.bat` создаёт автономный `AYGeography.exe` в корне проекта через
+PyInstaller.
 Ресурсы включаются в EXE, а изменяемая база хранится отдельно:
 `%LOCALAPPDATA%\AYGeography\save\aygeography.db`.

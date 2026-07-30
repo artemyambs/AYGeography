@@ -510,6 +510,21 @@ class PygameAppTests(unittest.TestCase):
             self.app.render()
         self.assertEqual(1, water_polygon.call_count)
 
+    def test_river_answers_are_placed_below_the_map(self):
+        view = self._show_water_question("river")
+
+        self.assertIn("map_overlay", view.active_question.metadata)
+        self.assertEqual(
+            710,
+            min(button.rect.top for button in view.answer_buttons),
+        )
+        self.assertTrue(
+            all(
+                not view.map_rect.colliderect(button.rect)
+                for button in view.answer_buttons
+            )
+        )
+
     def test_country_and_water_use_the_shared_region_selection(self):
         for mode in ("countries", "waters"):
             if mode == "waters":

@@ -945,7 +945,7 @@ class GameView(BaseView):
         gap = 18
         total_width = columns * width + (columns - 1) * gap
         start_x = SIDEBAR_WIDTH + (CONTENT.width - total_width) // 2
-        start_y = 710 if question.metadata.get("highlight") or question.metadata.get("water_highlight") else 590
+        start_y = 710 if self._has_map(question) else 590
         if question.metadata.get("capital_layout"):
             start_y = 530
         elif question.visual:
