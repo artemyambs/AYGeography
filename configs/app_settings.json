@@ -10,8 +10,8 @@
       "capitals": {"correct": 1.0, "incorrect": 1.5},
       "population": {"correct": 3.0, "incorrect": 4.0},
       "countries": {"correct": 1.0, "incorrect": 1.5},
-      "waters": {"correct": 1.0, "incorrect": 1.5},
-      "wonders": {"correct": 5.0, "incorrect": 6.0}
+      "waters": {"correct": 3.0, "incorrect": 4.5},
+      "wonders": {"correct": 6.0, "incorrect": 7.0}
     }
   },
   "colors": {
