@@ -8,7 +8,10 @@
     "continent": "Europe",
     "capital": "Москва",
     "population": 144820423,
-    "area": 17098246
+    "area": 17098246,
+    "official_languages": [
+      "русский"
+    ]
   },
   "AUS": {
     "id": 1,
@@ -19,7 +22,10 @@
     "continent": "Oceania",
     "capital": "Канберра",
     "population": 26713205,
-    "area": 7692024
+    "area": 7692024,
+    "official_languages": [
+      "английский"
+    ]
   },
   "AUT": {
     "id": 2,
@@ -30,7 +36,10 @@
     "continent": "Europe",
     "capital": "Вена",
     "population": 9120813,
-    "area": 83879
+    "area": 83879,
+    "official_languages": [
+      "немецкий"
+    ]
   },
   "AZE": {
     "id": 3,
@@ -41,7 +50,11 @@
     "continent": "Asia",
     "capital": "Баку",
     "population": 10336577,
-    "area": 86600
+    "area": 86600,
+    "official_languages": [
+      "азербайджанский",
+      "русский"
+    ]
   },
   "ALB": {
     "id": 4,
@@ -52,7 +65,10 @@
     "continent": "Europe",
     "capital": "Тирана",
     "population": 2791765,
-    "area": 28748
+    "area": 28748,
+    "official_languages": [
+      "албанский"
+    ]
   },
   "DZA": {
     "id": 5,
@@ -63,7 +79,10 @@
     "continent": "Africa",
     "capital": "Алжир",
     "population": 46814308,
-    "area": 2381741
+    "area": 2381741,
+    "official_languages": [
+      "арабский"
+    ]
   },
   "AGO": {
     "id": 6,
@@ -74,7 +93,10 @@
     "continent": "Africa",
     "capital": "Луанда",
     "population": 37885849,
-    "area": 1246700
+    "area": 1246700,
+    "official_languages": [
+      "португальский"
+    ]
   },
   "AND": {
     "id": 7,
@@ -85,7 +107,10 @@
     "continent": "Europe",
     "capital": "Андорра-ла-Велья",
     "population": 81938,
-    "area": 468
+    "area": 468,
+    "official_languages": [
+      "каталанский"
+    ]
   },
   "ATG": {
     "id": 8,
@@ -96,7 +121,10 @@
     "continent": "North America",
     "capital": "Сент-Джонс",
     "population": 93772,
-    "area": 442
+    "area": 442,
+    "official_languages": [
+      "английский"
+    ]
   },
   "ARG": {
     "id": 9,
@@ -107,7 +135,11 @@
     "continent": "South America",
     "capital": "Буэнос-Айрес",
     "population": 45696159,
-    "area": 2780400
+    "area": 2780400,
+    "official_languages": [
+      "гуарани",
+      "испанский"
+    ]
   },
   "ARM": {
     "id": 10,
@@ -118,7 +150,10 @@
     "continent": "Asia",
     "capital": "Ереван",
     "population": 2973840,
-    "area": 29743
+    "area": 29743,
+    "official_languages": [
+      "армянский"
+    ]
   },
   "AFG": {
     "id": 11,
@@ -129,7 +164,12 @@
     "continent": "Asia",
     "capital": "Кабул",
     "population": 42647492,
-    "area": 652230
+    "area": 652230,
+    "official_languages": [
+      "дари",
+      "пушту",
+      "туркменский"
+    ]
   },
   "BHS": {
     "id": 12,
@@ -140,7 +180,10 @@
     "continent": "North America",
     "capital": "Нассау",
     "population": 401283,
-    "area": 13943
+    "area": 13943,
+    "official_languages": [
+      "английский"
+    ]
   },
   "BGD": {
     "id": 13,
@@ -151,7 +194,10 @@
     "continent": "Asia",
     "capital": "Дакка",
     "population": 173562364,
-    "area": 147570
+    "area": 147570,
+    "official_languages": [
+      "бенгальский"
+    ]
   },
   "BRB": {
     "id": 14,
@@ -162,7 +208,10 @@
     "continent": "North America",
     "capital": "Бриджтаун",
     "population": 282467,
-    "area": 430
+    "area": 430,
+    "official_languages": [
+      "английский"
+    ]
   },
   "BHR": {
     "id": 15,
@@ -173,7 +222,10 @@
     "continent": "Asia",
     "capital": "Манама",
     "population": 1607049,
-    "area": 765
+    "area": 765,
+    "official_languages": [
+      "арабский"
+    ]
   },
   "BLZ": {
     "id": 16,
@@ -184,7 +236,12 @@
     "continent": "North America",
     "capital": "Бельмопан",
     "population": 417072,
-    "area": 22966
+    "area": 22966,
+    "official_languages": [
+      "белизский креольский",
+      "английский",
+      "испанский"
+    ]
   },
   "BLR": {
     "id": 17,
@@ -195,7 +252,11 @@
     "continent": "Europe",
     "capital": "Минск",
     "population": 9056696,
-    "area": 207600
+    "area": 207600,
+    "official_languages": [
+      "белорусский",
+      "русский"
+    ]
   },
   "BEL": {
     "id": 18,
@@ -206,7 +267,12 @@
     "continent": "Europe",
     "capital": "Брюссель",
     "population": 11738763,
-    "area": 30528
+    "area": 30528,
+    "official_languages": [
+      "немецкий",
+      "французский",
+      "нидерландский"
+    ]
   },
   "BEN": {
     "id": 19,
@@ -217,7 +283,10 @@
     "continent": "Africa",
     "capital": "Порто-Ново",
     "population": 14462724,
-    "area": 112622
+    "area": 112622,
+    "official_languages": [
+      "французский"
+    ]
   },
   "BGR": {
     "id": 20,
@@ -228,7 +297,10 @@
     "continent": "Europe",
     "capital": "София",
     "population": 6757689,
-    "area": 110879
+    "area": 110879,
+    "official_languages": [
+      "болгарский"
+    ]
   },
   "BOL": {
     "id": 21,
@@ -239,7 +311,13 @@
     "continent": "South America",
     "capital": "Сукре",
     "population": 12413315,
-    "area": 1098581
+    "area": 1098581,
+    "official_languages": [
+      "аймара",
+      "гуарани",
+      "кечуа",
+      "испанский"
+    ]
   },
   "BIH": {
     "id": 22,
@@ -250,7 +328,12 @@
     "continent": "Europe",
     "capital": "Сараево",
     "population": 3164253,
-    "area": 51197
+    "area": 51197,
+    "official_languages": [
+      "боснийский",
+      "хорватский",
+      "сербский"
+    ]
   },
   "BWA": {
     "id": 23,
@@ -261,7 +344,11 @@
     "continent": "Africa",
     "capital": "Габороне",
     "population": 2521139,
-    "area": 581730
+    "area": 581730,
+    "official_languages": [
+      "английский",
+      "тсвана"
+    ]
   },
   "BRA": {
     "id": 24,
@@ -272,7 +359,10 @@
     "continent": "South America",
     "capital": "Бразилиа",
     "population": 211998573,
-    "area": 8515767
+    "area": 8515767,
+    "official_languages": [
+      "португальский"
+    ]
   },
   "BRN": {
     "id": 25,
@@ -283,7 +373,10 @@
     "continent": "Asia",
     "capital": "Бандар-Сери-Бегаван",
     "population": 462721,
-    "area": 5765
+    "area": 5765,
+    "official_languages": [
+      "малайский"
+    ]
   },
   "BFA": {
     "id": 26,
@@ -294,7 +387,10 @@
     "continent": "Africa",
     "capital": "Уагадугу",
     "population": 23548781,
-    "area": 274200
+    "area": 274200,
+    "official_languages": [
+      "французский"
+    ]
   },
   "BDI": {
     "id": 27,
@@ -305,7 +401,11 @@
     "continent": "Africa",
     "capital": "Гитега",
     "population": 14047786,
-    "area": 27834
+    "area": 27834,
+    "official_languages": [
+      "французский",
+      "кирунди"
+    ]
   },
   "BTN": {
     "id": 28,
@@ -316,7 +416,10 @@
     "continent": "Asia",
     "capital": "Тхимпху",
     "population": 791524,
-    "area": 38394
+    "area": 38394,
+    "official_languages": [
+      "дзонг-кэ"
+    ]
   },
   "VUT": {
     "id": 29,
@@ -327,7 +430,12 @@
     "continent": "Oceania",
     "capital": "Порт-Вила",
     "population": 327777,
-    "area": 12189
+    "area": 12189,
+    "official_languages": [
+      "бислама",
+      "английский",
+      "французский"
+    ]
   },
   "VAT": {
     "id": 30,
@@ -338,7 +446,11 @@
     "continent": "Europe",
     "capital": "Ватикан",
     "population": 496,
-    "area": 0
+    "area": 0,
+    "official_languages": [
+      "итальянский",
+      "латинский"
+    ]
   },
   "GBR": {
     "id": 31,
@@ -349,7 +461,10 @@
     "continent": "Europe",
     "capital": "Лондон",
     "population": 69138192,
-    "area": 242495
+    "area": 242495,
+    "official_languages": [
+      "английский"
+    ]
   },
   "HUN": {
     "id": 32,
@@ -360,7 +475,10 @@
     "continent": "Europe",
     "capital": "Будапешт",
     "population": 9676135,
-    "area": 93030
+    "area": 93030,
+    "official_languages": [
+      "венгерский"
+    ]
   },
   "VEN": {
     "id": 33,
@@ -371,7 +489,10 @@
     "continent": "South America",
     "capital": "Каракас",
     "population": 28405543,
-    "area": 916445
+    "area": 916445,
+    "official_languages": [
+      "испанский"
+    ]
   },
   "TLS": {
     "id": 34,
@@ -382,7 +503,11 @@
     "continent": "Asia",
     "capital": "Дили",
     "population": 1400638,
-    "area": 14874
+    "area": 14874,
+    "official_languages": [
+      "португальский",
+      "тетум"
+    ]
   },
   "VNM": {
     "id": 35,
@@ -393,7 +518,10 @@
     "continent": "Asia",
     "capital": "Ханой",
     "population": 100987686,
-    "area": 331210
+    "area": 331210,
+    "official_languages": [
+      "вьетнамский"
+    ]
   },
   "GAB": {
     "id": 36,
@@ -404,7 +532,10 @@
     "continent": "Africa",
     "capital": "Либревиль",
     "population": 2538952,
-    "area": 267668
+    "area": 267668,
+    "official_languages": [
+      "французский"
+    ]
   },
   "HTI": {
     "id": 37,
@@ -415,7 +546,11 @@
     "continent": "North America",
     "capital": "Порт-о-Пренс",
     "population": 11772557,
-    "area": 27750
+    "area": 27750,
+    "official_languages": [
+      "французский",
+      "гаитянский"
+    ]
   },
   "GUY": {
     "id": 38,
@@ -426,7 +561,10 @@
     "continent": "South America",
     "capital": "Джорджтаун",
     "population": 831087,
-    "area": 214969
+    "area": 214969,
+    "official_languages": [
+      "английский"
+    ]
   },
   "GMB": {
     "id": 39,
@@ -437,7 +575,10 @@
     "continent": "Africa",
     "capital": "Банжул",
     "population": 2759988,
-    "area": 11295
+    "area": 11295,
+    "official_languages": [
+      "английский"
+    ]
   },
   "GHA": {
     "id": 40,
@@ -448,7 +589,10 @@
     "continent": "Africa",
     "capital": "Аккра",
     "population": 34427414,
-    "area": 238533
+    "area": 238533,
+    "official_languages": [
+      "английский"
+    ]
   },
   "GTM": {
     "id": 41,
@@ -459,7 +603,10 @@
     "continent": "North America",
     "capital": "Гватемала",
     "population": 18406359,
-    "area": 108889
+    "area": 108889,
+    "official_languages": [
+      "испанский"
+    ]
   },
   "GIN": {
     "id": 42,
@@ -470,7 +617,10 @@
     "continent": "Africa",
     "capital": "Конакри",
     "population": 14754785,
-    "area": 245857
+    "area": 245857,
+    "official_languages": [
+      "французский"
+    ]
   },
   "GNB": {
     "id": 43,
@@ -481,7 +631,11 @@
     "continent": "Africa",
     "capital": "Бисау",
     "population": 2201352,
-    "area": 36125
+    "area": 36125,
+    "official_languages": [
+      "португальский",
+      "верхнегвинейский креольский"
+    ]
   },
   "DEU": {
     "id": 44,
@@ -492,7 +646,10 @@
     "continent": "Europe",
     "capital": "Берлин",
     "population": 84552242,
-    "area": 357022
+    "area": 357022,
+    "official_languages": [
+      "немецкий"
+    ]
   },
   "HND": {
     "id": 45,
@@ -503,7 +660,10 @@
     "continent": "North America",
     "capital": "Тегусигальпа",
     "population": 10825703,
-    "area": 112492
+    "area": 112492,
+    "official_languages": [
+      "испанский"
+    ]
   },
   "GRD": {
     "id": 46,
@@ -514,7 +674,10 @@
     "continent": "North America",
     "capital": "Сент-Джорджес",
     "population": 117207,
-    "area": 344
+    "area": 344,
+    "official_languages": [
+      "английский"
+    ]
   },
   "GRC": {
     "id": 47,
@@ -525,7 +688,10 @@
     "continent": "Europe",
     "capital": "Афины",
     "population": 10047817,
-    "area": 131957
+    "area": 131957,
+    "official_languages": [
+      "греческий"
+    ]
   },
   "GEO": {
     "id": 48,
@@ -536,7 +702,10 @@
     "continent": "Asia",
     "capital": "Тбилиси",
     "population": 3807670,
-    "area": 69700
+    "area": 69700,
+    "official_languages": [
+      "грузинский"
+    ]
   },
   "DNK": {
     "id": 49,
@@ -547,7 +716,10 @@
     "continent": "Europe",
     "capital": "Копенгаген",
     "population": 5977412,
-    "area": 43094
+    "area": 43094,
+    "official_languages": [
+      "датский"
+    ]
   },
   "DJI": {
     "id": 50,
@@ -558,7 +730,11 @@
     "continent": "Africa",
     "capital": "Джибути",
     "population": 1168722,
-    "area": 23200
+    "area": 23200,
+    "official_languages": [
+      "арабский",
+      "французский"
+    ]
   },
   "DMA": {
     "id": 51,
@@ -569,7 +745,10 @@
     "continent": "North America",
     "capital": "Розо",
     "population": 66205,
-    "area": 751
+    "area": 751,
+    "official_languages": [
+      "английский"
+    ]
   },
   "DOM": {
     "id": 52,
@@ -580,7 +759,10 @@
     "continent": "North America",
     "capital": "Санто-Доминго",
     "population": 11427557,
-    "area": 48671
+    "area": 48671,
+    "official_languages": [
+      "испанский"
+    ]
   },
   "EGY": {
     "id": 53,
@@ -591,7 +773,10 @@
     "continent": "Africa",
     "capital": "Каир",
     "population": 116538258,
-    "area": 1002450
+    "area": 1002450,
+    "official_languages": [
+      "арабский"
+    ]
   },
   "ZMB": {
     "id": 54,
@@ -602,7 +787,10 @@
     "continent": "Africa",
     "capital": "Лусака",
     "population": 21314956,
-    "area": 752612
+    "area": 752612,
+    "official_languages": [
+      "английский"
+    ]
   },
   "ZWE": {
     "id": 55,
@@ -613,7 +801,24 @@
     "continent": "Africa",
     "capital": "Хараре",
     "population": 16634373,
-    "area": 390757
+    "area": 390757,
+    "official_languages": [
+      "чибарве",
+      "английский",
+      "каланга",
+      "койсанские языки",
+      "ндау",
+      "северный ндебеле",
+      "чева",
+      "шона",
+      "сесото",
+      "тонга",
+      "тсвана",
+      "тсонга",
+      "венда",
+      "коса",
+      "зимбабвийский жестовый язык"
+    ]
   },
   "ISR": {
     "id": 56,
@@ -624,7 +829,11 @@
     "continent": "Asia",
     "capital": "Иерусалим",
     "population": 9387021,
-    "area": 20770
+    "area": 20770,
+    "official_languages": [
+      "арабский",
+      "иврит"
+    ]
   },
   "IND": {
     "id": 57,
@@ -635,7 +844,12 @@
     "continent": "Asia",
     "capital": "Нью-Дели",
     "population": 1450935791,
-    "area": 3287263
+    "area": 3287263,
+    "official_languages": [
+      "английский",
+      "хинди",
+      "тамильский"
+    ]
   },
   "IDN": {
     "id": 58,
@@ -646,7 +860,10 @@
     "continent": "Asia",
     "capital": "Джакарта",
     "population": 283487931,
-    "area": 1904569
+    "area": 1904569,
+    "official_languages": [
+      "индонезийский"
+    ]
   },
   "JOR": {
     "id": 59,
@@ -657,7 +874,10 @@
     "continent": "Asia",
     "capital": "Амман",
     "population": 11552876,
-    "area": 89342
+    "area": 89342,
+    "official_languages": [
+      "арабский"
+    ]
   },
   "IRQ": {
     "id": 60,
@@ -668,7 +888,12 @@
     "continent": "Asia",
     "capital": "Багдад",
     "population": 46042015,
-    "area": 438317
+    "area": 438317,
+    "official_languages": [
+      "арабский",
+      "арамейский",
+      "центральнокурдский"
+    ]
   },
   "IRN": {
     "id": 61,
@@ -679,7 +904,10 @@
     "continent": "Asia",
     "capital": "Тегеран",
     "population": 91567738,
-    "area": 1648195
+    "area": 1648195,
+    "official_languages": [
+      "персидский"
+    ]
   },
   "IRL": {
     "id": 62,
@@ -690,7 +918,11 @@
     "continent": "Europe",
     "capital": "Дублин",
     "population": 5255017,
-    "area": 70273
+    "area": 70273,
+    "official_languages": [
+      "английский",
+      "ирландский"
+    ]
   },
   "ISL": {
     "id": 63,
@@ -701,7 +933,10 @@
     "continent": "Europe",
     "capital": "Рейкьявик",
     "population": 393396,
-    "area": 103000
+    "area": 103000,
+    "official_languages": [
+      "исландский"
+    ]
   },
   "ESP": {
     "id": 64,
@@ -712,7 +947,10 @@
     "continent": "Europe",
     "capital": "Мадрид",
     "population": 47910526,
-    "area": 505990
+    "area": 505990,
+    "official_languages": [
+      "испанский"
+    ]
   },
   "ITA": {
     "id": 65,
@@ -723,7 +961,10 @@
     "continent": "Europe",
     "capital": "Рим",
     "population": 59342867,
-    "area": 301340
+    "area": 301340,
+    "official_languages": [
+      "итальянский"
+    ]
   },
   "YEM": {
     "id": 66,
@@ -734,7 +975,10 @@
     "continent": "Asia",
     "capital": "Сана",
     "population": 40583164,
-    "area": 527968
+    "area": 527968,
+    "official_languages": [
+      "арабский"
+    ]
   },
   "CPV": {
     "id": 67,
@@ -745,7 +989,10 @@
     "continent": "Africa",
     "capital": "Прая",
     "population": 524877,
-    "area": 4033
+    "area": 4033,
+    "official_languages": [
+      "португальский"
+    ]
   },
   "KAZ": {
     "id": 68,
@@ -756,7 +1003,11 @@
     "continent": "Asia",
     "capital": "Астана",
     "population": 20592571,
-    "area": 2724900
+    "area": 2724900,
+    "official_languages": [
+      "казахский",
+      "русский"
+    ]
   },
   "KHM": {
     "id": 69,
@@ -767,7 +1018,10 @@
     "continent": "Asia",
     "capital": "Пномпень",
     "population": 17638801,
-    "area": 181035
+    "area": 181035,
+    "official_languages": [
+      "кхмерский"
+    ]
   },
   "CMR": {
     "id": 70,
@@ -778,7 +1032,11 @@
     "continent": "Africa",
     "capital": "Яунде",
     "population": 29123744,
-    "area": 475442
+    "area": 475442,
+    "official_languages": [
+      "английский",
+      "французский"
+    ]
   },
   "CAN": {
     "id": 71,
@@ -789,7 +1047,11 @@
     "continent": "North America",
     "capital": "Оттава",
     "population": 39742430,
-    "area": 9984670
+    "area": 9984670,
+    "official_languages": [
+      "английский",
+      "французский"
+    ]
   },
   "QAT": {
     "id": 72,
@@ -800,7 +1062,10 @@
     "continent": "Asia",
     "capital": "Доха",
     "population": 3048423,
-    "area": 11586
+    "area": 11586,
+    "official_languages": [
+      "арабский"
+    ]
   },
   "KEN": {
     "id": 73,
@@ -811,7 +1076,11 @@
     "continent": "Africa",
     "capital": "Найроби",
     "population": 56432944,
-    "area": 580367
+    "area": 580367,
+    "official_languages": [
+      "английский",
+      "суахили"
+    ]
   },
   "CYP": {
     "id": 74,
@@ -822,7 +1091,11 @@
     "continent": "Asia",
     "capital": "Никосия",
     "population": 1358282,
-    "area": 9251
+    "area": 9251,
+    "official_languages": [
+      "греческий",
+      "турецкий"
+    ]
   },
   "KGZ": {
     "id": 75,
@@ -833,7 +1106,11 @@
     "continent": "Asia",
     "capital": "Бишкек",
     "population": 7186009,
-    "area": 199951
+    "area": 199951,
+    "official_languages": [
+      "киргизский",
+      "русский"
+    ]
   },
   "KIR": {
     "id": 76,
@@ -844,7 +1121,11 @@
     "continent": "Oceania",
     "capital": "Южная Тарава",
     "population": 134518,
-    "area": 811
+    "area": 811,
+    "official_languages": [
+      "английский",
+      "гилбертский"
+    ]
   },
   "CHN": {
     "id": 77,
@@ -855,7 +1136,10 @@
     "continent": "Asia",
     "capital": "Пекин",
     "population": 1419321278,
-    "area": 9596961
+    "area": 9596961,
+    "official_languages": [
+      "китайский"
+    ]
   },
   "COL": {
     "id": 78,
@@ -866,7 +1150,10 @@
     "continent": "South America",
     "capital": "Богота",
     "population": 52886363,
-    "area": 1141748
+    "area": 1141748,
+    "official_languages": [
+      "испанский"
+    ]
   },
   "COM": {
     "id": 79,
@@ -877,7 +1164,12 @@
     "continent": "Africa",
     "capital": "Морони",
     "population": 866628,
-    "area": 1862
+    "area": 1862,
+    "official_languages": [
+      "арабский",
+      "французский",
+      "коморский"
+    ]
   },
   "COD": {
     "id": 80,
@@ -888,7 +1180,14 @@
     "continent": "Africa",
     "capital": "Киншаса",
     "population": 109276265,
-    "area": 2344858
+    "area": 2344858,
+    "official_languages": [
+      "французский",
+      "киконго",
+      "лингала",
+      "луба-лулуа",
+      "суахили"
+    ]
   },
   "COG": {
     "id": 81,
@@ -899,7 +1198,12 @@
     "continent": "Africa",
     "capital": "Браззавиль",
     "population": 6332961,
-    "area": 342000
+    "area": 342000,
+    "official_languages": [
+      "французский",
+      "киконго",
+      "лингала"
+    ]
   },
   "PRK": {
     "id": 82,
@@ -910,7 +1214,10 @@
     "continent": "Asia",
     "capital": "Пхеньян",
     "population": 26498823,
-    "area": 120538
+    "area": 120538,
+    "official_languages": [
+      "корейский"
+    ]
   },
   "CRI": {
     "id": 83,
@@ -921,7 +1228,10 @@
     "continent": "North America",
     "capital": "Сан-Хосе",
     "population": 5129910,
-    "area": 51100
+    "area": 51100,
+    "official_languages": [
+      "испанский"
+    ]
   },
   "CIV": {
     "id": 84,
@@ -932,7 +1242,10 @@
     "continent": "Africa",
     "capital": "Ямусукро",
     "population": 31934230,
-    "area": 322463
+    "area": 322463,
+    "official_languages": [
+      "французский"
+    ]
   },
   "CUB": {
     "id": 85,
@@ -943,7 +1256,10 @@
     "continent": "North America",
     "capital": "Гавана",
     "population": 10979783,
-    "area": 109884
+    "area": 109884,
+    "official_languages": [
+      "испанский"
+    ]
   },
   "KWT": {
     "id": 86,
@@ -954,7 +1270,10 @@
     "continent": "Asia",
     "capital": "Эль-Кувейт",
     "population": 4934507,
-    "area": 17818
+    "area": 17818,
+    "official_languages": [
+      "арабский"
+    ]
   },
   "LAO": {
     "id": 87,
@@ -965,7 +1284,10 @@
     "continent": "Asia",
     "capital": "Вьентьян",
     "population": 7769819,
-    "area": 236800
+    "area": 236800,
+    "official_languages": [
+      "лаосский"
+    ]
   },
   "LVA": {
     "id": 88,
@@ -976,7 +1298,10 @@
     "continent": "Europe",
     "capital": "Рига",
     "population": 1871871,
-    "area": 64589
+    "area": 64589,
+    "official_languages": [
+      "латышский"
+    ]
   },
   "LSO": {
     "id": 89,
@@ -987,7 +1312,11 @@
     "continent": "Africa",
     "capital": "Масеру",
     "population": 2337423,
-    "area": 30355
+    "area": 30355,
+    "official_languages": [
+      "английский",
+      "сесото"
+    ]
   },
   "LBR": {
     "id": 90,
@@ -998,7 +1327,10 @@
     "continent": "Africa",
     "capital": "Монровия",
     "population": 5612817,
-    "area": 111369
+    "area": 111369,
+    "official_languages": [
+      "английский"
+    ]
   },
   "LBN": {
     "id": 91,
@@ -1009,7 +1341,11 @@
     "continent": "Asia",
     "capital": "Бейрут",
     "population": 5805962,
-    "area": 10452
+    "area": 10452,
+    "official_languages": [
+      "арабский",
+      "французский"
+    ]
   },
   "LBY": {
     "id": 92,
@@ -1020,7 +1356,10 @@
     "continent": "Africa",
     "capital": "Триполи",
     "population": 7381023,
-    "area": 1759540
+    "area": 1759540,
+    "official_languages": [
+      "арабский"
+    ]
   },
   "LTU": {
     "id": 93,
@@ -1031,7 +1370,10 @@
     "continent": "Europe",
     "capital": "Вильнюс",
     "population": 2859110,
-    "area": 65300
+    "area": 65300,
+    "official_languages": [
+      "литовский"
+    ]
   },
   "LIE": {
     "id": 94,
@@ -1042,7 +1384,10 @@
     "continent": "Europe",
     "capital": "Вадуц",
     "population": 39870,
-    "area": 160
+    "area": 160,
+    "official_languages": [
+      "немецкий"
+    ]
   },
   "LUX": {
     "id": 95,
@@ -1053,7 +1398,12 @@
     "continent": "Europe",
     "capital": "Люксембург",
     "population": 673036,
-    "area": 2586
+    "area": 2586,
+    "official_languages": [
+      "немецкий",
+      "французский",
+      "люксембургский"
+    ]
   },
   "MUS": {
     "id": 96,
@@ -1064,7 +1414,12 @@
     "continent": "Africa",
     "capital": "Порт-Луи",
     "population": 1271169,
-    "area": 2040
+    "area": 2040,
+    "official_languages": [
+      "английский",
+      "французский",
+      "маврикийский креольский"
+    ]
   },
   "MRT": {
     "id": 97,
@@ -1075,7 +1430,10 @@
     "continent": "Africa",
     "capital": "Нуакшот",
     "population": 5169395,
-    "area": 1030700
+    "area": 1030700,
+    "official_languages": [
+      "арабский"
+    ]
   },
   "MDG": {
     "id": 98,
@@ -1086,7 +1444,11 @@
     "continent": "Africa",
     "capital": "Антананариву",
     "population": 31964956,
-    "area": 587041
+    "area": 587041,
+    "official_languages": [
+      "французский",
+      "малагасийский"
+    ]
   },
   "MWI": {
     "id": 99,
@@ -1097,7 +1459,11 @@
     "continent": "Africa",
     "capital": "Лилонгве",
     "population": 21655286,
-    "area": 118484
+    "area": 118484,
+    "official_languages": [
+      "английский",
+      "чева"
+    ]
   },
   "MYS": {
     "id": 100,
@@ -1108,7 +1474,11 @@
     "continent": "Asia",
     "capital": "Куала-Лумпур",
     "population": 35557673,
-    "area": 330803
+    "area": 330803,
+    "official_languages": [
+      "английский",
+      "малайский"
+    ]
   },
   "MLI": {
     "id": 101,
@@ -1119,7 +1489,10 @@
     "continent": "Africa",
     "capital": "Бамако",
     "population": 24478595,
-    "area": 1240192
+    "area": 1240192,
+    "official_languages": [
+      "французский"
+    ]
   },
   "MDV": {
     "id": 102,
@@ -1130,7 +1503,10 @@
     "continent": "Asia",
     "capital": "Мале",
     "population": 527799,
-    "area": 298
+    "area": 298,
+    "official_languages": [
+      "дивехи"
+    ]
   },
   "MLT": {
     "id": 103,
@@ -1141,7 +1517,11 @@
     "continent": "Europe",
     "capital": "Валлетта",
     "population": 539607,
-    "area": 316
+    "area": 316,
+    "official_languages": [
+      "английский",
+      "мальтийский"
+    ]
   },
   "MAR": {
     "id": 104,
@@ -1152,7 +1532,11 @@
     "continent": "Africa",
     "capital": "Рабат",
     "population": 38081173,
-    "area": 446550
+    "area": 446550,
+    "official_languages": [
+      "арабский",
+      "берберский"
+    ]
   },
   "MHL": {
     "id": 105,
@@ -1163,7 +1547,11 @@
     "continent": "Oceania",
     "capital": "Маджуро",
     "population": 37548,
-    "area": 181
+    "area": 181,
+    "official_languages": [
+      "английский",
+      "маршалльский"
+    ]
   },
   "MEX": {
     "id": 106,
@@ -1174,7 +1562,10 @@
     "continent": "North America",
     "capital": "Мехико",
     "population": 130861007,
-    "area": 1964375
+    "area": 1964375,
+    "official_languages": [
+      "испанский"
+    ]
   },
   "FSM": {
     "id": 107,
@@ -1185,7 +1576,10 @@
     "continent": "Oceania",
     "capital": "Паликир",
     "population": 113160,
-    "area": 702
+    "area": 702,
+    "official_languages": [
+      "английский"
+    ]
   },
   "MOZ": {
     "id": 108,
@@ -1196,7 +1590,10 @@
     "continent": "Africa",
     "capital": "Мапуту",
     "population": 34631766,
-    "area": 801590
+    "area": 801590,
+    "official_languages": [
+      "португальский"
+    ]
   },
   "MDA": {
     "id": 109,
@@ -1207,7 +1604,10 @@
     "continent": "Europe",
     "capital": "Кишинёв",
     "population": 3034961,
-    "area": 33851
+    "area": 33851,
+    "official_languages": [
+      "молдавский"
+    ]
   },
   "MCO": {
     "id": 110,
@@ -1218,7 +1618,10 @@
     "continent": "Europe",
     "capital": "Монако",
     "population": 38631,
-    "area": 2
+    "area": 2,
+    "official_languages": [
+      "французский"
+    ]
   },
   "MNG": {
     "id": 111,
@@ -1229,7 +1632,10 @@
     "continent": "Asia",
     "capital": "Улан-Батор",
     "population": 3475540,
-    "area": 1564116
+    "area": 1564116,
+    "official_languages": [
+      "монгольский"
+    ]
   },
   "MMR": {
     "id": 112,
@@ -1240,7 +1646,10 @@
     "continent": "Asia",
     "capital": "Нейпьидо",
     "population": 54500091,
-    "area": 676578
+    "area": 676578,
+    "official_languages": [
+      "бирманский"
+    ]
   },
   "NAM": {
     "id": 113,
@@ -1251,7 +1660,18 @@
     "continent": "Africa",
     "capital": "Виндхук",
     "population": 3030131,
-    "area": 825615
+    "area": 825615,
+    "official_languages": [
+      "африкаанс",
+      "немецкий",
+      "английский",
+      "гереро",
+      "койкой",
+      "квангали",
+      "лози",
+      "ндонга",
+      "тсвана"
+    ]
   },
   "NRU": {
     "id": 114,
@@ -1262,7 +1682,11 @@
     "continent": "Oceania",
     "capital": "Ярен",
     "population": 11947,
-    "area": 21
+    "area": 21,
+    "official_languages": [
+      "английский",
+      "науру"
+    ]
   },
   "NPL": {
     "id": 115,
@@ -1273,7 +1697,10 @@
     "continent": "Asia",
     "capital": "Катманду",
     "population": 29651054,
-    "area": 147516
+    "area": 147516,
+    "official_languages": [
+      "непальский"
+    ]
   },
   "NER": {
     "id": 116,
@@ -1284,7 +1711,10 @@
     "continent": "Africa",
     "capital": "Ниамей",
     "population": 27032412,
-    "area": 1267000
+    "area": 1267000,
+    "official_languages": [
+      "французский"
+    ]
   },
   "NGA": {
     "id": 117,
@@ -1295,7 +1725,10 @@
     "continent": "Africa",
     "capital": "Абуджа",
     "population": 232679478,
-    "area": 923768
+    "area": 923768,
+    "official_languages": [
+      "английский"
+    ]
   },
   "NLD": {
     "id": 118,
@@ -1306,7 +1739,10 @@
     "continent": "Europe",
     "capital": "Амстердам",
     "population": 18228742,
-    "area": 41543
+    "area": 41543,
+    "official_languages": [
+      "нидерландский"
+    ]
   },
   "NIC": {
     "id": 119,
@@ -1317,7 +1753,10 @@
     "continent": "North America",
     "capital": "Манагуа",
     "population": 6916140,
-    "area": 130373
+    "area": 130373,
+    "official_languages": [
+      "испанский"
+    ]
   },
   "NZL": {
     "id": 120,
@@ -1328,7 +1767,12 @@
     "continent": "Oceania",
     "capital": "Веллингтон",
     "population": 5213944,
-    "area": 268838
+    "area": 268838,
+    "official_languages": [
+      "английский",
+      "маори",
+      "новозеландский жестовый язык"
+    ]
   },
   "NOR": {
     "id": 121,
@@ -1339,7 +1783,12 @@
     "continent": "Europe",
     "capital": "Осло",
     "population": 5576660,
-    "area": 323802
+    "area": 323802,
+    "official_languages": [
+      "нюнорск",
+      "норвежский букмол",
+      "саамский"
+    ]
   },
   "ARE": {
     "id": 122,
@@ -1350,7 +1799,10 @@
     "continent": "Asia",
     "capital": "Абу-Даби",
     "population": 11027129,
-    "area": 83600
+    "area": 83600,
+    "official_languages": [
+      "арабский"
+    ]
   },
   "OMN": {
     "id": 123,
@@ -1361,7 +1813,10 @@
     "continent": "Asia",
     "capital": "Маскат",
     "population": 5281538,
-    "area": 309500
+    "area": 309500,
+    "official_languages": [
+      "арабский"
+    ]
   },
   "PAK": {
     "id": 124,
@@ -1372,7 +1827,11 @@
     "continent": "Asia",
     "capital": "Исламабад",
     "population": 251269164,
-    "area": 881912
+    "area": 881912,
+    "official_languages": [
+      "английский",
+      "урду"
+    ]
   },
   "PLW": {
     "id": 125,
@@ -1383,7 +1842,11 @@
     "continent": "Oceania",
     "capital": "Нгерулмуд",
     "population": 17695,
-    "area": 459
+    "area": 459,
+    "official_languages": [
+      "английский",
+      "палау"
+    ]
   },
   "PSE": {
     "id": 126,
@@ -1394,7 +1857,10 @@
     "continent": "Asia",
     "capital": "Восточный Иерусалим (де-юре), Рамалла (де-факто)",
     "population": 5495443,
-    "area": 6020
+    "area": 6020,
+    "official_languages": [
+      "арабский"
+    ]
   },
   "PAN": {
     "id": 127,
@@ -1405,7 +1871,10 @@
     "continent": "North America",
     "capital": "Панама",
     "population": 4515577,
-    "area": 75420
+    "area": 75420,
+    "official_languages": [
+      "испанский"
+    ]
   },
   "PNG": {
     "id": 128,
@@ -1416,7 +1885,12 @@
     "continent": "Oceania",
     "capital": "Порт-Морсби",
     "population": 10576502,
-    "area": 462840
+    "area": 462840,
+    "official_languages": [
+      "английский",
+      "хиримоту",
+      "ток-писин"
+    ]
   },
   "PRY": {
     "id": 129,
@@ -1427,7 +1901,11 @@
     "continent": "South America",
     "capital": "Асунсьон",
     "population": 6929153,
-    "area": 406752
+    "area": 406752,
+    "official_languages": [
+      "гуарани",
+      "испанский"
+    ]
   },
   "PER": {
     "id": 130,
@@ -1438,7 +1916,12 @@
     "continent": "South America",
     "capital": "Лима",
     "population": 34217848,
-    "area": 1285216
+    "area": 1285216,
+    "official_languages": [
+      "аймара",
+      "кечуа",
+      "испанский"
+    ]
   },
   "POL": {
     "id": 131,
@@ -1449,7 +1932,10 @@
     "continent": "Europe",
     "capital": "Варшава",
     "population": 38539201,
-    "area": 312696
+    "area": 312696,
+    "official_languages": [
+      "польский"
+    ]
   },
   "PRT": {
     "id": 132,
@@ -1460,7 +1946,10 @@
     "continent": "Europe",
     "capital": "Лиссабон",
     "population": 10425292,
-    "area": 92090
+    "area": 92090,
+    "official_languages": [
+      "португальский"
+    ]
   },
   "RWA": {
     "id": 133,
@@ -1471,7 +1960,12 @@
     "continent": "Africa",
     "capital": "Кигали",
     "population": 14256567,
-    "area": 26338
+    "area": 26338,
+    "official_languages": [
+      "английский",
+      "французский",
+      "киньяруанда"
+    ]
   },
   "ROU": {
     "id": 134,
@@ -1482,7 +1976,10 @@
     "continent": "Europe",
     "capital": "Бухарест",
     "population": 19015088,
-    "area": 238397
+    "area": 238397,
+    "official_languages": [
+      "румынский"
+    ]
   },
   "SLV": {
     "id": 135,
@@ -1493,7 +1990,10 @@
     "continent": "North America",
     "capital": "Сан-Сальвадор",
     "population": 6338193,
-    "area": 21041
+    "area": 21041,
+    "official_languages": [
+      "испанский"
+    ]
   },
   "WSM": {
     "id": 136,
@@ -1504,7 +2004,11 @@
     "continent": "Oceania",
     "capital": "Апиа",
     "population": 218019,
-    "area": 2842
+    "area": 2842,
+    "official_languages": [
+      "английский",
+      "самоанский"
+    ]
   },
   "SMR": {
     "id": 137,
@@ -1515,7 +2019,10 @@
     "continent": "Europe",
     "capital": "Сан-Марино",
     "population": 33581,
-    "area": 61
+    "area": 61,
+    "official_languages": [
+      "итальянский"
+    ]
   },
   "STP": {
     "id": 138,
@@ -1526,7 +2033,10 @@
     "continent": "Africa",
     "capital": "Сан-Томе",
     "population": 235536,
-    "area": 964
+    "area": 964,
+    "official_languages": [
+      "португальский"
+    ]
   },
   "SAU": {
     "id": 139,
@@ -1537,7 +2047,10 @@
     "continent": "Asia",
     "capital": "Эр-Рияд",
     "population": 33962757,
-    "area": 2149690
+    "area": 2149690,
+    "official_languages": [
+      "арабский"
+    ]
   },
   "MKD": {
     "id": 140,
@@ -1548,7 +2061,10 @@
     "continent": "Europe",
     "capital": "Скопье",
     "population": 1823009,
-    "area": 25713
+    "area": 25713,
+    "official_languages": [
+      "македонский"
+    ]
   },
   "SYC": {
     "id": 141,
@@ -1559,7 +2075,12 @@
     "continent": "Africa",
     "capital": "Виктория",
     "population": 130418,
-    "area": 455
+    "area": 455,
+    "official_languages": [
+      "сейшельский креольский",
+      "английский",
+      "французский"
+    ]
   },
   "SEN": {
     "id": 142,
@@ -1570,7 +2091,10 @@
     "continent": "Africa",
     "capital": "Дакар",
     "population": 18501984,
-    "area": 196722
+    "area": 196722,
+    "official_languages": [
+      "французский"
+    ]
   },
   "VCT": {
     "id": 143,
@@ -1581,7 +2105,10 @@
     "continent": "North America",
     "capital": "Кингстаун",
     "population": 100616,
-    "area": 389
+    "area": 389,
+    "official_languages": [
+      "английский"
+    ]
   },
   "KNA": {
     "id": 144,
@@ -1592,7 +2119,10 @@
     "continent": "North America",
     "capital": "Бастер",
     "population": 46843,
-    "area": 261
+    "area": 261,
+    "official_languages": [
+      "английский"
+    ]
   },
   "LCA": {
     "id": 145,
@@ -1603,7 +2133,10 @@
     "continent": "North America",
     "capital": "Кастри",
     "population": 179744,
-    "area": 616
+    "area": 616,
+    "official_languages": [
+      "английский"
+    ]
   },
   "SRB": {
     "id": 146,
@@ -1614,7 +2147,10 @@
     "continent": "Europe",
     "capital": "Белград",
     "population": 6736216,
-    "area": 77474
+    "area": 77474,
+    "official_languages": [
+      "сербский"
+    ]
   },
   "SGP": {
     "id": 147,
@@ -1625,7 +2161,13 @@
     "continent": "Asia",
     "capital": "Сингапур",
     "population": 5832387,
-    "area": 728
+    "area": 728,
+    "official_languages": [
+      "английский",
+      "малайский",
+      "тамильский",
+      "китайский"
+    ]
   },
   "SYR": {
     "id": 148,
@@ -1636,7 +2178,10 @@
     "continent": "Asia",
     "capital": "Дамаск",
     "population": 24672760,
-    "area": 185180
+    "area": 185180,
+    "official_languages": [
+      "арабский"
+    ]
   },
   "SVK": {
     "id": 149,
@@ -1647,7 +2192,10 @@
     "continent": "Europe",
     "capital": "Братислава",
     "population": 5506760,
-    "area": 49037
+    "area": 49037,
+    "official_languages": [
+      "словацкий"
+    ]
   },
   "SVN": {
     "id": 150,
@@ -1658,7 +2206,10 @@
     "continent": "Europe",
     "capital": "Любляна",
     "population": 2118697,
-    "area": 20273
+    "area": 20273,
+    "official_languages": [
+      "словенский"
+    ]
   },
   "USA": {
     "id": 151,
@@ -1669,7 +2220,10 @@
     "continent": "North America",
     "capital": "Вашингтон",
     "population": 345426571,
-    "area": 9833520
+    "area": 9833520,
+    "official_languages": [
+      "английский"
+    ]
   },
   "SLB": {
     "id": 152,
@@ -1680,7 +2234,10 @@
     "continent": "Oceania",
     "capital": "Хониара",
     "population": 819198,
-    "area": 28896
+    "area": 28896,
+    "official_languages": [
+      "английский"
+    ]
   },
   "SOM": {
     "id": 153,
@@ -1691,7 +2248,11 @@
     "continent": "Africa",
     "capital": "Могадишо",
     "population": 19009151,
-    "area": 637657
+    "area": 637657,
+    "official_languages": [
+      "арабский",
+      "сомали"
+    ]
   },
   "SDN": {
     "id": 154,
@@ -1702,7 +2263,11 @@
     "continent": "Africa",
     "capital": "Хартум",
     "population": 50448963,
-    "area": 1861484
+    "area": 1861484,
+    "official_languages": [
+      "арабский",
+      "английский"
+    ]
   },
   "SUR": {
     "id": 155,
@@ -1713,7 +2278,10 @@
     "continent": "South America",
     "capital": "Парамарибо",
     "population": 634431,
-    "area": 163820
+    "area": 163820,
+    "official_languages": [
+      "нидерландский"
+    ]
   },
   "SLE": {
     "id": 156,
@@ -1724,7 +2292,10 @@
     "continent": "Africa",
     "capital": "Фритаун",
     "population": 8642022,
-    "area": 71740
+    "area": 71740,
+    "official_languages": [
+      "английский"
+    ]
   },
   "TJK": {
     "id": 157,
@@ -1735,7 +2306,11 @@
     "continent": "Asia",
     "capital": "Душанбе",
     "population": 10590927,
-    "area": 143100
+    "area": 143100,
+    "official_languages": [
+      "русский",
+      "таджикский"
+    ]
   },
   "THA": {
     "id": 158,
@@ -1746,7 +2321,10 @@
     "continent": "Asia",
     "capital": "Бангкок",
     "population": 71668011,
-    "area": 513120
+    "area": 513120,
+    "official_languages": [
+      "тайский"
+    ]
   },
   "TZA": {
     "id": 159,
@@ -1757,7 +2335,11 @@
     "continent": "Africa",
     "capital": "Додома",
     "population": 68560157,
-    "area": 945087
+    "area": 945087,
+    "official_languages": [
+      "английский",
+      "суахили"
+    ]
   },
   "TGO": {
     "id": 160,
@@ -1768,7 +2350,10 @@
     "continent": "Africa",
     "capital": "Ломе",
     "population": 9515236,
-    "area": 56785
+    "area": 56785,
+    "official_languages": [
+      "французский"
+    ]
   },
   "TON": {
     "id": 161,
@@ -1779,7 +2364,11 @@
     "continent": "Oceania",
     "capital": "Нукуалофа",
     "population": 104175,
-    "area": 747
+    "area": 747,
+    "official_languages": [
+      "английский",
+      "тонганский"
+    ]
   },
   "TTO": {
     "id": 162,
@@ -1790,7 +2379,10 @@
     "continent": "North America",
     "capital": "Порт-оф-Спейн",
     "population": 1507782,
-    "area": 5130
+    "area": 5130,
+    "official_languages": [
+      "английский"
+    ]
   },
   "TUV": {
     "id": 163,
@@ -1801,7 +2393,11 @@
     "continent": "Oceania",
     "capital": "Фунафути",
     "population": 9646,
-    "area": 26
+    "area": 26,
+    "official_languages": [
+      "английский",
+      "тувалу"
+    ]
   },
   "TUN": {
     "id": 164,
@@ -1812,7 +2408,10 @@
     "continent": "Africa",
     "capital": "Тунис",
     "population": 12277109,
-    "area": 163610
+    "area": 163610,
+    "official_languages": [
+      "арабский"
+    ]
   },
   "TKM": {
     "id": 165,
@@ -1823,7 +2422,11 @@
     "continent": "Asia",
     "capital": "Ашхабад",
     "population": 7494498,
-    "area": 488100
+    "area": 488100,
+    "official_languages": [
+      "русский",
+      "туркменский"
+    ]
   },
   "TUR": {
     "id": 166,
@@ -1834,7 +2437,10 @@
     "continent": "Asia",
     "capital": "Анкара",
     "population": 87473805,
-    "area": 783562
+    "area": 783562,
+    "official_languages": [
+      "турецкий"
+    ]
   },
   "UGA": {
     "id": 167,
@@ -1845,7 +2451,11 @@
     "continent": "Africa",
     "capital": "Кампала",
     "population": 50015092,
-    "area": 241038
+    "area": 241038,
+    "official_languages": [
+      "английский",
+      "суахили"
+    ]
   },
   "UZB": {
     "id": 168,
@@ -1856,7 +2466,11 @@
     "continent": "Asia",
     "capital": "Ташкент",
     "population": 36361859,
-    "area": 447400
+    "area": 447400,
+    "official_languages": [
+      "русский",
+      "узбекский"
+    ]
   },
   "UKR": {
     "id": 169,
@@ -1867,7 +2481,10 @@
     "continent": "Europe",
     "capital": "Киев",
     "population": 37860221,
-    "area": 603500
+    "area": 603500,
+    "official_languages": [
+      "украинский"
+    ]
   },
   "URY": {
     "id": 170,
@@ -1878,7 +2495,10 @@
     "continent": "South America",
     "capital": "Монтевидео",
     "population": 3386588,
-    "area": 176215
+    "area": 176215,
+    "official_languages": [
+      "испанский"
+    ]
   },
   "FJI": {
     "id": 171,
@@ -1889,7 +2509,12 @@
     "continent": "Oceania",
     "capital": "Сува",
     "population": 928784,
-    "area": 18274
+    "area": 18274,
+    "official_languages": [
+      "английский",
+      "фиджи",
+      "фиджийский хинди"
+    ]
   },
   "PHL": {
     "id": 172,
@@ -1900,7 +2525,11 @@
     "continent": "Asia",
     "capital": "Манила",
     "population": 115843670,
-    "area": 300000
+    "area": 300000,
+    "official_languages": [
+      "английский",
+      "филиппинский"
+    ]
   },
   "FIN": {
     "id": 173,
@@ -1911,7 +2540,11 @@
     "continent": "Europe",
     "capital": "Хельсинки",
     "population": 5617310,
-    "area": 338424
+    "area": 338424,
+    "official_languages": [
+      "финский",
+      "шведский"
+    ]
   },
   "FRA": {
     "id": 174,
@@ -1922,7 +2555,10 @@
     "continent": "Europe",
     "capital": "Париж",
     "population": 66548530,
-    "area": 551695
+    "area": 551695,
+    "official_languages": [
+      "французский"
+    ]
   },
   "HRV": {
     "id": 175,
@@ -1933,7 +2569,10 @@
     "continent": "Europe",
     "capital": "Загреб",
     "population": 3875325,
-    "area": 56594
+    "area": 56594,
+    "official_languages": [
+      "хорватский"
+    ]
   },
   "CAF": {
     "id": 176,
@@ -1944,7 +2583,11 @@
     "continent": "Africa",
     "capital": "Банги",
     "population": 5330690,
-    "area": 622984
+    "area": 622984,
+    "official_languages": [
+      "французский",
+      "санго"
+    ]
   },
   "TCD": {
     "id": 177,
@@ -1955,7 +2598,11 @@
     "continent": "Africa",
     "capital": "Нджамена",
     "population": 20299123,
-    "area": 1284000
+    "area": 1284000,
+    "official_languages": [
+      "арабский",
+      "французский"
+    ]
   },
   "MNE": {
     "id": 178,
@@ -1966,7 +2613,10 @@
     "continent": "Europe",
     "capital": "Подгорица",
     "population": 638479,
-    "area": 13812
+    "area": 13812,
+    "official_languages": [
+      "черногорский"
+    ]
   },
   "CZE": {
     "id": 179,
@@ -1977,7 +2627,11 @@
     "continent": "Europe",
     "capital": "Прага",
     "population": 10735859,
-    "area": 78865
+    "area": 78865,
+    "official_languages": [
+      "чешский",
+      "словацкий"
+    ]
   },
   "CHL": {
     "id": 180,
@@ -1988,7 +2642,10 @@
     "continent": "South America",
     "capital": "Сантьяго",
     "population": 19764771,
-    "area": 756102
+    "area": 756102,
+    "official_languages": [
+      "испанский"
+    ]
   },
   "CHE": {
     "id": 181,
@@ -1999,7 +2656,13 @@
     "continent": "Europe",
     "capital": "Берн",
     "population": 8921981,
-    "area": 41284
+    "area": 41284,
+    "official_languages": [
+      "французский",
+      "швейцарский немецкий",
+      "итальянский",
+      "романшский"
+    ]
   },
   "SWE": {
     "id": 182,
@@ -2010,7 +2673,10 @@
     "continent": "Europe",
     "capital": "Стокгольм",
     "population": 10606999,
-    "area": 450295
+    "area": 450295,
+    "official_languages": [
+      "шведский"
+    ]
   },
   "LKA": {
     "id": 183,
@@ -2021,7 +2687,11 @@
     "continent": "Asia",
     "capital": "Шри-Джаяварденепура-Котте",
     "population": 23103565,
-    "area": 65610
+    "area": 65610,
+    "official_languages": [
+      "сингальский",
+      "тамильский"
+    ]
   },
   "ECU": {
     "id": 184,
@@ -2032,7 +2702,10 @@
     "continent": "South America",
     "capital": "Кито",
     "population": 18135478,
-    "area": 283561
+    "area": 283561,
+    "official_languages": [
+      "испанский"
+    ]
   },
   "GNQ": {
     "id": 185,
@@ -2043,7 +2716,12 @@
     "continent": "Africa",
     "capital": "Малабо",
     "population": 1892516,
-    "area": 28051
+    "area": 28051,
+    "official_languages": [
+      "французский",
+      "португальский",
+      "испанский"
+    ]
   },
   "ERI": {
     "id": 186,
@@ -2054,7 +2732,12 @@
     "continent": "Africa",
     "capital": "Асмэра",
     "population": 3535603,
-    "area": 117600
+    "area": 117600,
+    "official_languages": [
+      "арабский",
+      "английский",
+      "тигринья"
+    ]
   },
   "SWZ": {
     "id": 187,
@@ -2065,7 +2748,11 @@
     "continent": "Africa",
     "capital": "Мбабане",
     "population": 1242822,
-    "area": 17364
+    "area": 17364,
+    "official_languages": [
+      "английский",
+      "свати"
+    ]
   },
   "EST": {
     "id": 188,
@@ -2076,7 +2763,10 @@
     "continent": "Europe",
     "capital": "Таллин",
     "population": 1360546,
-    "area": 45228
+    "area": 45228,
+    "official_languages": [
+      "эстонский"
+    ]
   },
   "ETH": {
     "id": 189,
@@ -2087,7 +2777,10 @@
     "continent": "Africa",
     "capital": "Аддис-Абеба",
     "population": 132059767,
-    "area": 1104300
+    "area": 1104300,
+    "official_languages": [
+      "амхарский"
+    ]
   },
   "ZAF": {
     "id": 190,
@@ -2098,7 +2791,20 @@
     "continent": "Africa",
     "capital": "Претория",
     "population": 64007187,
-    "area": 1221037
+    "area": 1221037,
+    "official_languages": [
+      "африкаанс",
+      "английский",
+      "южный ндебеле",
+      "северный сото",
+      "южный сото",
+      "свати",
+      "тсвана",
+      "тсонга",
+      "венда",
+      "коса",
+      "зулу"
+    ]
   },
   "KOR": {
     "id": 191,
@@ -2109,7 +2815,10 @@
     "continent": "Asia",
     "capital": "Сеул",
     "population": 51717590,
-    "area": 100210
+    "area": 100210,
+    "official_languages": [
+      "корейский"
+    ]
   },
   "SSD": {
     "id": 192,
@@ -2120,7 +2829,10 @@
     "continent": "Africa",
     "capital": "Джуба",
     "population": 11943408,
-    "area": 644329
+    "area": 644329,
+    "official_languages": [
+      "английский"
+    ]
   },
   "JAM": {
     "id": 193,
@@ -2131,7 +2843,11 @@
     "continent": "North America",
     "capital": "Кингстон",
     "population": 2839175,
-    "area": 10991
+    "area": 10991,
+    "official_languages": [
+      "английский",
+      "ямайский креольский"
+    ]
   },
   "JPN": {
     "id": 194,
@@ -2142,6 +2858,9 @@
     "continent": "Asia",
     "capital": "Токио",
     "population": 123753041,
-    "area": 377975
+    "area": 377975,
+    "official_languages": [
+      "японский"
+    ]
   }
 }

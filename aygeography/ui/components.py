@@ -671,6 +671,7 @@ def _nav_icon(surface: pygame.Surface, name: str, center: tuple[int, int], colou
 
 NAV_ITEMS = [
     ("game", "Игра"),
+    ("atlas", "Атлас мира"),
     ("statistics", "Статистика"),
     ("achievements", "Достижения"),
     ("mastery", "Прогресс"),
@@ -729,20 +730,29 @@ def draw_sidebar(
         draw_native_circle(surface, CYAN_DARK, (46, 784), 27)
     nickname = str(profile.get("nickname", "ExplorerAY"))
     xp = int(profile.get("xp", 0))
-    level = xp // 500 + 1
+    level = int(profile.get("level", 1))
+    required_xp = max(1, int(profile.get("required_xp", 1000)))
+    title = str(profile.get("title", "Новичок"))
     draw_text(surface, nickname, (80, 764), 14, TEXT, bold=True)
-    draw_text(surface, f"Уровень {level}", (80, 785), 12, MUTED)
-    draw_text(surface, f"{xp:,} / {(level * 500):,} XP".replace(",", " "), (80, 804), 11, MUTED)
+    draw_text(surface, title, (80, 784), 10, GREEN, bold=True)
+    draw_text(surface, f"Уровень {level}", (80, 802), 11, MUTED)
+    draw_text(
+        surface,
+        f"{xp:,} / {required_xp:,} XP".replace(",", " "),
+        (80, 818),
+        10,
+        MUTED,
+    )
     draw_native_rect(
         surface,
         PANEL_ALT,
-        (80, 825, 102, 5),
+        (80, 834, 102, 5),
         border_radius=3,
     )
     draw_native_rect(
         surface,
         CYAN,
-        (80, 825, int(102 * ((xp % 500) / 500)), 5),
+        (80, 834, int(102 * min(1.0, xp / required_xp)), 5),
         border_radius=3,
     )
 
@@ -857,6 +867,8 @@ class MapRenderer:
         self._view_cache: pygame.Surface | None = None
         self._mastery_cache_key: tuple | None = None
         self._mastery_cache: pygame.Surface | None = None
+        self._atlas_cache_key: tuple | None = None
+        self._atlas_cache: pygame.Surface | None = None
 
     def focus_country(
         self,
@@ -1216,13 +1228,21 @@ class MapRenderer:
         rect: pygame.Rect,
         levels: dict[str, int],
         colors: dict[int, str],
+        camera: MapCamera | None = None,
     ) -> None:
         """Draw a cached world map coloured by permanent country mastery."""
         target = physical_rect(surface, rect)
+        physical_camera = scaled_camera(
+            camera or MapCamera(),
+            render_scale(surface),
+        )
         key = (
             target.size,
             tuple(sorted(levels.items())),
             tuple(sorted(colors.items())),
+            round(physical_camera.zoom, 4),
+            round(physical_camera.offset.x, 2),
+            round(physical_camera.offset.y, 2),
         )
         if key != self._mastery_cache_key or self._mastery_cache is None:
             canvas = pygame.Surface(target.size)
@@ -1235,7 +1255,10 @@ class MapRenderer:
             for iso3, rings in self.geometry.items():
                 colour = pygame.Color(colors.get(levels.get(iso3, 0), "#0a5572"))
                 for ring in rings:
-                    points = [self.project(point, local) for point in ring]
+                    points = [
+                        self.project(point, local, physical_camera)
+                        for point in ring
+                    ]
                     if len(points) >= 3:
                         pygame.draw.polygon(canvas, colour, points)
                         pygame.draw.aalines(canvas, MAP_BORDER, True, points)
@@ -1250,15 +1273,82 @@ class MapRenderer:
             self._mastery_cache = canvas
         surface.blit(self._mastery_cache, target)
 
+    def draw_atlas_map(
+        self,
+        surface: pygame.Surface,
+        rect: pygame.Rect,
+        continents: dict[str, str],
+        camera: MapCamera,
+        hovered_country: str | None = None,
+    ) -> None:
+        palette = {
+            "Europe": "#79c7e3",
+            "Asia": "#f5c86b",
+            "Africa": "#e99b68",
+            "North America": "#75c58b",
+            "South America": "#a7d36f",
+            "Oceania": "#c69be1",
+        }
+        target = physical_rect(surface, rect)
+        physical_camera = scaled_camera(camera, render_scale(surface))
+        key = (
+            target.size,
+            round(physical_camera.zoom, 4),
+            round(physical_camera.offset.x, 2),
+            round(physical_camera.offset.y, 2),
+            hovered_country,
+        )
+        if key != self._atlas_cache_key or self._atlas_cache is None:
+            canvas = pygame.Surface(target.size)
+            canvas.fill(pygame.Color("#bde7f2"))
+            local = canvas.get_rect()
+            for iso3, rings in self.geometry.items():
+                colour = pygame.Color(
+                    "#fff29a"
+                    if iso3 == hovered_country
+                    else palette.get(continents.get(iso3, ""), "#b7c5c8")
+                )
+                for ring in rings:
+                    points = [
+                        self.project(point, local, physical_camera)
+                        for point in ring
+                    ]
+                    if len(points) >= 3:
+                        pygame.draw.polygon(canvas, colour, points)
+                        pygame.draw.aalines(
+                            canvas,
+                            pygame.Color("#476b73"),
+                            True,
+                            points,
+                        )
+            pygame.draw.rect(
+                canvas,
+                pygame.Color("#4a7a86"),
+                local,
+                2,
+                border_radius=7,
+            )
+            self._atlas_cache_key = key
+            self._atlas_cache = canvas
+        surface.blit(self._atlas_cache, target)
+
     def country_at(
         self,
         position: tuple[int, int],
         rect: pygame.Rect,
+        camera: MapCamera | None = None,
     ) -> str | None:
         if not rect.collidepoint(position):
             return None
-        longitude = (position[0] - rect.left) / rect.width * 360.0 - 180.0
-        latitude = 90.0 - (position[1] - rect.top) / rect.height * 180.0
+        camera = camera or MapCamera()
+        screen = pygame.Vector2(position)
+        base = (
+            pygame.Vector2(rect.center)
+            + (screen - pygame.Vector2(rect.center) - camera.offset)
+            / camera.zoom
+        )
+        longitude = (base.x - rect.left) / rect.width * 360.0 - 180.0
+        latitude = 90.0 - (base.y - rect.top) / rect.height * 180.0
         for iso3, bounds in self._country_bounds.items():
             if not (
                 bounds[0] <= longitude <= bounds[2]
@@ -1270,6 +1360,20 @@ class MapRenderer:
                 for ring in self.geometry[iso3]
             ):
                 return iso3
+        nearest = min(
+            (
+                (
+                    pygame.Vector2(
+                        self.project(center, rect, camera)
+                    ).distance_to(position),
+                    iso3,
+                )
+                for iso3, center in self.centers.items()
+            ),
+            default=(float("inf"), None),
+        )
+        if nearest[0] <= max(5.0, 7.0 * min(2.0, camera.zoom)):
+            return nearest[1]
         return None
 
     @staticmethod

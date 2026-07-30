@@ -98,8 +98,14 @@ class BaseView:
         return button
 
     def _create_sidebar_actions(self) -> None:
+        if (
+            self.app.profile_manager is not None
+            and not self.app._profile_selected
+        ):
+            return
         routes = {
             "game": self.app.show_game,
+            "atlas": lambda: self.app.show("atlas"),
             "statistics": lambda: self.app.show("statistics"),
             "achievements": lambda: self.app.show("achievements"),
             "mastery": lambda: self.app.show("mastery"),
@@ -127,6 +133,14 @@ class BaseView:
     def draw(self, surface: pygame.Surface) -> None:
         surface.fill(BG)
         profile = self.app.repository.profile()
+        progress = self.app.profile_progression.progress(
+            int(profile["level"]),
+            int(profile["xp"]),
+        )
+        profile.update(
+            required_xp=progress.required_xp,
+            title=progress.title,
+        )
         avatar = self.app.assets.avatar(int(profile["avatar"]))
         draw_sidebar(surface, self.active, profile, avatar, self.app.assets.icon)
         draw_footer(surface, self.app.assets.icon)
@@ -1393,6 +1407,14 @@ class ResultView(BaseView):
 
 class StatisticsView(BaseView):
     active = "statistics"
+    PERIODS = (
+        ("today", "Сегодня"),
+        ("yesterday", "Вчера"),
+        ("3_days", "Последние 3 дня"),
+        ("week", "Неделя"),
+        ("month", "Месяц"),
+        ("all", "Всё время"),
+    )
 
     def __init__(self, app) -> None:
         super().__init__(app)
@@ -1400,6 +1422,18 @@ class StatisticsView(BaseView):
         self.activity_cells: list[
             tuple[pygame.Rect, str, float]
         ] = []
+        self.period = "all"
+        self.period_rects: dict[str, pygame.Rect] = {}
+        widths = (112, 105, 165, 105, 105, 120)
+        x = 772
+        for (key, _), width in zip(self.PERIODS, widths):
+            rect = pygame.Rect(x, 18, width, 36)
+            self.period_rects[key] = rect
+            self.add_action(
+                rect,
+                lambda value=key: setattr(self, "period", value),
+            )
+            x += width + 8
 
     def handle_event(self, event: pygame.event.Event) -> None:
         if event.type == pygame.MOUSEMOTION:
@@ -1434,22 +1468,38 @@ class StatisticsView(BaseView):
 
     def draw(self, surface: pygame.Surface) -> None:
         super().draw(surface)
-        stats = self.app.repository.statistics()
+        stats = self.app.repository.statistics(self.period)
         total = stats["total"]
+        draw_text(
+            surface,
+            "Период статистики",
+            (250, 27),
+            15,
+            TEXT,
+            bold=True,
+        )
+        for key, label in self.PERIODS:
+            draw_button(
+                surface,
+                self.period_rects[key],
+                label,
+                selected=key == self.period,
+                size=12,
+            )
         metrics = [
             ("Раундов", str(total["rounds"])),
             ("Ответов", str(total["question_count"])),
             ("Игровых минут", str(round(total["duration"] / 60))),
             (
-                "Лучший результат за последние 7 д.",
-                f"{total['best_score_last_7_days_25_questions']} XP",
+                "Лучший результат (25 вопросов)",
+                f"{total['best_score_25_questions']} XP",
             ),
         ]
         for index, (title, value) in enumerate(metrics):
-            rect = pygame.Rect(250 + index * 325, 42, 290, 92)
+            rect = pygame.Rect(250 + index * 325, 68, 290, 72)
             panel(surface, rect)
-            draw_text(surface, title, (rect.left + 18, rect.top + 16), 13, MUTED)
-            draw_text(surface, value, (rect.left + 18, rect.top + 44), 25, TEXT, bold=True)
+            draw_text(surface, title, (rect.left + 18, rect.top + 11), 12, MUTED)
+            draw_text(surface, value, (rect.left + 18, rect.top + 34), 23, TEXT, bold=True)
         left = pygame.Rect(250, 165, 620, 330)
         right = pygame.Rect(900, 165, 620, 330)
         bottom = pygame.Rect(250, 525, 1270, 285)
@@ -1723,18 +1773,252 @@ class AchievementsView(BaseView):
         )
 
 
-class MasteryView(BaseView):
-    active = "mastery"
+class InteractiveMapView(BaseView):
+    """Reusable pan/zoom controls for non-game world maps."""
 
     def __init__(self, app) -> None:
         super().__init__(app)
         self.mouse_position: tuple[int, int] | None = None
         self.map_rect = pygame.Rect(275, 155, 1210, 535)
-        self.mastery = app.progression.country_mastery()
+        self.map_camera = MapCamera()
+        self.map_buttons: dict[UIButton, tuple[str, pygame.Rect]] = {}
+        self._dragging = False
+        self._drag_origin = pygame.Vector2()
+        self._drag_offset = pygame.Vector2()
+        self._build_map_actions()
+
+    def _build_map_actions(self) -> None:
+        left, right, bottom = (
+            self.map_rect.left,
+            self.map_rect.right,
+            self.map_rect.bottom,
+        )
+        controls = {
+            "zoom_in": pygame.Rect(left + 15, bottom - 145, 42, 42),
+            "zoom_out": pygame.Rect(left + 15, bottom - 98, 42, 42),
+            "reset": pygame.Rect(left + 15, bottom - 51, 42, 42),
+            "up": pygame.Rect(right - 100, bottom - 145, 42, 42),
+            "left": pygame.Rect(right - 147, bottom - 98, 42, 42),
+            "down": pygame.Rect(right - 100, bottom - 98, 42, 42),
+            "right": pygame.Rect(right - 53, bottom - 98, 42, 42),
+        }
+        actions = {
+            "zoom_in": lambda: self._zoom(1.2),
+            "zoom_out": lambda: self._zoom(1 / 1.2),
+            "reset": self.map_camera.reset,
+            "up": lambda: self.map_camera.pan(0, 45),
+            "left": lambda: self.map_camera.pan(45, 0),
+            "down": lambda: self.map_camera.pan(0, -45),
+            "right": lambda: self.map_camera.pan(-45, 0),
+        }
+        for key, rect in controls.items():
+            button = self.add_action(rect, actions[key])
+            self.map_buttons[button] = key, rect
+
+    def _zoom(self, factor: float) -> None:
+        focus = (
+            self.mouse_position
+            if self.mouse_position
+            and self.map_rect.collidepoint(self.mouse_position)
+            else self.map_rect.center
+        )
+        self.map_camera.zoom_by(factor, self.map_rect, focus)
 
     def handle_event(self, event: pygame.event.Event) -> None:
         if event.type == pygame.MOUSEMOTION:
             self.mouse_position = event.pos
+            if self._dragging:
+                delta = pygame.Vector2(event.pos) - self._drag_origin
+                self.map_camera.offset = self._drag_offset + delta
+            return
+        if event.type == pygame.MOUSEWHEEL:
+            self._zoom(1.15 ** event.y)
+            return
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            on_control = any(
+                rect.collidepoint(event.pos)
+                for _, rect in self.map_buttons.values()
+            )
+            if self.map_rect.collidepoint(event.pos) and not on_control:
+                self._dragging = True
+                self._drag_origin.update(event.pos)
+                self._drag_offset = self.map_camera.offset.copy()
+            return
+        if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            self._dragging = False
+            return
+        if event.type != pygame.KEYDOWN:
+            return
+        if event.key in (pygame.K_PLUS, pygame.K_EQUALS, pygame.K_KP_PLUS):
+            self._zoom(1.2)
+        elif event.key in (pygame.K_MINUS, pygame.K_KP_MINUS):
+            self._zoom(1 / 1.2)
+        elif event.key == pygame.K_LEFT:
+            self.map_camera.pan(45, 0)
+        elif event.key == pygame.K_RIGHT:
+            self.map_camera.pan(-45, 0)
+        elif event.key == pygame.K_UP:
+            self.map_camera.pan(0, 45)
+        elif event.key == pygame.K_DOWN:
+            self.map_camera.pan(0, -45)
+        elif event.key == pygame.K_r:
+            self.map_camera.reset()
+
+    def _draw_map_controls(self, surface: pygame.Surface) -> None:
+        for _, (key, rect) in self.map_buttons.items():
+            panel(
+                surface,
+                rect,
+                fill=pygame.Color("#061a25"),
+                border=CYAN_DARK,
+                radius=6,
+            )
+            icon_name = {
+                "left": "arrow_left",
+                "right": "arrow_right",
+                "up": "arrow_up",
+                "down": "arrow_down",
+            }.get(key, key)
+            icon = self.app.assets.icon(icon_name, (27, 27))
+            blit_centered(surface, icon, rect.center)
+        draw_text(
+            surface,
+            "ЛКМ: перемещение  •  колесо: масштаб  •  R: сброс",
+            (self.map_rect.centerx, self.map_rect.bottom - 12),
+            12,
+            MUTED,
+            anchor="midbottom",
+        )
+
+
+class AtlasView(InteractiveMapView):
+    active = "atlas"
+
+    def __init__(self, app) -> None:
+        super().__init__(app)
+        self._continents = {
+            country.iso3: country.continent
+            for country in app.catalog.all()
+        }
+
+    def draw(self, surface: pygame.Surface) -> None:
+        super().draw(surface)
+        self.draw_page_title(
+            surface,
+            "Атлас мира",
+            "Наведите курсор на страну, чтобы увидеть подробности",
+        )
+        hovered = (
+            self.app.map_renderer.country_at(
+                self.mouse_position,
+                self.map_rect,
+                self.map_camera,
+            )
+            if self.mouse_position is not None
+            else None
+        )
+        self.app.map_renderer.draw_atlas_map(
+            surface,
+            self.map_rect,
+            self._continents,
+            self.map_camera,
+            hovered,
+        )
+        self._draw_map_controls(surface)
+        if hovered and hovered in self._continents:
+            self._draw_country_card(surface, hovered)
+
+    def _draw_country_card(
+        self,
+        surface: pygame.Surface,
+        iso3: str,
+    ) -> None:
+        assert self.mouse_position is not None
+        country = self.app.catalog.get(iso3)
+        language_lines = textwrap.wrap(
+            ", ".join(country.official_languages),
+            width=38,
+        ) or ["—"]
+        card = pygame.Rect(
+            self.mouse_position[0] + 18,
+            self.mouse_position[1] + 18,
+            390,
+            170 + max(0, len(language_lines) - 1) * 18,
+        )
+        card.clamp_ip(pygame.Rect(225, 125, 1350, 680))
+        panel(
+            surface,
+            card,
+            fill=pygame.Color("#f8fcfd"),
+            border=pygame.Color("#4a7a86"),
+            radius=10,
+        )
+        flag = self.app.assets.image(
+            ASSETS_DIR / "flags_png" / f"{iso3}.png"
+        )
+        blit_centered(
+            surface,
+            flag,
+            (card.left + 57, card.top + 48),
+            (82, 52),
+        )
+        dark = pygame.Color("#17343d")
+        secondary = pygame.Color("#4f6870")
+        draw_text(
+            surface,
+            country.name,
+            (card.left + 112, card.top + 22),
+            18,
+            dark,
+            bold=True,
+        )
+        rows = (
+            ("Столица", country.capital),
+            ("Население", f"{format_population(country.population)} чел."),
+            ("Площадь", f"{country.area:,} км²".replace(",", " ")),
+        )
+        for index, (label, value) in enumerate(rows):
+            y = card.top + 72 + index * 25
+            draw_text(
+                surface,
+                label,
+                (card.left + 18, y),
+                11,
+                secondary,
+                bold=True,
+            )
+            draw_text(
+                surface,
+                value,
+                (card.left + 112, y),
+                11,
+                dark,
+            )
+        y = card.top + 147
+        draw_text(
+            surface,
+            "Оф. язык",
+            (card.left + 18, y),
+            11,
+            secondary,
+            bold=True,
+        )
+        for index, line in enumerate(language_lines):
+            draw_text(
+                surface,
+                line,
+                (card.left + 112, y + index * 18),
+                11,
+                dark,
+            )
+
+
+class MasteryView(InteractiveMapView):
+    active = "mastery"
+
+    def __init__(self, app) -> None:
+        super().__init__(app)
+        self.mastery = app.progression.country_mastery()
 
     def draw(self, surface: pygame.Surface) -> None:
         super().draw(surface)
@@ -1758,7 +2042,9 @@ class MasteryView(BaseView):
             self.map_rect,
             levels,
             self.app.progression_catalog.mastery_colors,
+            self.map_camera,
         )
+        self._draw_map_controls(surface)
         legend_y = 726
         legend_center = self.map_rect.centerx
         labels = ("Не изучена", "1 звезда", "2 звезды", "3 звезды")
@@ -1787,6 +2073,7 @@ class MasteryView(BaseView):
         iso3 = self.app.map_renderer.country_at(
             self.mouse_position,
             self.map_rect,
+            self.map_camera,
         )
         if iso3 is None or iso3 not in self.mastery:
             return
@@ -1850,7 +2137,12 @@ class ProfileView(BaseView):
         self.selected = int(profile["avatar"])
         self.avatar_rects: list[pygame.Rect] = []
         for index in range(10):
-            rect = pygame.Rect(695 + (index % 5) * 120, 500 + (index // 5) * 120, 92, 92)
+            rect = pygame.Rect(
+                624 + (index % 5) * 116,
+                435 + (index // 5) * 108,
+                92,
+                92,
+            )
             self.avatar_rects.append(rect)
             self.add_action(rect, lambda value=index: setattr(self, "selected", value))
         self.entry_rect = pygame.Rect(645, 220, 360, 50)
@@ -1860,8 +2152,23 @@ class ProfileView(BaseView):
             object_id="#profile_entry",
         )
         self.entry.set_text(str(profile["nickname"]))
-        self.save_rect = primary_action_rect(825, 755)
+        self.save_rect = primary_action_rect(825, 650)
         self.add_action(self.save_rect, self._save)
+        self.create_rect = pygame.Rect(300, 735, 270, 52)
+        self.delete_rect = pygame.Rect(590, 735, 270, 52)
+        self.export_rect = pygame.Rect(880, 735, 270, 52)
+        self.import_rect = pygame.Rect(1170, 735, 270, 52)
+        if app.profile_manager is not None:
+            self.add_action(
+                self.create_rect,
+                lambda: app.show("profile_create"),
+            )
+            self.add_action(
+                self.delete_rect,
+                lambda: app.show("profile_delete"),
+            )
+            self.add_action(self.export_rect, app.export_current_profile)
+            self.add_action(self.import_rect, app.import_profile)
 
     def _save(self) -> None:
         self.app.repository.update_profile(self.entry.get_text(), self.selected)
@@ -1884,12 +2191,49 @@ class ProfileView(BaseView):
             anchor="midleft",
         )
         xp = int(profile["xp"])
-        level = xp // 500 + 1
-        draw_text(surface, f"Уровень {level}", (825, 300), 17, TEXT, bold=True, anchor="center")
+        progress = self.app.profile_progression.progress(
+            int(profile["level"]),
+            xp,
+        )
+        draw_text(
+            surface,
+            progress.title,
+            (825, 292),
+            16,
+            GREEN,
+            bold=True,
+            anchor="center",
+        )
+        draw_text(
+            surface,
+            f"Уровень {progress.level}",
+            (825, 318),
+            17,
+            TEXT,
+            bold=True,
+            anchor="center",
+        )
         draw_native_rect(surface, PANEL_ALT, (645, 335, 360, 12), border_radius=6)
-        draw_native_rect(surface, GREEN, (645, 335, round(360 * ((xp % 500) / 500)), 12), border_radius=6)
-        draw_text(surface, f"{xp:,} / {level * 500:,} XP".replace(",", " "), (825, 370), 14, TEXT, anchor="center")
-        draw_text(surface, "Выберите аватар", (825, 445), 19, TEXT, bold=True, anchor="center")
+        draw_native_rect(
+            surface,
+            GREEN,
+            (
+                645,
+                335,
+                round(360 * min(1.0, xp / progress.required_xp)),
+                12,
+            ),
+            border_radius=6,
+        )
+        draw_text(
+            surface,
+            f"{xp:,} / {progress.required_xp:,} XP".replace(",", " "),
+            (825, 365),
+            14,
+            TEXT,
+            anchor="center",
+        )
+        draw_text(surface, "Выберите аватар", (825, 405), 19, TEXT, bold=True, anchor="center")
         for index, rect in enumerate(self.avatar_rects):
             selected = index == self.selected
             blit_centered(
@@ -1905,6 +2249,321 @@ class ProfileView(BaseView):
             primary=True,
             size=PRIMARY_ACTION_FONT_SIZE,
         )
+        if self.app.profile_manager is not None:
+            draw_button(surface, self.create_rect, "Создать профиль", size=15)
+            draw_button(
+                surface,
+                self.delete_rect,
+                "Удалить профиль",
+                size=15,
+            )
+            draw_button(surface, self.export_rect, "Экспорт", size=15)
+            draw_button(surface, self.import_rect, "Импорт", size=15)
+
+
+class ProfileCreateView(BaseView):
+    active = "profile"
+
+    def __init__(self, app) -> None:
+        super().__init__(app)
+        self.selected = 0
+        self.entry_rect = pygame.Rect(620, 180, 410, 52)
+        self.entry = UITextEntryLine(
+            self.entry_rect,
+            manager=self.manager,
+            object_id="#profile_entry",
+        )
+        self.entry.set_text("Новый игрок")
+        self.avatar_rects = []
+        for index in range(10):
+            rect = pygame.Rect(
+                624 + (index % 5) * 116,
+                335 + (index // 5) * 108,
+                92,
+                92,
+            )
+            self.avatar_rects.append(rect)
+            self.add_action(
+                rect,
+                lambda value=index: setattr(self, "selected", value),
+            )
+        self.create_rect = primary_action_rect(825, 615)
+        self.cancel_rect = pygame.Rect(690, 690, 270, 50)
+        self.add_action(
+            self.create_rect,
+            lambda: app.create_profile(
+                self.entry.get_text(),
+                self.selected,
+            ),
+        )
+        self.add_action(
+            self.cancel_rect,
+            lambda: app.show(
+                "profile_select"
+                if app.profile_manager is not None
+                and not app._profile_selected
+                else "profile"
+            ),
+        )
+
+    def draw(self, surface: pygame.Surface) -> None:
+        super().draw(surface)
+        self.draw_page_title(surface, "Новый профиль")
+        panel(surface, self.entry_rect, fill=PANEL_ALT, border=CYAN_DARK)
+        draw_text(
+            surface,
+            self.entry.get_text() or "Введите имя",
+            (self.entry_rect.left + 15, self.entry_rect.centery),
+            17,
+            TEXT if self.entry.get_text() else MUTED,
+            anchor="midleft",
+        )
+        draw_text(
+            surface,
+            "Выберите аватар",
+            (825, 292),
+            19,
+            TEXT,
+            bold=True,
+            anchor="center",
+        )
+        for index, rect in enumerate(self.avatar_rects):
+            blit_centered(
+                surface,
+                self.app.assets.avatar(index),
+                rect.center,
+                (88, 88) if index == self.selected else (78, 78),
+            )
+        draw_button(
+            surface,
+            self.create_rect,
+            "Создать профиль",
+            primary=True,
+            size=PRIMARY_ACTION_FONT_SIZE,
+        )
+        draw_button(surface, self.cancel_rect, "Отмена", size=16)
+
+
+class ProfileDeleteView(BaseView):
+    active = "profile"
+    PAGE_SIZE = 8
+
+    def __init__(self, app) -> None:
+        super().__init__(app)
+        self.page = 0
+        self.profile_buttons: list[
+            tuple[UIButton, pygame.Rect, object]
+        ] = []
+        self.previous_rect = pygame.Rect(600, 740, 70, 46)
+        self.next_rect = pygame.Rect(980, 740, 70, 46)
+        self.add_action(self.previous_rect, lambda: self._change_page(-1))
+        self.add_action(self.next_rect, lambda: self._change_page(1))
+        self._build_profile_actions()
+
+    @property
+    def profiles(self):
+        assert self.app.profile_manager is not None
+        return self.app.profile_manager.profiles()
+
+    @property
+    def page_count(self) -> int:
+        return max(1, math.ceil(len(self.profiles) / self.PAGE_SIZE))
+
+    def _change_page(self, delta: int) -> None:
+        self.page = max(0, min(self.page_count - 1, self.page + delta))
+        self._build_profile_actions()
+
+    def _build_profile_actions(self) -> None:
+        for button, _, _ in self.profile_buttons:
+            self._actions.pop(button, None)
+            button.kill()
+        self.profile_buttons.clear()
+        start = self.page * self.PAGE_SIZE
+        for index, profile in enumerate(
+            self.profiles[start : start + self.PAGE_SIZE]
+        ):
+            column, row = index % 2, index // 2
+            rect = pygame.Rect(
+                300 + column * 620,
+                155 + row * 130,
+                580,
+                105,
+            )
+            button = self.add_action(
+                rect,
+                lambda value=profile.id: self.app.request_profile_deletion(
+                    value
+                ),
+            )
+            self.profile_buttons.append((button, rect, profile))
+
+    def draw(self, surface: pygame.Surface) -> None:
+        super().draw(surface)
+        self.draw_page_title(
+            surface,
+            "Удаление профиля",
+            "Удаление потребует двух подтверждений",
+        )
+        for _, rect, profile in self.profile_buttons:
+            panel(surface, rect)
+            blit_centered(
+                surface,
+                self.app.assets.avatar(profile.avatar),
+                (rect.left + 55, rect.centery),
+                (76, 76),
+            )
+            draw_text(
+                surface,
+                profile.nickname,
+                (rect.left + 105, rect.top + 24),
+                17,
+                TEXT,
+                bold=True,
+            )
+            draw_text(
+                surface,
+                f"Уровень {profile.level}",
+                (rect.left + 105, rect.top + 56),
+                13,
+                MUTED,
+            )
+            draw_text(
+                surface,
+                "Удалить",
+                (rect.right - 28, rect.centery),
+                14,
+                RED,
+                bold=True,
+                anchor="midright",
+            )
+        if self.page_count > 1:
+            draw_button(
+                surface,
+                self.previous_rect,
+                "‹",
+                disabled=self.page == 0,
+                size=22,
+            )
+            draw_text(
+                surface,
+                f"{self.page + 1} / {self.page_count}",
+                (825, self.previous_rect.centery),
+                14,
+                TEXT,
+                anchor="center",
+            )
+            draw_button(
+                surface,
+                self.next_rect,
+                "›",
+                disabled=self.page >= self.page_count - 1,
+                size=22,
+            )
+
+
+class ProfileSelectionView(BaseView):
+    PAGE_SIZE = 6
+
+    def _create_sidebar_actions(self) -> None:
+        pass
+
+    def __init__(self, app) -> None:
+        super().__init__(app)
+        self.page = 0
+        self.profile_buttons: list[
+            tuple[UIButton, pygame.Rect, object]
+        ] = []
+        self.create_rect = pygame.Rect(485, 720, 290, 54)
+        self.import_rect = pygame.Rect(825, 720, 290, 54)
+        self.previous_rect = pygame.Rect(260, 720, 70, 46)
+        self.next_rect = pygame.Rect(1270, 720, 70, 46)
+        self.add_action(
+            self.create_rect,
+            lambda: app.show("profile_create"),
+        )
+        self.add_action(self.import_rect, app.import_profile)
+        self.add_action(self.previous_rect, lambda: self._change_page(-1))
+        self.add_action(self.next_rect, lambda: self._change_page(1))
+        self._build_profile_actions()
+
+    @property
+    def profiles(self):
+        return self.app.profile_manager.profiles()
+
+    @property
+    def page_count(self) -> int:
+        return max(1, math.ceil(len(self.profiles) / self.PAGE_SIZE))
+
+    def _change_page(self, delta: int) -> None:
+        self.page = max(0, min(self.page_count - 1, self.page + delta))
+        self._build_profile_actions()
+
+    def _build_profile_actions(self) -> None:
+        for button, _, _ in self.profile_buttons:
+            self._actions.pop(button, None)
+            button.kill()
+        self.profile_buttons.clear()
+        start = self.page * self.PAGE_SIZE
+        for index, profile in enumerate(
+            self.profiles[start : start + self.PAGE_SIZE]
+        ):
+            column, row = index % 3, index // 3
+            rect = pygame.Rect(
+                230 + column * 390,
+                225 + row * 225,
+                350,
+                190,
+            )
+            button = self.add_action(
+                rect,
+                lambda value=profile.id: self.app.select_profile(value),
+            )
+            self.profile_buttons.append((button, rect, profile))
+
+    def draw(self, surface: pygame.Surface) -> None:
+        surface.fill(BG)
+        draw_logo(surface, (LOGICAL_SIZE[0] // 2, 92), 52)
+        draw_text(
+            surface,
+            "Выберите профиль",
+            (LOGICAL_SIZE[0] // 2, 158),
+            30,
+            TEXT,
+            bold=True,
+            anchor="center",
+        )
+        for _, rect, profile in self.profile_buttons:
+            panel(surface, rect)
+            blit_centered(
+                surface,
+                self.app.assets.avatar(profile.avatar),
+                (rect.centerx, rect.top + 67),
+                (100, 100),
+            )
+            draw_text(
+                surface,
+                profile.nickname,
+                (rect.centerx, rect.top + 128),
+                18,
+                TEXT,
+                bold=True,
+                anchor="center",
+            )
+            title = self.app.profile_progression.title(profile.level)
+            draw_text(
+                surface,
+                f"{title} • уровень {profile.level}",
+                (rect.centerx, rect.top + 158),
+                12,
+                GREEN,
+                anchor="center",
+            )
+        draw_button(surface, self.create_rect, "Создать профиль", size=16)
+        draw_button(surface, self.import_rect, "Импортировать", size=16)
+        if self.page_count > 1:
+            draw_button(surface, self.previous_rect, "‹", size=22)
+            draw_button(surface, self.next_rect, "›", size=22)
+        draw_footer(surface, self.app.assets.icon)
 
 
 class SettingsView(BaseView):
@@ -2001,9 +2660,13 @@ VIEW_TYPES = {
     "modes": ModeSelectionView,
     "continents": ContinentSelectionView,
     "question_count": QuestionCountView,
+    "atlas": AtlasView,
     "statistics": StatisticsView,
     "achievements": AchievementsView,
     "mastery": MasteryView,
     "profile": ProfileView,
+    "profile_create": ProfileCreateView,
+    "profile_delete": ProfileDeleteView,
+    "profile_select": ProfileSelectionView,
     "settings": SettingsView,
 }

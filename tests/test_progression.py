@@ -50,7 +50,7 @@ class ProgressionTests(unittest.TestCase):
                 ).fetchall()
             }
 
-        self.assertEqual(2, version)
+        self.assertEqual(3, version)
         self.assertEqual(1, foreign_keys)
         self.assertIn("idx_rounds_started_at", indexes)
         self.assertIn("idx_answers_round_id", indexes)

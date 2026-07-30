@@ -31,6 +31,10 @@ class CountryCatalog:
                 continent=data["continent"],
                 population=int(data["population"]),
                 area=int(data["area"]),
+                official_languages=tuple(
+                    str(language)
+                    for language in data["official_languages"]
+                ),
             )
             for iso3, data in raw_countries.items()
         }

@@ -837,6 +837,47 @@ class PygameAppTests(unittest.TestCase):
             any(key.startswith("rotate") for key, _ in view.map_buttons.values())
         )
 
+    def test_atlas_and_mastery_maps_support_pan_zoom_and_country_hover(self):
+        for route in ("atlas", "mastery"):
+            with self.subTest(route=route):
+                self.app.show(route)
+                view = self.app.view
+                start_zoom = view.map_camera.zoom
+                view.handle_event(
+                    pygame.event.Event(
+                        pygame.MOUSEMOTION,
+                        {"pos": view.map_rect.center, "rel": (0, 0)},
+                    )
+                )
+                view.handle_event(
+                    pygame.event.Event(
+                        pygame.MOUSEWHEEL,
+                        {"y": 1, "x": 0},
+                    )
+                )
+                self.assertGreater(view.map_camera.zoom, start_zoom)
+                country_position = self.app.map_renderer.project(
+                    self.app.map_renderer.centers["RUS"],
+                    view.map_rect,
+                    view.map_camera,
+                )
+                self.assertEqual(
+                    "RUS",
+                    self.app.map_renderer.country_at(
+                        country_position,
+                        view.map_rect,
+                        view.map_camera,
+                    ),
+                )
+
+    def test_profile_avatar_grid_is_centered(self):
+        self.app.show("profile")
+        rects = self.app.view.avatar_rects[:5]
+        self.assertLessEqual(
+            abs((rects[0].left + rects[-1].right) / 2 - CONTENT.centerx),
+            2,
+        )
+
     def test_country_highlight_starts_at_nine_x_zoom(self):
         self.app.start_game(GameConfig(["countries"], ["Europe"], 10))
         view = self.app.view

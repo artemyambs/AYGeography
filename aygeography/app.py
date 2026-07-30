@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import ctypes
+import json
 import os
 import time
+import zipfile
 from pathlib import Path
 from typing import Callable
 
@@ -35,9 +37,11 @@ from .config import (
     ASSETS_DIR,
     CONFIGS_DIR,
     CONTINENT_NAMES,
-    DATABASE_PATH,
+    SAVE_DIR,
 )
 from .models import GameConfig, RoundResult
+from .profile_progress import ProfileProgression
+from .profiles import ProfileManager
 from .progression import ProgressionCatalog, ProgressionService
 from .quiz import GameSession, QuestionFactory
 from .storage import GameRepository
@@ -52,7 +56,13 @@ from .ui.components import (
     draw_text,
 )
 from .ui.modals import ConfirmationModal
-from .ui.screens import GameView, HomeView, ResultView, VIEW_TYPES
+from .ui.screens import (
+    GameView,
+    HomeView,
+    ProfileSelectionView,
+    ResultView,
+    VIEW_TYPES,
+)
 from .wonders import WonderCatalog
 from .waters import WaterCatalog
 
@@ -160,7 +170,20 @@ class AYGeographyApp:
             CONFIGS_DIR / "water_area",
             self.catalog.all(),
         )
-        self.repository = repository or GameRepository(DATABASE_PATH)
+        self.profile_progression = ProfileProgression(
+            CONFIGS_DIR / "progression.json"
+        )
+        self.profile_manager = (
+            None
+            if repository is not None
+            else ProfileManager(SAVE_DIR, self.profile_progression)
+        )
+        self._profile_selected = self.profile_manager is None
+        if self.profile_manager is not None:
+            default_profile = self.profile_manager.ensure_default()
+            repository = self.profile_manager.repository(default_profile.id)
+        assert repository is not None
+        self.repository = repository
         self.progression_catalog = ProgressionCatalog(
             CONFIGS_DIR / "progression.json",
             CONFIGS_DIR / "achievements.json",
@@ -170,13 +193,7 @@ class AYGeographyApp:
             wonder_catalog=self.wonder_catalog,
         )
         self.mode_registry = self.question_factory.registry
-        self.progression = ProgressionService(
-            self.repository,
-            self.catalog,
-            self.progression_catalog,
-            self.mode_registry,
-        )
-        self.progression.sync()
+        self.progression = self._create_progression_service()
         self.map_renderer = MapRenderer(
             ASSETS_DIR / "maps/world_geometry.json",
             self.water_catalog,
@@ -200,10 +217,14 @@ class AYGeographyApp:
         self._toast = ""
         self._toast_colour = GREEN
         self._toast_until = 0.0
-        self.show("home")
-        if self._active_game_state is not None:
+        self.show("profile_select" if self.profile_manager is not None else "home")
+        if self.profile_manager is None and self._active_game_state is not None:
             self._offer_resume_game()
-        if self.repository.settings()["fullscreen"] and not headless:
+        if (
+            self.profile_manager is None
+            and self.repository.settings()["fullscreen"]
+            and not headless
+        ):
             self.set_fullscreen(True)
 
     @staticmethod
@@ -223,7 +244,154 @@ class AYGeographyApp:
     def clock(self) -> float:
         return self.clock_source()
 
+    def _create_progression_service(self) -> ProgressionService:
+        service = ProgressionService(
+            self.repository,
+            self.catalog,
+            self.progression_catalog,
+            self.mode_registry,
+        )
+        service.sync()
+        return service
+
+    def select_profile(self, profile_id: str) -> None:
+        if self.profile_manager is None:
+            return
+        self.profile_manager.set_active_profile(profile_id)
+        self._profile_selected = True
+        self.repository = self.profile_manager.repository(profile_id)
+        self.progression = self._create_progression_service()
+        self._active_game_state = self.repository.load_active_game()
+        if not self._headless:
+            fullscreen = bool(self.repository.settings()["fullscreen"])
+            if fullscreen != self._fullscreen:
+                self.set_fullscreen(fullscreen)
+        self.show("home")
+        if self._active_game_state is not None:
+            self._offer_resume_game()
+
+    def create_profile(self, nickname: str, avatar: int) -> None:
+        if self.profile_manager is None:
+            return
+        profile = self.profile_manager.create(nickname, avatar)
+        self.select_profile(profile.id)
+        self.toast("Профиль создан", GREEN)
+
+    def request_profile_deletion(self, profile_id: str) -> None:
+        if self.profile_manager is None:
+            return
+        profiles = {item.id: item for item in self.profile_manager.profiles()}
+        profile = profiles.get(profile_id)
+        if profile is None:
+            return
+        self._open_confirmation(
+            title="Удаление профиля",
+            description=f"Удалить профиль «{profile.nickname}»?",
+            action_name="Продолжить",
+            action=lambda: self._confirm_profile_deletion(profile_id),
+            danger=True,
+        )
+
+    def _confirm_profile_deletion(self, profile_id: str) -> None:
+        assert self.profile_manager is not None
+        profiles = {item.id: item for item in self.profile_manager.profiles()}
+        profile = profiles.get(profile_id)
+        if profile is None:
+            return
+        self._open_confirmation(
+            title="Подтвердите удаление",
+            description=(
+                f"Все данные профиля «{profile.nickname}» будут удалены безвозвратно."
+            ),
+            action_name="Удалить",
+            action=lambda: self._delete_profile(profile_id),
+            danger=True,
+        )
+
+    def _delete_profile(self, profile_id: str) -> None:
+        assert self.profile_manager is not None
+        try:
+            self.profile_manager.delete(profile_id)
+        except ValueError as error:
+            self.toast(str(error), RED)
+            return
+        active_id = self.profile_manager.active_profile_id()
+        if active_id:
+            self.repository = self.profile_manager.repository(active_id)
+            self.progression = self._create_progression_service()
+        self.show("profile")
+        self.toast("Профиль удалён", GREEN)
+
+    def export_current_profile(self, destination: Path | None = None) -> None:
+        if self.profile_manager is None:
+            self.toast("Экспорт недоступен для временного профиля", RED)
+            return
+        profile_id = self.profile_manager.active_profile_id()
+        if profile_id is None:
+            self.toast("Сначала выберите профиль", RED)
+            return
+        destination = destination or self._save_profile_dialog()
+        if destination is None:
+            return
+        try:
+            path = self.profile_manager.export_profile(
+                profile_id,
+                destination,
+            )
+        except (OSError, ValueError) as error:
+            self.toast(f"Ошибка экспорта: {error}", RED)
+            return
+        self.toast(f"Профиль сохранён: {path.name}", GREEN)
+
+    def import_profile(self, source: Path | None = None) -> None:
+        if self.profile_manager is None:
+            self.toast("Импорт недоступен для временного профиля", RED)
+            return
+        source = source or self._open_profile_dialog()
+        if source is None:
+            return
+        try:
+            profile = self.profile_manager.import_profile(source)
+        except (OSError, ValueError, zipfile.BadZipFile, json.JSONDecodeError) as error:
+            self.toast(f"Ошибка импорта: {error}", RED)
+            return
+        self.select_profile(profile.id)
+        self.toast("Профиль импортирован", GREEN)
+
+    @staticmethod
+    def _save_profile_dialog() -> Path | None:
+        from tkinter import Tk, filedialog
+
+        root = Tk()
+        root.withdraw()
+        value = filedialog.asksaveasfilename(
+            title="Экспорт профиля",
+            defaultextension=".ayprofile",
+            filetypes=[("Профиль AYGeography", "*.ayprofile")],
+        )
+        root.destroy()
+        return Path(value) if value else None
+
+    @staticmethod
+    def _open_profile_dialog() -> Path | None:
+        from tkinter import Tk, filedialog
+
+        root = Tk()
+        root.withdraw()
+        value = filedialog.askopenfilename(
+            title="Импорт профиля",
+            filetypes=[("Профиль AYGeography", "*.ayprofile")],
+        )
+        root.destroy()
+        return Path(value) if value else None
+
     def show(self, name: str) -> None:
+        if (
+            self.profile_manager is not None
+            and not self._profile_selected
+            and name not in {"profile_select", "profile_create"}
+        ):
+            name = "profile_select"
         if isinstance(self.view, GameView):
             self._suspend_game(self.view)
         self.manager.clear_and_reset()
@@ -434,8 +602,10 @@ class AYGeographyApp:
                 self._confirmation_action = None
             elif isinstance(self.view, GameView):
                 self.view.pause()
-            elif isinstance(self.view, HomeView):
+            elif isinstance(self.view, (HomeView, ProfileSelectionView)):
                 self.request_exit()
+            elif self.profile_manager is not None and not self._profile_selected:
+                self.show("profile_select")
             else:
                 self.show("home")
             return

@@ -14,6 +14,7 @@ class Country:
     continent: str
     population: int
     area: int
+    official_languages: tuple[str, ...]
 
 
 @dataclass(slots=True)

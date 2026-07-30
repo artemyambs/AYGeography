@@ -6,8 +6,10 @@ from contextlib import closing
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
+from .config import CONFIGS_DIR
 from .models import RoundResult
 from .persistence import SQLiteDatabase
+from .profile_progress import ProfileProgression
 
 
 class GameRepository:
@@ -20,12 +22,19 @@ class GameRepository:
         "confirm_exit": True,
     }
 
-    def __init__(self, database_path: Path) -> None:
+    def __init__(
+        self,
+        database_path: Path,
+        profile_progression: ProfileProgression | None = None,
+    ) -> None:
         self._database = SQLiteDatabase(
             database_path,
             self.DEFAULT_SETTINGS,
         )
         self._database.initialize()
+        self._profile_progression = profile_progression or ProfileProgression(
+            CONFIGS_DIR / "progression.json"
+        )
         self._profile_cache: dict[str, int | str] | None = None
 
     def _connect(self) -> sqlite3.Connection:
@@ -35,7 +44,9 @@ class GameRepository:
         if self._profile_cache is not None:
             return self._profile_cache.copy()
         with closing(self._connect()) as db:
-            row = db.execute("SELECT nickname, avatar, xp FROM profile WHERE id=1").fetchone()
+            row = db.execute(
+                "SELECT nickname, avatar, level, xp FROM profile WHERE id=1"
+            ).fetchone()
         self._profile_cache = dict(row)
         return self._profile_cache.copy()
 
@@ -125,7 +136,18 @@ class GameRepository:
                         for country_iso in dict.fromkeys(item.subjects)
                     ],
                 )
-            db.execute("UPDATE profile SET xp = xp + ? WHERE id=1", (result.score,))
+            profile = db.execute(
+                "SELECT level, xp FROM profile WHERE id=1"
+            ).fetchone()
+            progress = self._profile_progression.add_score(
+                int(profile["level"]),
+                int(profile["xp"]),
+                result.score,
+            )
+            db.execute(
+                "UPDATE profile SET level=?, xp=? WHERE id=1",
+                (progress.level, progress.xp),
+            )
             db.commit()
         self._profile_cache = None
 
@@ -261,87 +283,137 @@ class GameRepository:
         ).fetchone()
         return int(row["reset_after_round_id"]), str(row["reset_at"])
 
-    def statistics(self) -> dict[str, object]:
+    @staticmethod
+    def _statistics_period_bounds(
+        period: str,
+    ) -> tuple[str | None, str | None]:
         today = date.today()
+        starts = {
+            "today": today,
+            "yesterday": today - timedelta(days=1),
+            "3_days": today - timedelta(days=2),
+            "week": today - timedelta(days=6),
+            "month": today - timedelta(days=29),
+            "all": None,
+        }
+        if period not in starts:
+            raise ValueError(f"Неизвестный период статистики: {period}")
+        start = starts[period]
+        if start is None:
+            return None, None
+        end = today if period == "yesterday" else today + timedelta(days=1)
+        return start.isoformat(), end.isoformat()
+
+    def statistics(self, period: str = "all") -> dict[str, object]:
+        today = date.today()
+        period_start, period_end = self._statistics_period_bounds(period)
         best_score_first_day = today - timedelta(
             days=self.BEST_SCORE_PERIOD_DAYS - 1
         )
         with closing(self._connect()) as db:
             reset_after_round_id, reset_at = self._statistics_reset_state(db)
+            parameters: dict[str, object] = {
+                "reset_id": reset_after_round_id,
+                "reset_at": reset_at,
+                "question_count": self.BEST_SCORE_QUESTION_COUNT,
+            }
+            period_sql = ""
+            if period_start is not None and period_end is not None:
+                period_sql = (
+                    " AND rounds.started_at >= :period_start"
+                    " AND rounds.started_at < :period_end"
+                )
+                parameters.update(
+                    period_start=period_start,
+                    period_end=period_end,
+                )
             total = db.execute(
-                """
+                f"""
                 SELECT
-                    COALESCE(SUM(
-                        CASE WHEN id > ? AND started_at >= ? THEN 1 ELSE 0 END
-                    ), 0) rounds,
+                    COUNT(*) rounds,
                     COALESCE(SUM(duration), 0) duration,
-                    COALESCE(SUM(
-                        CASE
-                            WHEN id > ? AND started_at >= ?
-                            THEN question_count
-                            ELSE 0
-                        END
-                    ), 0) question_count
+                    COALESCE(SUM(question_count), 0) question_count
                 FROM rounds
+                WHERE rounds.id > :reset_id
+                  AND rounds.started_at >= :reset_at
+                  {period_sql}
                 """,
-                (
-                    reset_after_round_id,
-                    reset_at,
-                    reset_after_round_id,
-                    reset_at,
-                ),
+                parameters,
+            ).fetchone()
+            play_time = db.execute(
+                f"""
+                SELECT COALESCE(SUM(duration), 0) duration
+                FROM rounds
+                WHERE 1=1
+                  {period_sql}
+                """,
+                parameters,
             ).fetchone()
             comparable_best = db.execute(
+                f"""
+                SELECT COALESCE(MAX(score), 0) best_score
+                FROM rounds
+                WHERE rounds.id > :reset_id
+                  AND rounds.started_at >= :reset_at
+                  AND question_count = :question_count
+                  {period_sql}
+                """,
+                parameters,
+            ).fetchone()
+            last_week_best = db.execute(
                 """
                 SELECT COALESCE(MAX(score), 0) best_score
                 FROM rounds
-                WHERE id > ?
-                  AND started_at >= ?
-                  AND question_count = ?
-                  AND date(started_at) BETWEEN ? AND ?
+                WHERE rounds.id > :reset_id
+                  AND rounds.started_at >= :reset_at
+                  AND question_count = :question_count
+                  AND date(started_at) BETWEEN :week_start AND :today
                 """,
-                (
-                    reset_after_round_id,
-                    reset_at,
-                    self.BEST_SCORE_QUESTION_COUNT,
-                    best_score_first_day.isoformat(),
-                    today.isoformat(),
-                ),
+                {
+                    **parameters,
+                    "week_start": best_score_first_day.isoformat(),
+                    "today": today.isoformat(),
+                },
             ).fetchone()
             modes = db.execute(
-                """
+                f"""
                 SELECT answers.mode, COUNT(*) total,
                        SUM(answers.is_correct) correct
                 FROM answers
                 JOIN rounds ON rounds.id = answers.round_id
-                WHERE rounds.id > ? AND rounds.started_at >= ?
+                WHERE rounds.id > :reset_id
+                  AND rounds.started_at >= :reset_at
+                  {period_sql}
                 GROUP BY answers.mode
                 """,
-                (reset_after_round_id, reset_at),
+                parameters,
             ).fetchall()
             continents = db.execute(
-                """
+                f"""
                 SELECT answer_countries.country_iso, COUNT(*) total,
                        SUM(answers.is_correct) correct
                 FROM answers
                 JOIN rounds ON rounds.id = answers.round_id
                 JOIN answer_countries
                   ON answer_countries.answer_id = answers.id
-                WHERE rounds.id > ? AND rounds.started_at >= ?
+                WHERE rounds.id > :reset_id
+                  AND rounds.started_at >= :reset_at
+                  {period_sql}
                 GROUP BY answer_countries.country_iso
                 """,
-                (reset_after_round_id, reset_at),
+                parameters,
             ).fetchall()
             first_day = today - timedelta(days=29)
             recent_rows = db.execute(
-                """
+                f"""
                 SELECT date(started_at) day, COUNT(*) count,
                        COALESCE(SUM(duration), 0) duration
                 FROM rounds
-                WHERE date(started_at) >= ?
+                WHERE date(started_at) >= :first_day
+                  {period_sql}
                 GROUP BY date(started_at)
                 """,
-                (first_day.isoformat(),),
+                {**parameters, "first_day": first_day.isoformat()},
             ).fetchall()
         recent_by_day = {row["day"]: dict(row) for row in recent_rows}
         recent = []
@@ -354,8 +426,10 @@ class GameRepository:
                 )
             )
         total_stats = dict(total)
+        total_stats["duration"] = play_time["duration"]
+        total_stats["best_score_25_questions"] = comparable_best["best_score"]
         total_stats["best_score_last_7_days_25_questions"] = (
-            comparable_best["best_score"]
+            last_week_best["best_score"]
         )
         return {
             "total": total_stats,

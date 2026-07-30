@@ -1,4 +1,32 @@
 {
+  "profile": {
+    "levels": [
+      {"level": 2, "xp": 1000},
+      {"level": 3, "xp": 1500},
+      {"level": 4, "xp": 2500},
+      {"level": 5, "xp": 3500},
+      {"level": 6, "xp": 5000},
+      {"level": 7, "xp": 6500},
+      {"level": 8, "xp": 8500},
+      {"level": 9, "xp": 11000},
+      {"level": 10, "xp": 13000},
+      {"level": 11, "xp": 15000},
+      {"level": 12, "xp": 18000},
+      {"level": 13, "xp": 22000},
+      {"level": 14, "xp": 26000},
+      {"level": 15, "xp": 30000},
+      {"level": 16, "xp": 30000}
+    ],
+    "repeat_from_level": 17,
+    "repeat_xp": 40000,
+    "titles": [
+      {"min_level": 1, "max_level": 3, "title": "Новичок"},
+      {"min_level": 4, "max_level": 7, "title": "Троечник по географии"},
+      {"min_level": 8, "max_level": 11, "title": "Ударник"},
+      {"min_level": 12, "max_level": 15, "title": "Профессионал"},
+      {"min_level": 16, "max_level": null, "title": "Эксперт в географии"}
+    ]
+  },
   "country_mastery": {
     "modes": ["flags", "capitals", "population", "countries", "wonders"],
     "levels": [

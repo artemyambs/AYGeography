@@ -10,7 +10,7 @@ from typing import Mapping
 class SQLiteDatabase:
     """Owns SQLite connections and ordered, idempotent migrations."""
 
-    SCHEMA_VERSION = 2
+    SCHEMA_VERSION = 3
 
     def __init__(
         self,
@@ -51,6 +51,7 @@ class SQLiteDatabase:
                 id INTEGER PRIMARY KEY CHECK (id = 1),
                 nickname TEXT NOT NULL,
                 avatar INTEGER NOT NULL DEFAULT 0,
+                level INTEGER NOT NULL DEFAULT 1,
                 xp INTEGER NOT NULL DEFAULT 0
             );
             CREATE TABLE IF NOT EXISTS settings (
@@ -104,6 +105,12 @@ class SQLiteDatabase:
     def _migrate_legacy_schema(self, db: sqlite3.Connection) -> None:
         self._ensure_column(
             db,
+            "profile",
+            "level",
+            "INTEGER NOT NULL DEFAULT 1",
+        )
+        self._ensure_column(
+            db,
             "rounds",
             "difficulty",
             "TEXT NOT NULL DEFAULT 'medium'",
@@ -136,8 +143,8 @@ class SQLiteDatabase:
     def _seed_defaults(self, db: sqlite3.Connection) -> None:
         db.execute(
             """
-            INSERT OR IGNORE INTO profile(id, nickname, avatar, xp)
-            VALUES(1, ?, 0, 0)
+            INSERT OR IGNORE INTO profile(id, nickname, avatar, level, xp)
+            VALUES(1, ?, 0, 1, 0)
             """,
             ("ExplorerAY",),
         )
