@@ -1,3 +1,4 @@
+import json
 import os
 import random
 import tempfile
@@ -1202,6 +1203,15 @@ class PygameAppTests(unittest.TestCase):
         after = pygame.image.tobytes(self.app.render(), "RGB")
 
         self.assertNotEqual(before, after)
+
+    def test_hitbox_press_state_is_fully_transparent(self):
+        theme = json.loads(
+            (ASSETS_DIR / "theme.json").read_text(encoding="utf-8")
+        )
+        colours = theme["#hitbox"]["colours"]
+
+        self.assertEqual("#00000000", colours["active_bg"])
+        self.assertEqual("#00000000", colours["active_border"])
 
     def test_active_sidebar_item_is_not_a_second_navigation_target(self):
         self.app.show("statistics")
