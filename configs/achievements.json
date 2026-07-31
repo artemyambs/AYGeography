@@ -257,83 +257,83 @@
     "id": "master_europe",
     "category": "Континенты",
     "title": "Знаток Европы",
-    "description": "Получить 1 звезду для каждой страны Европы",
+    "description": "Получить оценку «Плохо» для каждой страны Европы",
     "icon": "achievement_master_europe",
     "rule": {
       "type": "continent_mastery",
       "continent": "Europe",
-      "stars": 1
+      "rating": 1
     }
   },
   {
     "id": "master_asia",
     "category": "Континенты",
     "title": "Знаток Азии",
-    "description": "Получить 1 звезду для каждой страны Азии",
+    "description": "Получить оценку «Плохо» для каждой страны Азии",
     "icon": "achievement_master_asia",
     "rule": {
       "type": "continent_mastery",
       "continent": "Asia",
-      "stars": 1
+      "rating": 1
     }
   },
   {
     "id": "master_north_america",
     "category": "Континенты",
     "title": "Знаток Северной Америки",
-    "description": "Получить 1 звезду для каждой страны Северной Америки",
+    "description": "Получить оценку «Плохо» для каждой страны Северной Америки",
     "icon": "achievement_master_north_america",
     "rule": {
       "type": "continent_mastery",
       "continent": "North America",
-      "stars": 1
+      "rating": 1
     }
   },
   {
     "id": "master_south_america",
     "category": "Континенты",
     "title": "Знаток Южной Америки",
-    "description": "Получить 1 звезду для каждой страны Южной Америки",
+    "description": "Получить оценку «Плохо» для каждой страны Южной Америки",
     "icon": "achievement_master_south_america",
     "rule": {
       "type": "continent_mastery",
       "continent": "South America",
-      "stars": 1
+      "rating": 1
     }
   },
   {
     "id": "master_africa",
     "category": "Континенты",
     "title": "Знаток Африки",
-    "description": "Получить 1 звезду для каждой страны Африки",
+    "description": "Получить оценку «Плохо» для каждой страны Африки",
     "icon": "achievement_master_africa",
     "rule": {
       "type": "continent_mastery",
       "continent": "Africa",
-      "stars": 1
+      "rating": 1
     }
   },
   {
     "id": "master_oceania",
     "category": "Континенты",
     "title": "Знаток Океании",
-    "description": "Получить 1 звезду для каждой страны Океании",
+    "description": "Получить оценку «Плохо» для каждой страны Океании",
     "icon": "achievement_master_oceania",
     "rule": {
       "type": "continent_mastery",
       "continent": "Oceania",
-      "stars": 1
+      "rating": 1
     }
   },
   {
     "id": "master_world",
     "category": "Континенты",
     "title": "Весь мир",
-    "description": "Получить 1 звезду для всех стран",
+    "description": "Получить оценку «Плохо» для всех стран",
     "icon": "achievement_master_world",
     "rule": {
       "type": "world_mastery",
-      "stars": 1
+      "rating": 1
     }
   },
   {

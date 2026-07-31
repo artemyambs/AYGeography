@@ -67,6 +67,7 @@ from .layout import (
     CAPITAL_LABEL_FONT_SIZE,
     CONTENT,
     GAMEPLAY_AREA,
+    PAGE_TITLE_FONT_SIZE,
     PRIMARY_ACTION_FONT_SIZE,
     PRIMARY_ACTION_SIZE,
     QUESTION_FLAG_IMAGE_SIZE,
@@ -85,6 +86,7 @@ class BaseView:
         self.app = app
         self.manager = app.manager
         self._actions: dict[UIButton, object] = {}
+        self._circular_actions: dict[UIButton, int] = {}
         self._pointer_position: tuple[int, int] | None = None
         self._create_sidebar_actions()
 
@@ -96,6 +98,16 @@ class BaseView:
             object_id=object_id,
         )
         self._actions[button] = action
+        return button
+
+    def add_circular_action(
+        self,
+        rect: pygame.Rect,
+        action,
+        radius: int,
+    ) -> UIButton:
+        button = self.add_action(rect, action)
+        self._circular_actions[button] = radius
         return button
 
     def _create_sidebar_actions(self) -> None:
@@ -153,9 +165,9 @@ class BaseView:
         self._pointer_position = position
 
     def draw_interaction_effects(self, surface: pygame.Surface) -> None:
-        hovered_rect = next(
+        hovered_button = next(
             (
-                button.relative_rect
+                button
                 for button in self._actions
                 if self._pointer_position is not None
                 and button.relative_rect.collidepoint(
@@ -164,25 +176,35 @@ class BaseView:
             ),
             None,
         )
-        if hovered_rect is not None:
+        if hovered_button is not None:
+            hovered_rect = hovered_button.relative_rect
             hover_layer = pygame.Surface(
                 surface.get_size(),
                 pygame.SRCALPHA,
             )
             hover_layer.fill((0, 0, 0, 0))
-            draw_native_rect(
-                hover_layer,
-                (57, 215, 238, 26),
-                hovered_rect,
-                border_radius=8,
-            )
-            draw_native_rect(
-                hover_layer,
-                (57, 215, 238, 130),
-                hovered_rect,
-                1,
-                border_radius=8,
-            )
+            radius = self._circular_actions.get(hovered_button)
+            if radius is None:
+                draw_native_rect(
+                    hover_layer,
+                    (57, 215, 238, 26),
+                    hovered_rect,
+                    border_radius=8,
+                )
+                draw_native_rect(
+                    hover_layer,
+                    (57, 215, 238, 130),
+                    hovered_rect,
+                    1,
+                    border_radius=8,
+                )
+            else:
+                draw_native_circle(
+                    hover_layer,
+                    (57, 215, 238, 26),
+                    hovered_rect.center,
+                    radius,
+                )
             surface.blit(hover_layer, (0, 0))
 
     def update(self, delta: float) -> None:
@@ -204,7 +226,7 @@ class BaseView:
         draw_footer(surface, self.app.assets.icon)
 
     def draw_page_title(self, surface: pygame.Surface, title: str, subtitle: str = "") -> None:
-        draw_text(surface, title, (CONTENT.centerx, 70), 27, TEXT, bold=True, anchor="midtop")
+        draw_text(surface, title, (CONTENT.centerx, 70), PAGE_TITLE_FONT_SIZE, TEXT, bold=True, anchor="midtop")
         if subtitle:
             draw_text(surface, subtitle, (CONTENT.centerx, 110), 13, MUTED, anchor="midtop")
 
@@ -582,7 +604,7 @@ class QuestionCountView(SelectionView):
                     lambda value=count: setattr(self, "selected", value),
                 )
         self.difficulty_cards: dict[str, pygame.Rect] = {}
-        difficulty_w, difficulty_gap = 220, 24
+        difficulty_w, difficulty_gap = PRIMARY_ACTION_SIZE[0], 24
         difficulty_width = 3 * difficulty_w + 2 * difficulty_gap
         difficulty_x = CONTENT.centerx - difficulty_width // 2
         for index, key in enumerate(DIFFICULTY_NAMES):
@@ -590,7 +612,7 @@ class QuestionCountView(SelectionView):
                 difficulty_x + index * (difficulty_w + difficulty_gap),
                 475,
                 difficulty_w,
-                76,
+                PRIMARY_ACTION_SIZE[1],
             )
             self.difficulty_cards[key] = rect
             self.add_action(
@@ -626,7 +648,7 @@ class QuestionCountView(SelectionView):
             surface,
             "Количество вопросов",
             (CONTENT.centerx, 125),
-            18,
+            PAGE_TITLE_FONT_SIZE,
             TEXT,
             bold=True,
             anchor="center",
@@ -670,7 +692,7 @@ class QuestionCountView(SelectionView):
             surface,
             "Уровень сложности",
             (CONTENT.centerx, 440),
-            18,
+            PAGE_TITLE_FONT_SIZE,
             TEXT,
             bold=True,
             anchor="center",
@@ -698,7 +720,7 @@ class QuestionCountView(SelectionView):
         draw_button(
             surface,
             self.next_rect,
-            "Далее",
+            "Начать игру",
             primary=True,
             size=PRIMARY_ACTION_FONT_SIZE,
         )
@@ -760,8 +782,8 @@ class GameView(BaseView):
         self.answer_buttons: dict[UIButton, str] = {}
         self.pause_rect = pygame.Rect(1530, 14, 48, 48)
         self.add_action(self.pause_rect, self._toggle_pause)
-        self.continue_rect = pygame.Rect(690, 395, 220, 50)
-        self.end_round_rect = pygame.Rect(690, 465, 220, 50)
+        self.continue_rect = primary_action_rect(800, 395)
+        self.end_round_rect = primary_action_rect(800, 465)
         self.continue_button: UIButton | None = None
         self.end_round_button: UIButton | None = None
         self.map_rect = pygame.Rect(300, 170, 1240, 525)
@@ -1086,7 +1108,7 @@ class GameView(BaseView):
         if self.end_round_button is None:
             self.end_round_button = self.add_action(
                 self.end_round_rect,
-                self._end_round,
+                self.end_round,
             )
 
     def _remove_pause_actions(self) -> None:
@@ -1098,7 +1120,7 @@ class GameView(BaseView):
             button.kill()
             setattr(self, attribute, None)
 
-    def _end_round(self) -> None:
+    def end_round(self) -> None:
         self.app.end_round(self.session.result())
 
     def update(self, delta: float) -> None:
@@ -1111,6 +1133,11 @@ class GameView(BaseView):
 
     def handle_event(self, event: pygame.event.Event) -> None:
         if self.paused:
+            if event.type == pygame.KEYDOWN:
+                if event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+                    self._resume()
+                elif event.key == pygame.K_ESCAPE:
+                    self.end_round()
             return
         if self.advance_at is not None:
             if self._is_feedback_advance_event(event):
@@ -1370,18 +1397,18 @@ class GameView(BaseView):
             overlay.fill((0, 7, 11, 210))
             surface.blit(overlay, (0, 0))
             panel(surface, pygame.Rect(620, 285, 360, 280), fill=PANEL_ALT, border=CYAN)
-            draw_text(surface, "ПАУЗА", (800, 345), 30, TEXT, bold=True, anchor="center")
+            draw_text(surface, "ПАУЗА", (800, 345), PAGE_TITLE_FONT_SIZE, TEXT, bold=True, anchor="center")
             draw_button(
                 surface,
                 self.continue_rect,
-                "Продолжить",
+                "Продолжить [Enter]",
                 primary=True,
                 size=17,
             )
             panel(surface, self.end_round_rect, fill=PANEL, border=RED, radius=7)
             draw_text(
                 surface,
-                "Закончить раунд",
+                "Закончить раунд [Esc]",
                 self.end_round_rect.center,
                 17,
                 RED,
@@ -1443,7 +1470,7 @@ class ResultView(BaseView):
         draw_native_polygon(surface, YELLOW, [(490, 175), (640, 175), (610, 340), (520, 340)])
         draw_native_circle(surface, pygame.Color("#ffda42"), trophy_center, 48)
         draw_text(surface, "★", trophy_center, 48, pygame.Color("#9a6700"), bold=True, anchor="center")
-        draw_text(surface, "Отличный результат!", (565, 470), 26, TEXT, bold=True, anchor="center")
+        draw_text(surface, "Отличный результат!", (565, 470), PAGE_TITLE_FONT_SIZE, TEXT, bold=True, anchor="center")
         draw_text(surface, f"{result.score} XP", (565, 520), 35, GREEN, bold=True, anchor="center")
         accuracy = round(result.accuracy * 100)
         draw_native_circle(surface, PANEL_ALT, (565, 630), 55)
@@ -1517,17 +1544,82 @@ class StatisticsView(BaseView):
     @staticmethod
     def _activity_colour(seconds: float) -> pygame.Color:
         bands = (
-            (15 * 60, pygame.Color("#76c52b")),
-            (30 * 60, pygame.Color("#61ad28")),
-            (60 * 60, pygame.Color("#4b9424")),
-            (2 * 60 * 60, pygame.Color("#367b20")),
-            (float("inf"), pygame.Color("#1c641b")),
+            (15 * 60, pygame.Color("#2c7bb6")),
+            (30 * 60, pygame.Color("#00a6ca")),
+            (60 * 60, pygame.Color("#00ccbc")),
+            (2 * 60 * 60, pygame.Color("#90eb9d")),
+            (float("inf"), pygame.Color("#f9d057")),
         )
         return next(colour for limit, colour in bands if seconds <= limit)
 
     @staticmethod
     def _answer_percentage(correct: int, total: int) -> int:
         return round(100 * correct / total) if total else 0
+
+    @classmethod
+    def _draw_answer_row(
+        cls,
+        surface: pygame.Surface,
+        container: pygame.Rect,
+        y: int,
+        label: str,
+        correct: int,
+        total: int,
+    ) -> None:
+        draw_text(
+            surface,
+            label,
+            (container.left + 20, y + 12),
+            11,
+            TEXT,
+            bold=True,
+            anchor="midleft",
+        )
+        bar = pygame.Rect(container.left + 180, y, container.width - 200, 24)
+        if total <= 0:
+            draw_native_rect(surface, PANEL_ALT, bar, border_radius=6)
+            draw_text(
+                surface,
+                "Нет ответов",
+                bar.center,
+                10,
+                MUTED,
+                bold=True,
+                anchor="center",
+            )
+            return
+        correct = max(0, min(correct, total))
+        incorrect = total - correct
+        percent = cls._answer_percentage(correct, total)
+        correct_width = round(bar.width * correct / total)
+        draw_native_rect(surface, RED, bar, border_radius=6)
+        if correct_width:
+            draw_native_rect(
+                surface,
+                GREEN,
+                (bar.left, bar.top, correct_width, bar.height),
+                border_radius=6,
+            )
+        if correct:
+            draw_text(
+                surface,
+                f"{correct} · {percent}%",
+                (bar.left + correct_width // 2, bar.centery),
+                9,
+                TEXT,
+                bold=True,
+                anchor="center",
+            )
+        if incorrect:
+            draw_text(
+                surface,
+                f"{incorrect} · {100 - percent}%",
+                (bar.left + correct_width + (bar.width - correct_width) // 2, bar.centery),
+                9,
+                TEXT,
+                bold=True,
+                anchor="center",
+            )
 
     def draw(self, surface: pygame.Surface) -> None:
         super().draw(surface)
@@ -1536,8 +1628,8 @@ class StatisticsView(BaseView):
         draw_text(
             surface,
             "Статистика",
-            (250, 27),
-            15,
+            (250, 25),
+            PAGE_TITLE_FONT_SIZE,
             TEXT,
             bold=True,
         )
@@ -1548,6 +1640,7 @@ class StatisticsView(BaseView):
                 label,
                 selected=key == self.period,
                 size=12,
+                bold=True,
             )
         metrics = [
             ("Раундов", str(total["rounds"])),
@@ -1569,67 +1662,38 @@ class StatisticsView(BaseView):
         panel(surface, left)
         panel(surface, right)
         panel(surface, bottom)
-        draw_text(surface, "Правильные ответы по континентам", (left.left + 20, left.top + 18), 16, TEXT, bold=True)
+        draw_text(surface, "Ответы по континентам", (left.left + 20, left.top + 18), 16, TEXT, bold=True)
         country_stats = {item["country_iso"]: item for item in stats["countries"]}
         for index, (continent, label) in enumerate(CONTINENT_NAMES.items()):
             rows = [country_stats.get(iso3) for iso3 in self.app.catalog.continents[continent]]
             rows = [row for row in rows if row]
             attempts = sum(row["total"] for row in rows)
             correct = sum(row["correct"] for row in rows)
-            percent = self._answer_percentage(correct, attempts)
             y = left.top + 62 + index * 40
-            draw_text(surface, label, (left.left + 20, y), 12, TEXT)
-            draw_native_rect(surface, PANEL_ALT, (left.left + 190, y + 3, 335, 12), border_radius=6)
-            draw_native_rect(surface, GREEN, (left.left + 190, y + 3, round(335 * percent / 100), 12), border_radius=6)
-            draw_text(surface, f"{percent}%", (left.right - 22, y), 12, TEXT, bold=True, anchor="topright")
-        draw_text(surface, "Правильные ответы по режимам", (right.left + 20, right.top + 18), 16, TEXT, bold=True)
+            self._draw_answer_row(
+                surface,
+                left,
+                y,
+                label,
+                correct,
+                attempts,
+            )
+        draw_text(surface, "Ответы по режимам", (right.left + 20, right.top + 18), 16, TEXT, bold=True)
         mode_stats = {item["mode"]: item for item in stats["modes"]}
-        centre = (right.centerx, right.centery + 25)
-        colours = [
-            CYAN,
-            pygame.Color("#6e83c9"),
-            GREEN,
-            pygame.Color("#f18b3a"),
-            pygame.Color("#a76cd1"),
-            YELLOW,
-        ]
-        start = -math.pi / 2
-        total_attempts = max(1, sum(item["total"] for item in mode_stats.values()))
-        for index, definition in enumerate(
-            self.app.mode_registry.definitions
-        ):
+        for index, definition in enumerate(self.app.mode_registry.definitions):
             mode, label = definition.key, definition.title
             mode_stat = mode_stats.get(
                 mode,
                 {"total": 0, "correct": 0},
             )
-            amount = mode_stat["total"]
-            percent = self._answer_percentage(
-                mode_stat["correct"],
-                amount,
-            )
-            angle = math.tau * amount / total_attempts
-            draw_native_arc(surface, colours[index], (centre[0] - 90, centre[1] - 90, 180, 180), start, start + max(.03, angle), 25)
-            start += angle
-            row_y = right.top + 75 + index * 37
-            draw_text(
+            self._draw_answer_row(
                 surface,
-                f"• {label}",
-                (right.left + 420, row_y),
-                13,
-                colours[index],
+                right,
+                right.top + 62 + index * 40,
+                label,
+                int(mode_stat["correct"]),
+                int(mode_stat["total"]),
             )
-            draw_text(
-                surface,
-                f"{percent}%",
-                (right.right - 24, row_y),
-                13,
-                TEXT,
-                bold=True,
-                anchor="topright",
-            )
-        draw_text(surface, str(total["question_count"]), centre, 25, TEXT, bold=True, anchor="center")
-        draw_text(surface, "ответов", (centre[0], centre[1] + 26), 11, MUTED, anchor="center")
         draw_text(surface, "Активность за последние 30 дней", (bottom.left + 20, bottom.top + 18), 16, TEXT, bold=True)
         self.activity_cells.clear()
         for column, item in enumerate(stats["recent"]):
@@ -1738,7 +1802,12 @@ class AchievementsView(BaseView):
         )
 
     def _change_page(self, offset: int) -> None:
-        self.page = max(0, min(self.page_count - 1, self.page + offset))
+        target = max(0, min(self.page_count - 1, self.page + offset))
+        if target == self.page:
+            return
+        self.app.animate_view_update(
+            lambda: setattr(self, "page", target),
+        )
 
     def draw(self, surface: pygame.Surface) -> None:
         super().draw(surface)
@@ -2208,6 +2277,7 @@ class MasteryView(InteractiveMapView):
     def __init__(self, app) -> None:
         super().__init__(app)
         self.mastery = app.progression.country_mastery()
+        self.rating_legend_rects: dict[int, pygame.Rect] = {}
 
     def draw(self, surface: pygame.Surface) -> None:
         super().draw(surface)
@@ -2215,7 +2285,7 @@ class MasteryView(InteractiveMapView):
         self._draw_mastery(surface)
 
     def _draw_mastery(self, surface: pygame.Surface) -> None:
-        levels = {iso3: item.stars for iso3, item in self.mastery.items()}
+        levels = {iso3: item.rating for iso3, item in self.mastery.items()}
         mastered = sum(level > 0 for level in levels.values())
         draw_text(
             surface,
@@ -2230,19 +2300,23 @@ class MasteryView(InteractiveMapView):
             surface,
             self.map_rect,
             levels,
-            self.app.progression_catalog.mastery_colors,
+            self.app.progression_catalog.mastery_rating_colors,
             self.map_camera,
         )
         self._draw_map_controls(surface)
         legend_y = 726
         legend_center = self.map_rect.centerx
-        labels = ("Не изучена", "1 звезда", "2 звезды", "3 звезды")
-        for stars in range(4):
-            item_center = legend_center + round((stars - 1.5) * 235)
+        rating_levels = self.app.progression_catalog.mastery_rating_levels
+        labels = ("Не изучена", *(level.label for level in rating_levels))
+        self.rating_legend_rects.clear()
+        for rating, label in enumerate(labels):
+            item_center = legend_center + round((rating - 1.5) * 235)
             x = item_center - 62
             colour = pygame.Color(
-                self.app.progression_catalog.mastery_colors[stars]
+                self.app.progression_catalog.mastery_rating_colors[rating]
             )
+            legend_rect = pygame.Rect(x, legend_y - 8, 150, 32)
+            self.rating_legend_rects[rating] = legend_rect
             draw_native_rect(
                 surface,
                 colour,
@@ -2251,13 +2325,49 @@ class MasteryView(InteractiveMapView):
             )
             draw_text(
                 surface,
-                labels[stars],
+                label,
                 (x + 34, legend_y + 8),
                 12,
                 TEXT,
                 anchor="midleft",
             )
         if self.mouse_position is None:
+            return
+        hovered_rating = next(
+            (
+                rating
+                for rating, rect in self.rating_legend_rects.items()
+                if rating > 0 and rect.collidepoint(self.mouse_position)
+            ),
+            None,
+        )
+        if hovered_rating is not None:
+            level = rating_levels[hovered_rating - 1]
+            tooltip = pygame.Rect(0, 0, 570, 82)
+            tooltip.midbottom = (self.map_rect.centerx, legend_y - 18)
+            panel(
+                surface,
+                tooltip,
+                fill=pygame.Color("#0d2b38"),
+                border=CYAN,
+                radius=9,
+            )
+            draw_text(
+                surface,
+                level.label,
+                (tooltip.centerx, tooltip.top + 14),
+                15,
+                TEXT,
+                bold=True,
+                anchor="midtop",
+            )
+            draw_multiline(
+                surface,
+                level.hint,
+                pygame.Rect(tooltip.left + 18, tooltip.top + 35, tooltip.width - 36, 36),
+                11,
+                MUTED,
+            )
             return
         iso3 = self.app.map_renderer.country_at(
             self.mouse_position,
@@ -2271,8 +2381,8 @@ class MasteryView(InteractiveMapView):
         tooltip = pygame.Rect(
             self.mouse_position[0] + 14,
             self.mouse_position[1] + 14,
-            270,
-            46 + 22 * len(item.correct_by_mode),
+            360,
+            46 + 22 * len(item.rating_by_mode),
         )
         tooltip.clamp_ip(pygame.Rect(220, 165, 1360, 650))
         panel(
@@ -2291,15 +2401,15 @@ class MasteryView(InteractiveMapView):
         )
         draw_text(
             surface,
-            f"{item.stars} из 3",
+            labels[item.rating],
             (tooltip.right - 14, tooltip.top + 10),
             14,
             GREEN,
             bold=True,
             anchor="topright",
         )
-        maximum = self.app.progression_catalog.mastery_levels[-1].correct_per_mode
-        for index, (mode, correct) in enumerate(item.correct_by_mode.items()):
+        maximum = len(rating_levels)
+        for index, (mode, rating) in enumerate(item.rating_by_mode.items()):
             draw_text(
                 surface,
                 self.app.mode_registry.names.get(mode, mode),
@@ -2309,7 +2419,15 @@ class MasteryView(InteractiveMapView):
             )
             draw_text(
                 surface,
-                f"{min(correct, maximum)} / {maximum}",
+                (
+                    rating_levels[rating - 1].label
+                    if rating >= maximum
+                    else (
+                        f"{labels[rating]} · "
+                        f"{item.streak_by_mode[mode]}/"
+                        f"{rating_levels[rating].required_streak}"
+                    )
+                ),
                 (tooltip.right - 14, tooltip.top + 38 + index * 22),
                 11,
                 TEXT,
@@ -2325,28 +2443,36 @@ class ProfileView(BaseView):
         profile = app.repository.profile()
         self.selected = int(profile["avatar"])
         self.avatar_rects: list[pygame.Rect] = []
+        avatar_start_x = CONTENT.centerx - (5 * 92 + 4 * 24) // 2
         for index in range(10):
             rect = pygame.Rect(
-                624 + (index % 5) * 116,
+                avatar_start_x + (index % 5) * 116,
                 435 + (index // 5) * 108,
                 92,
                 92,
             )
             self.avatar_rects.append(rect)
-            self.add_action(rect, lambda value=index: setattr(self, "selected", value))
-        self.entry_rect = pygame.Rect(645, 220, 360, 50)
+            self.add_circular_action(
+                rect,
+                lambda value=index: setattr(self, "selected", value),
+                44,
+            )
+        self.entry_rect = pygame.Rect(CONTENT.centerx - 180, 220, 360, 50)
         self.entry = UITextEntryLine(
             self.entry_rect,
             manager=self.manager,
             object_id="#profile_entry",
         )
         self.entry.set_text(str(profile["nickname"]))
-        self.save_rect = primary_action_rect(825, 650)
+        self.save_rect = primary_action_rect(CONTENT.centerx, 650)
         self.add_action(self.save_rect, self._save)
-        self.create_rect = pygame.Rect(300, 735, 270, 52)
-        self.delete_rect = pygame.Rect(590, 735, 270, 52)
-        self.export_rect = pygame.Rect(880, 735, 270, 52)
-        self.import_rect = pygame.Rect(1170, 735, 270, 52)
+        top_actions_x = CONTENT.centerx - (3 * 270 + 2 * 20) // 2
+        bottom_actions_x = CONTENT.centerx - (2 * 270 + 20) // 2
+        self.create_rect = pygame.Rect(top_actions_x, 718, 270, 52)
+        self.delete_rect = pygame.Rect(top_actions_x + 290, 718, 270, 52)
+        self.switch_rect = pygame.Rect(top_actions_x + 580, 718, 270, 52)
+        self.export_rect = pygame.Rect(bottom_actions_x, 788, 270, 52)
+        self.import_rect = pygame.Rect(bottom_actions_x + 290, 788, 270, 52)
         if app.profile_manager is not None:
             self.add_action(
                 self.create_rect,
@@ -2358,6 +2484,10 @@ class ProfileView(BaseView):
             )
             self.add_action(self.export_rect, app.export_current_profile)
             self.add_action(self.import_rect, app.import_profile)
+            self.add_action(
+                self.switch_rect,
+                lambda: app.show("profile_select"),
+            )
 
     def _save(self) -> None:
         self.app.repository.update_profile(self.entry.get_text(), self.selected)
@@ -2395,7 +2525,7 @@ class ProfileView(BaseView):
         profile = self.app.repository.profile()
         avatar = self.app.assets.avatar(self.selected)
         blit_centered(surface, avatar, (520, 235), (170, 170))
-        draw_text(surface, "Профиль игрока", (825, 150), 27, TEXT, bold=True, anchor="center")
+        draw_text(surface, "Профиль игрока", (CONTENT.centerx, 150), PAGE_TITLE_FONT_SIZE, TEXT, bold=True, anchor="center")
         self._draw_entry(surface, self.entry, self.entry_rect)
         xp = int(profile["xp"])
         progress = self.app.profile_progression.progress(
@@ -2405,7 +2535,7 @@ class ProfileView(BaseView):
         draw_text(
             surface,
             progress.title,
-            (825, 292),
+            (CONTENT.centerx, 292),
             16,
             GREEN,
             bold=True,
@@ -2414,18 +2544,18 @@ class ProfileView(BaseView):
         draw_text(
             surface,
             f"Уровень {progress.level}",
-            (825, 318),
+            (CONTENT.centerx, 318),
             17,
             TEXT,
             bold=True,
             anchor="center",
         )
-        draw_native_rect(surface, PANEL_ALT, (645, 335, 360, 12), border_radius=6)
+        draw_native_rect(surface, PANEL_ALT, (CONTENT.centerx - 180, 335, 360, 12), border_radius=6)
         draw_native_rect(
             surface,
             GREEN,
             (
-                645,
+                CONTENT.centerx - 180,
                 335,
                 round(360 * min(1.0, xp / progress.required_xp)),
                 12,
@@ -2435,14 +2565,16 @@ class ProfileView(BaseView):
         draw_text(
             surface,
             f"{xp:,} / {progress.required_xp:,} XP".replace(",", " "),
-            (825, 365),
+            (CONTENT.centerx, 365),
             14,
             TEXT,
             anchor="center",
         )
-        draw_text(surface, "Выберите аватар", (825, 405), 19, TEXT, bold=True, anchor="center")
+        draw_text(surface, "Выберите аватар", (CONTENT.centerx, 405), 19, TEXT, bold=True, anchor="center")
         for index, rect in enumerate(self.avatar_rects):
             selected = index == self.selected
+            if selected:
+                draw_native_circle(surface, GREEN, rect.center, 44, 2)
             blit_centered(
                 surface,
                 self.app.assets.avatar(index),
@@ -2464,8 +2596,9 @@ class ProfileView(BaseView):
                 "Удалить профиль",
                 size=15,
             )
-            draw_button(surface, self.export_rect, "Экспорт", size=15)
-            draw_button(surface, self.import_rect, "Импорт", size=15)
+            draw_button(surface, self.export_rect, "Экспорт профиля", size=15)
+            draw_button(surface, self.import_rect, "Импорт профиля", size=15)
+            draw_button(surface, self.switch_rect, "Сменить профиль", size=15)
 
 
 class ProfileCreateView(BaseView):
@@ -2474,7 +2607,7 @@ class ProfileCreateView(BaseView):
     def __init__(self, app) -> None:
         super().__init__(app)
         self.selected = 0
-        self.entry_rect = pygame.Rect(620, 180, 410, 52)
+        self.entry_rect = pygame.Rect(CONTENT.centerx - 205, 180, 410, 52)
         self.entry = UITextEntryLine(
             self.entry_rect,
             manager=self.manager,
@@ -2482,20 +2615,22 @@ class ProfileCreateView(BaseView):
         )
         self.entry.set_text("Новый игрок")
         self.avatar_rects = []
+        avatar_start_x = CONTENT.centerx - (5 * 92 + 4 * 24) // 2
         for index in range(10):
             rect = pygame.Rect(
-                624 + (index % 5) * 116,
+                avatar_start_x + (index % 5) * 116,
                 335 + (index // 5) * 108,
                 92,
                 92,
             )
             self.avatar_rects.append(rect)
-            self.add_action(
+            self.add_circular_action(
                 rect,
                 lambda value=index: setattr(self, "selected", value),
+                44,
             )
-        self.create_rect = primary_action_rect(825, 615)
-        self.cancel_rect = pygame.Rect(690, 690, 270, 50)
+        self.create_rect = primary_action_rect(CONTENT.centerx, 615)
+        self.cancel_rect = primary_action_rect(CONTENT.centerx, 690)
         self.add_action(
             self.create_rect,
             lambda: app.create_profile(
@@ -2520,13 +2655,15 @@ class ProfileCreateView(BaseView):
         draw_text(
             surface,
             "Выберите аватар",
-            (825, 292),
+            (CONTENT.centerx, 292),
             19,
             TEXT,
             bold=True,
             anchor="center",
         )
         for index, rect in enumerate(self.avatar_rects):
+            if index == self.selected:
+                draw_native_circle(surface, GREEN, rect.center, 44, 2)
             blit_centered(
                 surface,
                 self.app.assets.avatar(index),
@@ -2735,7 +2872,7 @@ class ProfileSelectionView(BaseView):
             surface,
             "Выберите профиль",
             (LOGICAL_SIZE[0] // 2, 158),
-            30,
+            PAGE_TITLE_FONT_SIZE,
             TEXT,
             bold=True,
             anchor="center",
@@ -2825,7 +2962,7 @@ class SettingsView(BaseView):
             rect = pygame.Rect(330, 150 + index * 145, 1145, 110)
             self.rows[key] = rect
             self.add_action(
-                pygame.Rect(rect.right - 100, rect.centery - 25, 70, 50),
+                rect,
                 lambda item=key: self._toggle(item),
             )
         self.reset_answers_rect = pygame.Rect(330, 470, 1145, 110)
@@ -2842,7 +2979,7 @@ class SettingsView(BaseView):
 
     def draw(self, surface: pygame.Surface) -> None:
         super().draw(surface)
-        draw_text(surface, "Настройки", (CONTENT.centerx, 72), 28, TEXT, bold=True, anchor="center")
+        self.draw_page_title(surface, "Настройки")
         icons = ("fullscreen", "confirm")
         for index, (key, title, subtitle) in enumerate(self.ITEMS):
             rect = self.rows[key]

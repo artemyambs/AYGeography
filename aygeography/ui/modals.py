@@ -26,15 +26,16 @@ class ConfirmationModal:
     title: str
     description: str
     action_name: str
+    cancel_name: str = "Отмена"
     danger: bool = False
     panel_rect: pygame.Rect = field(
-        default_factory=lambda: pygame.Rect(570, 275, 460, 330)
+        default_factory=lambda: pygame.Rect(455, 275, 690, 330)
     )
     cancel_rect: pygame.Rect = field(
-        default_factory=lambda: pygame.Rect(610, 505, 170, 52)
+        default_factory=lambda: pygame.Rect(505, 505, 270, 52)
     )
     confirm_rect: pygame.Rect = field(
-        default_factory=lambda: pygame.Rect(820, 505, 170, 52)
+        default_factory=lambda: pygame.Rect(825, 505, 270, 52)
     )
 
     def handle_event(self, event: pygame.event.Event) -> str | None:
@@ -106,14 +107,14 @@ class ConfirmationModal:
             )
             draw_text(
                 surface,
-                "Отмена",
+                self.cancel_name,
                 self.cancel_rect.center,
                 17,
                 TEXT,
                 anchor="center",
             )
         else:
-            draw_button(surface, self.cancel_rect, "Отмена", size=17)
+            draw_button(surface, self.cancel_rect, self.cancel_name, size=17)
         if self.danger:
             panel(
                 surface,

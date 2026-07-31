@@ -43,6 +43,7 @@ from aygeography.ui.components import (
     draw_native_rect,
     font,
 )
+from aygeography.ui.notifications import AchievementNotificationCenter
 from aygeography.ui.screens import (
     CAPITAL_LABEL_FONT_SIZE,
     CONTENT,
@@ -181,6 +182,85 @@ class PygameAppTests(unittest.TestCase):
 
         self.assertEqual([PRIMARY_ACTION_SIZE] * len(buttons), buttons)
 
+    def test_requested_action_buttons_share_one_size(self):
+        self.app.show("profile")
+        profile = self.app.view
+        profile_sizes = [
+            profile.save_rect.size,
+            profile.create_rect.size,
+            profile.delete_rect.size,
+            profile.export_rect.size,
+            profile.import_rect.size,
+            profile.switch_rect.size,
+        ]
+        self.app.show("profile_create")
+        create = self.app.view
+        self.app.show("question_count")
+        difficulty_sizes = [
+            rect.size for rect in self.app.view.difficulty_cards.values()
+        ]
+        self.app.start_game(GameConfig(["flags"], ["Europe"], 10))
+        game = self.app.view
+        sizes = profile_sizes + [
+            create.create_rect.size,
+            create.cancel_rect.size,
+            game.continue_rect.size,
+            game.end_round_rect.size,
+        ] + difficulty_sizes
+        self.assertEqual([PRIMARY_ACTION_SIZE] * len(sizes), sizes)
+
+    def test_avatar_grids_are_centered_and_use_round_hover(self):
+        for name in ("profile", "profile_create"):
+            self.app.show(name)
+            view = self.app.view
+            bounds = view.avatar_rects[0].unionall(view.avatar_rects)
+            self.assertEqual(CONTENT.centerx, bounds.centerx)
+            self.assertEqual(10, len(view._circular_actions))
+
+    def test_avatar_hover_uses_fill_without_outline(self):
+        self.app.show("profile")
+        view = self.app.view
+        view.set_pointer_position(view.avatar_rects[0].center)
+        target = pygame.Surface(LOGICAL_SIZE)
+
+        with patch("aygeography.ui.screens.draw_native_circle") as draw_circle:
+            view.draw_interaction_effects(target)
+
+        draw_circle.assert_called_once()
+        self.assertEqual(4, len(draw_circle.call_args.args))
+
+    def test_final_setup_and_profile_buttons_use_explicit_labels(self):
+        target = pygame.Surface(LOGICAL_SIZE)
+        expected = {
+            "question_count": {"Начать игру"},
+            "profile": {"Экспорт профиля", "Импорт профиля"},
+        }
+        for route, labels in expected.items():
+            with self.subTest(route=route):
+                self.app.show(route)
+                profile_manager = self.app.profile_manager
+                if route == "profile" and profile_manager is None:
+                    self.app.profile_manager = object()
+                try:
+                    with patch(
+                        "aygeography.ui.screens.draw_button"
+                    ) as draw_button:
+                        self.app.view.draw(target)
+                finally:
+                    self.app.profile_manager = profile_manager
+                rendered_labels = {
+                    call.args[2]
+                    for call in draw_button.call_args_list
+                    if len(call.args) >= 3
+                }
+                self.assertTrue(labels.issubset(rendered_labels))
+
+    def test_settings_toggle_hover_covers_the_whole_field(self):
+        self.app.show("settings")
+        view = self.app.view
+        action_rects = [button.relative_rect for button in view._actions]
+        self.assertTrue(all(rect in action_rects for rect in view.rows.values()))
+
     def test_home_uses_a_high_resolution_earth_asset(self):
         earth = self.app.assets.image(
             ASSETS_DIR / "home" / "earth_hero_v2.png"
@@ -234,10 +314,11 @@ class PygameAppTests(unittest.TestCase):
             )
         )
         self.assertEqual("1 ч 1 мин", StatisticsView._format_play_time(3660))
-        self.assertLess(
-            sum(StatisticsView._activity_colour(7200)),
-            sum(StatisticsView._activity_colour(60)),
-        )
+        colours = {
+            tuple(StatisticsView._activity_colour(seconds))
+            for seconds in (60, 20 * 60, 45 * 60, 90 * 60, 3 * 60 * 60)
+        }
+        self.assertEqual(5, len(colours))
         self.assertEqual(LOGICAL_SIZE, self.app.render().get_size())
 
     def test_statistics_answer_percentage_handles_empty_data(self):
@@ -308,6 +389,68 @@ class PygameAppTests(unittest.TestCase):
         cache = self.app.map_renderer._mastery_cache
         self.app.render()
         self.assertIs(cache, self.app.map_renderer._mastery_cache)
+
+    def test_achievement_page_uses_standard_transition(self):
+        self.app.show("achievements")
+        view = self.app.view
+        self.app._transition_surface = None
+        view._change_page(1)
+        self.assertEqual(1, view.page)
+        self.assertIsNotNone(self.app._transition_surface)
+
+    def test_achievement_notifications_stack_close_and_expire(self):
+        now = [100.0]
+        center = AchievementNotificationCenter(
+            lambda: now[0],
+            self.app.assets.icon,
+        )
+        definitions = self.app.progression_catalog.achievements[:2]
+        center.add(definitions)
+        surface = pygame.Surface(LOGICAL_SIZE)
+        center.draw(surface)
+        self.assertEqual(2, len(center.items))
+        first_close = center._close_rects[0][0]
+        second_close = center._close_rects[1][0]
+        self.assertLess(first_close.top, second_close.top)
+        self.assertTrue(center.close_at(first_close.center))
+        now[0] += center.ANIMATION_SECONDS + 0.01
+        center.update()
+        self.assertEqual(1, len(center.items))
+        now[0] = 110.01
+        center.update()
+        self.assertEqual(0, len(center.items))
+
+    def test_achievement_notifications_queue_overflow_cards(self):
+        now = [0.0]
+        center = AchievementNotificationCenter(
+            lambda: now[0],
+            self.app.assets.icon,
+        )
+        center.add(
+            self.app.progression_catalog.achievements[
+                : center.MAX_VISIBLE + 1
+            ]
+        )
+        active = [item for item in center.items if item.opened_at is not None]
+        self.assertEqual(center.MAX_VISIBLE, len(active))
+        now[0] = center.DISPLAY_SECONDS + 0.01
+        center.update()
+        self.assertEqual(1, len(center.items))
+        self.assertEqual(now[0], center.items[0].opened_at)
+
+    def test_pause_hotkeys_resume_and_finish_round(self):
+        self.app.start_game(GameConfig(["flags"], ["Europe"], 10))
+        view = self.app.view
+        view.pause()
+        view.handle_event(
+            pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_RETURN})
+        )
+        self.assertFalse(view.paused)
+        view.pause()
+        self.app.process_event(
+            pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_ESCAPE})
+        )
+        self.assertNotIsInstance(self.app.view, GameView)
 
     def test_every_game_mode_renders(self):
         for mode in (
@@ -1260,6 +1403,34 @@ class PygameAppTests(unittest.TestCase):
 
         self.assertIs(cached_view, self.app.map_renderer._atlas_view_cache)
         self.assertIs(cached_layers, self.app.map_renderer._atlas_base_layers)
+
+    def test_atlas_zoom_smooths_fills_and_draws_vector_boundaries(self):
+        self.app.show("atlas")
+        view = self.app.view
+        target = pygame.Surface(LOGICAL_SIZE)
+        camera = MapCamera(zoom=4.0)
+
+        with (
+            patch.object(
+                pygame.transform,
+                "smoothscale",
+                wraps=pygame.transform.smoothscale,
+            ) as smoothscale,
+            patch.object(
+                pygame.draw,
+                "aalines",
+                wraps=pygame.draw.aalines,
+            ) as draw_boundaries,
+        ):
+            self.app.map_renderer.draw_atlas_map(
+                target,
+                view.map_rect,
+                view._continents,
+                camera,
+            )
+
+        smoothscale.assert_called()
+        draw_boundaries.assert_called()
 
     def test_section_change_starts_animation_without_button_press_pulse(self):
         previous_clock = self.app.clock_source

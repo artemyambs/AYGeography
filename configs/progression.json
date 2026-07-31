@@ -29,12 +29,27 @@
   },
   "country_mastery": {
     "modes": ["flags", "capitals", "population", "countries", "wonders"],
-    "levels": [
-      {"stars": 1, "correct_per_mode": 1},
-      {"stars": 2, "correct_per_mode": 2},
-      {"stars": 3, "correct_per_mode": 3}
+    "ratings": [
+      {
+        "rating": 1,
+        "label": "Плохо",
+        "required_streak": 1,
+        "hint": "Дай 1 правильный ответ по каждой теме для данной страны."
+      },
+      {
+        "rating": 2,
+        "label": "Хорошо",
+        "required_streak": 2,
+        "hint": "Дай 2 правильных ответа подряд по каждой теме для данной страны."
+      },
+      {
+        "rating": 3,
+        "label": "Отлично",
+        "required_streak": 5,
+        "hint": "Дай 5 правильных ответов подряд по каждой теме для данной страны."
+      }
     ],
-    "colors": {
+    "rating_colors": {
       "0": "#0a5268",
       "1": "#247b88",
       "2": "#39aeb6",

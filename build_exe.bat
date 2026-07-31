@@ -1,48 +1,50 @@
 @echo off
-chcp 65001 >nul
 setlocal
 cd /d "%~dp0"
 
+set "BUILD_PYTHON=.venv-build\Scripts\python.exe"
+
 where py >nul 2>nul
 if errorlevel 1 (
-    echo Python Launcher не найден. Установите Python 3.11 или новее.
+    echo Python Launcher was not found. Install Python 3.11 or newer to build.
+    echo Python is not required on the player's computer.
     pause
     exit /b 1
 )
 
-if not exist ".venv-build\Scripts\python.exe" (
+if not exist "%BUILD_PYTHON%" (
     py -3 -m venv .venv-build
     if errorlevel 1 goto :error
 )
 
-".venv-build\Scripts\python.exe" -m pip install --disable-pip-version-check -r requirements-build.txt
+"%BUILD_PYTHON%" -c "import PyInstaller, pygame, pygame_gui" >nul 2>nul
+if errorlevel 1 (
+    "%BUILD_PYTHON%" -m pip install --disable-pip-version-check -r requirements-build.txt
+    if errorlevel 1 goto :error
+)
+
+"%BUILD_PYTHON%" tools\build_app_icon.py
 if errorlevel 1 goto :error
 
-".venv-build\Scripts\python.exe" tools\build_app_icon.py
-if errorlevel 1 goto :error
-
-".venv-build\Scripts\python.exe" -m PyInstaller ^
+"%BUILD_PYTHON%" -m PyInstaller ^
     --noconfirm ^
     --clean ^
-    --onefile ^
-    --windowed ^
-    --name AYGeography ^
-    --distpath "." ^
+    --distpath "dist" ^
     --workpath "build" ^
-    --specpath "build" ^
-    --icon "%CD%\assets\app_icon.ico" ^
-    --collect-all pygame_gui ^
-    --add-data "%CD%\assets;assets" ^
-    --add-data "%CD%\configs;configs" ^
-    main.py
+    AYGeography.spec
+if errorlevel 1 goto :error
+
+"%BUILD_PYTHON%" tools\package_portable.py
 if errorlevel 1 goto :error
 
 echo.
-echo Готово: AYGeography.exe
+echo Portable build: dist\AYGeography-portable.zip
+echo Extract it and run AYGeography\AYGeography.exe.
+echo Python and internet access are not required on the player's computer.
 exit /b 0
 
 :error
 echo.
-echo Не удалось собрать AYGeography.exe
+echo Failed to build the AYGeography portable distribution.
 pause
 exit /b 1

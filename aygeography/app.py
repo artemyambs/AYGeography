@@ -48,15 +48,20 @@ from .quiz import GameSession, QuestionFactory
 from .storage import GameRepository
 from .ui.components import (
     BG,
+    CYAN,
     GREEN,
     LOGICAL_SIZE,
+    PANEL_ALT,
     RED,
     TEXT,
     MapRenderer,
+    draw_logo,
     draw_native_rect,
     draw_text,
 )
 from .ui.modals import ConfirmationModal
+from .ui.notifications import AchievementNotificationCenter
+from .ui.file_dialogs import WindowsProfileFileDialog
 from .ui.screens import (
     GameView,
     HomeView,
@@ -157,11 +162,13 @@ class AYGeographyApp:
         self.clock_source = time.monotonic
         self.frame_clock = pygame.time.Clock()
         self.running = False
+        self._present_loading(10, "Подготовка окна")
 
         self.catalog = CountryCatalog(
             CONFIGS_DIR / "countries_by_iso3.json",
             CONFIGS_DIR / "continents.json",
         )
+        self._present_loading(25, "Загрузка карты мира")
         self.wonder_catalog = WonderCatalog(
             CONFIGS_DIR / "wonders",
             self.catalog.all(),
@@ -171,6 +178,7 @@ class AYGeographyApp:
             CONFIGS_DIR / "water_area",
             self.catalog.all(),
         )
+        self._present_loading(42, "Загрузка игровых данных")
         self.profile_progression = ProfileProgression(
             CONFIGS_DIR / "progression.json"
         )
@@ -193,6 +201,7 @@ class AYGeographyApp:
                 )
         assert repository is not None
         self.repository = repository
+        self._present_loading(60, "Загрузка профиля")
         self.progression_catalog = ProgressionCatalog(
             CONFIGS_DIR / "progression.json",
             CONFIGS_DIR / "achievements.json",
@@ -203,10 +212,12 @@ class AYGeographyApp:
         )
         self.mode_registry = self.question_factory.registry
         self.progression = self._create_progression_service()
+        self._present_loading(75, "Подготовка режимов")
         self.map_renderer = MapRenderer(
             ASSETS_DIR / "maps/world_geometry.json",
             self.water_catalog,
         )
+        self._present_loading(88, "Подготовка интерфейса")
         self.assets = AssetStore()
         self.manager = LogicalUIManager(
             LOGICAL_SIZE,
@@ -215,6 +226,11 @@ class AYGeographyApp:
             enable_live_theme_updates=False,
             starting_language="ru",
         )
+        self._achievement_notifications = AchievementNotificationCenter(
+            self.clock,
+            self.assets.icon,
+        )
+        self._present_loading(96, "Завершение загрузки")
         self.pending_modes = ["countries", "waters"]
         self.pending_continents = list(CONTINENT_NAMES)
         self.pending_count = 25
@@ -229,9 +245,8 @@ class AYGeographyApp:
         self._transition_surface: pygame.Surface | None = None
         self._transition_started = 0.0
         self._transition_duration = 0.24
-        self._achievement_queue = []
-        self._achievement_started = 0.0
         self._cursor_is_hand = False
+        self._present_loading(100, "Готово")
         self.show("profile_select" if self.profile_manager is not None else "home")
         if self.profile_manager is None and self._active_game_state is not None:
             self._offer_resume_game()
@@ -255,6 +270,49 @@ class AYGeographyApp:
             available_height / LOGICAL_SIZE[1],
         )
         return round(LOGICAL_SIZE[0] * scale), round(LOGICAL_SIZE[1] * scale)
+
+    def _present_loading(self, progress: int, label: str) -> None:
+        """Present real bootstrap milestones before the regular loop starts."""
+        self.logical.fill(BG)
+        draw_logo(self.logical, (800, 315), 88)
+        draw_text(
+            self.logical,
+            "AYGeography",
+            (800, 430),
+            32,
+            TEXT,
+            bold=True,
+            anchor="center",
+        )
+        bar = pygame.Rect(500, 500, 600, 18)
+        draw_native_rect(self.logical, PANEL_ALT, bar, border_radius=9)
+        draw_native_rect(
+            self.logical,
+            CYAN,
+            (bar.left, bar.top, round(bar.width * progress / 100), bar.height),
+            border_radius=9,
+        )
+        draw_text(
+            self.logical,
+            f"{progress}% · {label}",
+            (800, 550),
+            15,
+            TEXT,
+            bold=True,
+            anchor="center",
+        )
+        if self._headless:
+            return
+        width, height = self.display.get_size()
+        self.display.fill((0, 0, 0))
+        self.display.blit(
+            self.logical,
+            (
+                (width - self.logical.get_width()) // 2,
+                (height - self.logical.get_height()) // 2,
+            ),
+        )
+        pygame.display.flip()
 
     def clock(self) -> float:
         return self.clock_source()
@@ -351,7 +409,12 @@ class AYGeographyApp:
         if profile_id is None:
             self.toast("Сначала выберите профиль", RED)
             return
-        destination = destination or self._save_profile_dialog()
+        if destination is None:
+            try:
+                destination = self._save_profile_dialog()
+            except OSError as error:
+                self.toast(f"Ошибка системного диалога: {error}", RED)
+                return
         if destination is None:
             return
         try:
@@ -368,7 +431,12 @@ class AYGeographyApp:
         if self.profile_manager is None:
             self.toast("Импорт недоступен для временного профиля", RED)
             return
-        source = source or self._open_profile_dialog()
+        if source is None:
+            try:
+                source = self._open_profile_dialog()
+            except OSError as error:
+                self.toast(f"Ошибка системного диалога: {error}", RED)
+                return
         if source is None:
             return
         try:
@@ -380,31 +448,15 @@ class AYGeographyApp:
         self.toast("Профиль импортирован", GREEN)
 
     @staticmethod
-    def _save_profile_dialog() -> Path | None:
-        from tkinter import Tk, filedialog
+    def _window_handle() -> int | None:
+        value = pygame.display.get_wm_info().get("window")
+        return int(value) if value else None
 
-        root = Tk()
-        root.withdraw()
-        value = filedialog.asksaveasfilename(
-            title="Экспорт профиля",
-            defaultextension=".ayprofile",
-            filetypes=[("Профиль AYGeography", "*.ayprofile")],
-        )
-        root.destroy()
-        return Path(value) if value else None
+    def _save_profile_dialog(self) -> Path | None:
+        return WindowsProfileFileDialog.save(self._window_handle())
 
-    @staticmethod
-    def _open_profile_dialog() -> Path | None:
-        from tkinter import Tk, filedialog
-
-        root = Tk()
-        root.withdraw()
-        value = filedialog.askopenfilename(
-            title="Импорт профиля",
-            filetypes=[("Профиль AYGeography", "*.ayprofile")],
-        )
-        root.destroy()
-        return Path(value) if value else None
+    def _open_profile_dialog(self) -> Path | None:
+        return WindowsProfileFileDialog.open(self._window_handle())
 
     def show(self, name: str) -> None:
         if (
@@ -420,6 +472,13 @@ class AYGeographyApp:
         self._confirmation = None
         self._confirmation_action = None
         self.view = VIEW_TYPES[name](self)
+        self._transition_surface = previous_frame
+        self._transition_started = self.clock()
+
+    def animate_view_update(self, update: Callable[[], None]) -> None:
+        """Apply an in-place view change using the standard screen transition."""
+        previous_frame = self._capture_transition_frame()
+        update()
         self._transition_surface = previous_frame
         self._transition_started = self.clock()
 
@@ -499,9 +558,7 @@ class AYGeographyApp:
         self._notify_achievements(unlocked)
 
     def _notify_achievements(self, unlocked) -> None:
-        if unlocked:
-            self._achievement_queue = list(unlocked)
-            self._achievement_started = self.clock()
+        self._achievement_notifications.add(unlocked)
 
     def _suspend_game(self, view: GameView) -> None:
         view.pause()
@@ -554,7 +611,8 @@ class AYGeographyApp:
         self._open_confirmation(
             title="Выход",
             description="Завершить игру AYGeography?",
-            action_name="Выйти",
+            action_name="Выйти [Enter]",
+            cancel_name="Отмена [Esc]",
             action=self._confirm_exit,
             danger=True,
         )
@@ -569,6 +627,7 @@ class AYGeographyApp:
         description: str,
         action_name: str,
         action: Callable[[], None],
+        cancel_name: str = "Отмена",
         danger: bool = False,
     ) -> None:
         if self._confirmation is not None:
@@ -578,6 +637,7 @@ class AYGeographyApp:
             title=title,
             description=description,
             action_name=action_name,
+            cancel_name=cancel_name,
             danger=danger,
         )
 
@@ -639,7 +699,10 @@ class AYGeographyApp:
                 self._confirmation = None
                 self._confirmation_action = None
             elif isinstance(self.view, GameView):
-                self.view.pause()
+                if self.view.paused:
+                    self.view.end_round()
+                else:
+                    self.view.pause()
             elif isinstance(self.view, (HomeView, ProfileSelectionView)):
                 self.request_exit()
             elif self.profile_manager is not None and not self._profile_selected:
@@ -659,6 +722,12 @@ class AYGeographyApp:
                 self._confirmation_action = None
                 if action is not None:
                     action()
+            return
+        if (
+            translated.type == pygame.MOUSEBUTTONUP
+            and translated.button == 1
+            and self._achievement_notifications.close_at(translated.pos)
+        ):
             return
         self.manager.process_events(translated)
         if self.view is not None:
@@ -685,8 +754,11 @@ class AYGeographyApp:
             )
         else:
             hand = bool(
-                self.view is not None
-                and self.view.interactive_at(position)
+                self._achievement_notifications.interactive_at(position)
+                or (
+                    self.view is not None
+                    and self.view.interactive_at(position)
+                )
             )
         if self.view is not None:
             self.view.set_pointer_position(position)
@@ -760,68 +832,7 @@ class AYGeographyApp:
         )
 
     def _draw_achievement_cards(self) -> None:
-        if not self._achievement_queue:
-            return
-        group_duration = 3.4
-        elapsed = self.clock() - self._achievement_started
-        group_index = int(elapsed // group_duration)
-        start = group_index * 3
-        items = self._achievement_queue[start : start + 3]
-        if not items:
-            self._achievement_queue = []
-            return
-        local_time = elapsed % group_duration
-        enter = min(1.0, local_time / 0.42)
-        exit_progress = max(0.0, (local_time - 2.8) / 0.6)
-        eased = 1 - (1 - enter) ** 3
-        offset = round((1 - eased) * 520 - exit_progress * 580)
-        for index, definition in enumerate(items):
-            rect = pygame.Rect(
-                490 + offset,
-                215 + index * 142,
-                620,
-                120,
-            )
-            panel_colour = pygame.Color("#092633")
-            draw_native_rect(
-                self.logical,
-                panel_colour,
-                rect,
-                border_radius=10,
-            )
-            draw_native_rect(
-                self.logical,
-                GREEN,
-                rect,
-                2,
-                border_radius=10,
-            )
-            icon = self.assets.icon(definition.icon, (76, 76))
-            icon_rect = icon.get_rect(center=(rect.left + 66, rect.centery))
-            self.logical.blit(icon, icon_rect)
-            draw_text(
-                self.logical,
-                "НОВОЕ ДОСТИЖЕНИЕ",
-                (rect.left + 122, rect.top + 20),
-                11,
-                GREEN,
-                bold=True,
-            )
-            draw_text(
-                self.logical,
-                definition.title,
-                (rect.left + 122, rect.top + 43),
-                19,
-                TEXT,
-                bold=True,
-            )
-            draw_text(
-                self.logical,
-                definition.description,
-                (rect.left + 122, rect.top + 76),
-                12,
-                pygame.Color("#8fa6b1"),
-            )
+        self._achievement_notifications.draw(self.logical)
 
     def present(self) -> None:
         frame = self.render()

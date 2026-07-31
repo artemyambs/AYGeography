@@ -60,14 +60,18 @@ class ProgressionTests(unittest.TestCase):
         )
 
     @staticmethod
-    def _answer(mode: str, iso3: str = "RUS") -> AnswerRecord:
+    def _answer(
+        mode: str,
+        iso3: str = "RUS",
+        is_correct: bool = True,
+    ) -> AnswerRecord:
         return AnswerRecord(
             mode=mode,
             country_iso=iso3,
             prompt="Вопрос",
             answer="Ответ",
             correct_answer="Ответ",
-            is_correct=True,
+            is_correct=is_correct,
             seconds=2.0,
             points=10,
         )
@@ -95,37 +99,74 @@ class ProgressionTests(unittest.TestCase):
             3,
             self.catalog.mastery_modes[:-1],
         )
-        self.assertEqual(self.service.country_mastery()["RUS"].stars, 0)
+        self.assertEqual(self.service.country_mastery()["RUS"].rating, 0)
 
-    def test_mastery_awards_one_two_and_three_stars(self):
-        for expected in (1, 2, 3):
+    def test_mastery_awards_poor_good_and_excellent_ratings(self):
+        for expected, correct_count in ((1, 1), (2, 3), (3, 8)):
             with self.subTest(expected=expected):
                 repository = GameRepository(
-                    Path(self.temporary.name) / f"stars_{expected}.db"
+                    Path(self.temporary.name) / f"rating_{expected}.db"
                 )
                 service = ProgressionService(
                     repository,
                     self.countries,
                     self.catalog,
                 )
-                for round_index in range(expected):
-                    repository.save_round(
-                        RoundResult(
-                            f"2026-07-{20 + round_index:02d}T12:00:00",
-                            10,
-                            100,
-                            [
-                                self._answer(mode)
-                                for mode in self.catalog.mastery_modes
-                            ],
-                        )
+                repository.save_round(
+                    RoundResult(
+                        "2026-07-20T12:00:00",
+                        10,
+                        100,
+                        [
+                            self._answer(mode)
+                            for _ in range(correct_count)
+                            for mode in self.catalog.mastery_modes
+                        ],
                     )
+                )
                 self.assertEqual(
-                    service.country_mastery()["RUS"].stars,
+                    service.country_mastery()["RUS"].rating,
                     expected,
                 )
 
-    def test_population_mastery_counts_both_countries_once_per_round(self):
+    def test_mastery_resets_only_current_streak(self):
+        def save_attempts(count: int, is_correct: bool = True) -> None:
+            self.repository.save_round(
+                RoundResult(
+                    "2026-07-26T12:00:00",
+                    10,
+                    100,
+                    [
+                        self._answer(mode, is_correct=is_correct)
+                        for _ in range(count)
+                        for mode in self.catalog.mastery_modes
+                    ],
+                )
+            )
+
+        save_attempts(1)
+        mastery = self.service.country_mastery()["RUS"]
+        self.assertEqual(1, mastery.rating)
+        self.assertTrue(all(value == 0 for value in mastery.streak_by_mode.values()))
+
+        save_attempts(1)
+        save_attempts(1, is_correct=False)
+        mastery = self.service.country_mastery()["RUS"]
+        self.assertEqual(1, mastery.rating)
+        self.assertTrue(all(value == 0 for value in mastery.streak_by_mode.values()))
+
+        save_attempts(2)
+        mastery = self.service.country_mastery()["RUS"]
+        self.assertEqual(2, mastery.rating)
+        self.assertTrue(all(value == 0 for value in mastery.streak_by_mode.values()))
+
+        save_attempts(4)
+        save_attempts(1, is_correct=False)
+        save_attempts(5)
+        mastery = self.service.country_mastery()["RUS"]
+        self.assertEqual(3, mastery.rating)
+
+    def test_population_mastery_tracks_each_answer_for_both_countries(self):
         answer = AnswerRecord(
             mode="population",
             country_iso="RUS",
@@ -148,8 +189,10 @@ class ProgressionTests(unittest.TestCase):
 
         mastery = self.service.country_mastery()
 
-        self.assertEqual(1, mastery["RUS"].correct_by_mode["population"])
-        self.assertEqual(1, mastery["DEU"].correct_by_mode["population"])
+        self.assertEqual(1, mastery["RUS"].rating_by_mode["population"])
+        self.assertEqual(1, mastery["DEU"].rating_by_mode["population"])
+        self.assertEqual(1, mastery["RUS"].streak_by_mode["population"])
+        self.assertEqual(1, mastery["DEU"].streak_by_mode["population"])
 
     def test_new_mastery_mode_is_required_without_code_changes(self):
         progression = json.loads(
@@ -171,7 +214,7 @@ class ProgressionTests(unittest.TestCase):
             future_catalog,
         )
         self._save_mastery_round(3)
-        self.assertEqual(service.country_mastery()["RUS"].stars, 0)
+        self.assertEqual(service.country_mastery()["RUS"].rating, 0)
         self.repository.save_round(
             RoundResult(
                 "2026-07-26T12:10:00",
@@ -180,17 +223,17 @@ class ProgressionTests(unittest.TestCase):
                 [self._answer("future_mode")],
             )
         )
-        self.assertEqual(service.country_mastery()["RUS"].stars, 1)
+        self.assertEqual(service.country_mastery()["RUS"].rating, 1)
 
     def test_reset_does_not_remove_mastery_or_achievements(self):
         self._save_mastery_round(1)
         unlocked = self.service.sync()
         self.assertTrue(unlocked)
-        before_mastery = self.service.country_mastery()["RUS"].stars
+        before_mastery = self.service.country_mastery()["RUS"].rating
         before_unlocks = self.repository.unlocked_achievements()
         self.repository.reset_answer_statistics()
         self.assertEqual(
-            self.service.country_mastery()["RUS"].stars,
+            self.service.country_mastery()["RUS"].rating,
             before_mastery,
         )
         self.assertEqual(

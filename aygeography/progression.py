@@ -14,9 +14,11 @@ from .storage import GameRepository
 
 
 @dataclass(frozen=True, slots=True)
-class MasteryLevel:
-    stars: int
-    correct_per_mode: int
+class RatingLevel:
+    rating: int
+    label: str
+    required_streak: int
+    hint: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -41,8 +43,9 @@ class AchievementProgress:
 @dataclass(frozen=True, slots=True)
 class CountryMastery:
     iso3: str
-    stars: int
-    correct_by_mode: dict[str, int]
+    rating: int
+    rating_by_mode: dict[str, int]
+    streak_by_mode: dict[str, int]
 
 
 class ProgressionCatalog:
@@ -52,16 +55,18 @@ class ProgressionCatalog:
         progression = json.loads(progression_path.read_text(encoding="utf-8"))
         mastery = progression["country_mastery"]
         self.mastery_modes = tuple(str(mode) for mode in mastery["modes"])
-        self.mastery_levels = tuple(
-            MasteryLevel(
-                stars=int(item["stars"]),
-                correct_per_mode=int(item["correct_per_mode"]),
+        self.mastery_rating_levels = tuple(
+            RatingLevel(
+                rating=int(item["rating"]),
+                label=str(item["label"]),
+                required_streak=int(item["required_streak"]),
+                hint=str(item["hint"]),
             )
-            for item in mastery["levels"]
+            for item in mastery["ratings"]
         )
-        self.mastery_colors = {
-            int(stars): str(colour)
-            for stars, colour in mastery["colors"].items()
+        self.mastery_rating_colors = {
+            int(rating): str(colour)
+            for rating, colour in mastery["rating_colors"].items()
         }
         raw_achievements = json.loads(
             achievements_path.read_text(encoding="utf-8")
@@ -85,16 +90,23 @@ class ProgressionCatalog:
         ):
             raise ValueError("Режимы мастерства должны быть уникальны")
         ordered_levels = sorted(
-            self.mastery_levels,
-            key=lambda level: level.correct_per_mode,
+            self.mastery_rating_levels,
+            key=lambda level: level.rating,
         )
-        if list(self.mastery_levels) != ordered_levels:
+        if list(self.mastery_rating_levels) != ordered_levels:
             raise ValueError("Уровни мастерства должны идти по возрастанию")
         if any(
-            level.stars <= 0 or level.correct_per_mode <= 0
-            for level in self.mastery_levels
+            level.rating <= 0 or level.required_streak <= 0
+            for level in self.mastery_rating_levels
         ):
             raise ValueError("Пороги мастерства должны быть положительными")
+        if not self.mastery_rating_levels:
+            raise ValueError("Должна быть задана хотя бы одна оценка мастерства")
+        expected_ratings = list(range(1, len(self.mastery_rating_levels) + 1))
+        if [level.rating for level in self.mastery_rating_levels] != expected_ratings:
+            raise ValueError("Оценки мастерства должны идти подряд, начиная с 1")
+        if set(self.mastery_rating_colors) != set(range(len(expected_ratings) + 1)):
+            raise ValueError("Для каждой оценки мастерства должен быть задан цвет")
         ids = [item.id for item in self.achievements]
         if len(ids) != len(set(ids)):
             raise ValueError("Идентификаторы достижений должны быть уникальны")
@@ -201,37 +213,44 @@ class ProgressionService:
         }
 
     def country_mastery(self) -> dict[str, CountryMastery]:
-        counts: dict[str, dict[str, int]] = defaultdict(
+        ratings: dict[str, dict[str, int]] = defaultdict(
             lambda: defaultdict(int)
         )
-        counted_population: set[tuple[int, str]] = set()
+        streaks: dict[str, dict[str, int]] = defaultdict(
+            lambda: defaultdict(int)
+        )
         for answer in self.repository.lifetime_answer_countries():
-            if bool(answer["is_correct"]):
-                country_iso = str(answer["country_iso"])
-                mode = str(answer["mode"])
-                if mode == "population":
-                    key = int(answer["round_id"]), country_iso
-                    if key in counted_population:
-                        continue
-                    counted_population.add(key)
-                counts[country_iso][mode] += 1
+            country_iso = str(answer["country_iso"])
+            mode = str(answer["mode"])
+            if mode not in self.catalog.mastery_modes:
+                continue
+            if not bool(answer["is_correct"]):
+                streaks[country_iso][mode] = 0
+                continue
+            current_rating = ratings[country_iso][mode]
+            if current_rating >= len(self.catalog.mastery_rating_levels):
+                continue
+            streaks[country_iso][mode] += 1
+            next_level = self.catalog.mastery_rating_levels[current_rating]
+            if streaks[country_iso][mode] >= next_level.required_streak:
+                ratings[country_iso][mode] = next_level.rating
+                streaks[country_iso][mode] = 0
         result: dict[str, CountryMastery] = {}
         for country in self.countries.all():
-            by_mode = {
-                mode: counts[country.iso3][mode]
+            rating_by_mode = {
+                mode: ratings[country.iso3][mode]
                 for mode in self.catalog.mastery_modes
             }
-            stars = 0
-            for level in self.catalog.mastery_levels:
-                if all(
-                    by_mode[mode] >= level.correct_per_mode
-                    for mode in self.catalog.mastery_modes
-                ):
-                    stars = level.stars
+            streak_by_mode = {
+                mode: streaks[country.iso3][mode]
+                for mode in self.catalog.mastery_modes
+            }
+            rating = min(rating_by_mode.values(), default=0)
             result[country.iso3] = CountryMastery(
                 country.iso3,
-                stars,
-                by_mode,
+                rating,
+                rating_by_mode,
+                streak_by_mode,
             )
         return result
 
@@ -389,13 +408,13 @@ class ProgressionService:
 
     def _continent_mastery(self, rule, snapshot, mastery):
         country_ids = self.countries.continents[str(rule["continent"])]
-        stars = int(rule["stars"])
-        current = sum(mastery[iso3].stars >= stars for iso3 in country_ids)
+        rating = int(rule["rating"])
+        current = sum(mastery[iso3].rating >= rating for iso3 in country_ids)
         return current, len(country_ids)
 
     def _world_mastery(self, rule, snapshot, mastery):
-        stars = int(rule["stars"])
-        return sum(item.stars >= stars for item in mastery.values()), len(mastery)
+        rating = int(rule["rating"])
+        return sum(item.rating >= rating for item in mastery.values()), len(mastery)
 
     def _daily_streak(self, rule, snapshot, mastery):
         return snapshot.max_daily_streak(), self._target(rule)
@@ -413,13 +432,13 @@ class ProgressionService:
         return len(countries), self._target(rule)
 
     def _balanced_mode_correct(self, rule, snapshot, mastery):
-        correct_by_mode = defaultdict(int)
+        correct_counts = defaultdict(int)
         for row in snapshot.answers:
             if bool(row["is_correct"]):
-                correct_by_mode[str(row["mode"])] += 1
+                correct_counts[str(row["mode"])] += 1
         current = min(
             (
-                correct_by_mode[mode]
+                correct_counts[mode]
                 for mode in self.mode_registry.keys
             ),
             default=0,

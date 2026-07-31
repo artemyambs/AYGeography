@@ -1,15 +1,18 @@
 # -*- mode: python ; coding: utf-8 -*-
 from PyInstaller.utils.hooks import collect_all
 
-datas = [('assets', 'assets'), ('configs', 'configs')]
+
+datas = [("assets", "assets"), ("configs", "configs")]
 binaries = []
 hiddenimports = []
-tmp_ret = collect_all('pygame_gui')
-datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
+collected = collect_all("pygame_gui")
+datas += collected[0]
+binaries += collected[1]
+hiddenimports += collected[2]
 
 
-a = Analysis(
-    ['main.py'],
+analysis = Analysis(
+    ["main.py"],
     pathex=[],
     binaries=binaries,
     datas=datas,
@@ -21,25 +24,35 @@ a = Analysis(
     noarchive=False,
     optimize=0,
 )
-pyz = PYZ(a.pure)
+python_archive = PYZ(analysis.pure)
 
-exe = EXE(
-    pyz,
-    a.scripts,
-    a.binaries,
-    a.datas,
+executable = EXE(
+    python_archive,
+    analysis.scripts,
     [],
-    name='AYGeography',
+    exclude_binaries=True,
+    name="AYGeography",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    upx=False,
     upx_exclude=[],
     runtime_tmpdir=None,
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
+    icon="assets/app_icon.ico",
     codesign_identity=None,
     entitlements_file=None,
+)
+
+distribution = COLLECT(
+    executable,
+    analysis.binaries,
+    analysis.datas,
+    strip=False,
+    upx=False,
+    upx_exclude=[],
+    name="AYGeography",
 )

@@ -332,6 +332,7 @@ def draw_button(
     selected: bool = False,
     disabled: bool = False,
     size: int = 18,
+    bold: bool = False,
 ) -> None:
     if primary:
         fill, border = GREEN_DARK, GREEN
@@ -348,7 +349,7 @@ def draw_button(
         rect,
         size,
         MUTED if disabled else TEXT,
-        bold=primary or selected,
+        bold=bold or primary or selected,
     )
 
 
@@ -1144,8 +1145,8 @@ class MapRenderer:
         self,
         surface: pygame.Surface,
         rect: pygame.Rect,
-        levels: dict[str, int],
-        colors: dict[int, str],
+        ratings: dict[str, int],
+        rating_colors: dict[int, str],
         camera: MapCamera | None = None,
     ) -> None:
         """Draw a cached world map coloured by permanent country mastery."""
@@ -1156,8 +1157,8 @@ class MapRenderer:
         )
         key = (
             target.size,
-            tuple(sorted(levels.items())),
-            tuple(sorted(colors.items())),
+            tuple(sorted(ratings.items())),
+            tuple(sorted(rating_colors.items())),
             round(physical_camera.zoom, 4),
             round(physical_camera.offset.x, 2),
             round(physical_camera.offset.y, 2),
@@ -1171,7 +1172,9 @@ class MapRenderer:
             for y in range(0, local.height, max(1, local.height // 6)):
                 pygame.draw.line(canvas, pygame.Color("#0e3747"), (0, y), (local.width, y))
             for iso3, rings in self.geometry.items():
-                colour = pygame.Color(colors.get(levels.get(iso3, 0), "#0a5572"))
+                colour = pygame.Color(
+                    rating_colors.get(ratings.get(iso3, 0), "#0a5572")
+                )
                 for ring in rings:
                     points = [
                         self.project(point, local, physical_camera)
@@ -1235,6 +1238,7 @@ class MapRenderer:
                 target.size,
                 physical_camera,
             )
+            self._draw_atlas_boundaries(canvas, physical_camera)
             local = canvas.get_rect()
             pygame.draw.rect(
                 canvas,
@@ -1357,7 +1361,6 @@ class MapRenderer:
         detailed = pygame.Surface(detailed_size)
         detailed.fill(WATER)
         detailed_rect = detailed.get_rect()
-        border_colour = pygame.Color("#1683a4")
         for iso3, rings in self.geometry.items():
             colour = pygame.Color(
                 palette.get(continents.get(iso3, ""), "#b7c5c8")
@@ -1366,14 +1369,37 @@ class MapRenderer:
                 points = [self.project(point, detailed_rect) for point in ring]
                 if len(points) >= 3:
                     pygame.draw.polygon(detailed, colour, points)
-                    pygame.draw.lines(
-                        detailed,
+        return detailed
+
+    def _draw_atlas_boundaries(
+        self,
+        canvas: pygame.Surface,
+        camera: MapCamera,
+    ) -> None:
+        """Draw crisp one-pixel borders over the cached, scaled country fills."""
+        map_rect = canvas.get_rect()
+        border_colour = pygame.Color("#1683a4")
+        for iso3, rings in self.geometry.items():
+            min_lon, min_lat, max_lon, max_lat = self._country_bounds[iso3]
+            top_left = self.project((min_lon, max_lat), map_rect, camera)
+            bottom_right = self.project((max_lon, min_lat), map_rect, camera)
+            country_rect = pygame.Rect(
+                top_left,
+                (
+                    max(1, bottom_right[0] - top_left[0] + 1),
+                    max(1, bottom_right[1] - top_left[1] + 1),
+                ),
+            )
+            if not map_rect.colliderect(country_rect):
+                continue
+            for ring in rings:
+                if len(ring) >= 3:
+                    pygame.draw.aalines(
+                        canvas,
                         border_colour,
                         True,
-                        points,
-                        max(1, detail),
+                        [self.project(point, map_rect, camera) for point in ring],
                     )
-        return detailed
 
     def _sample_atlas_view(
         self,
@@ -1440,7 +1466,7 @@ class MapRenderer:
         source_rect.height = max(1, source_bottom - source_rect.top)
         cropped = source.subsurface(source_rect)
         canvas.blit(
-            pygame.transform.scale(cropped, visible.size),
+            pygame.transform.smoothscale(cropped, visible.size),
             visible,
         )
         return canvas
