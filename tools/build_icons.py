@@ -39,14 +39,22 @@ ICONS = {
     "arrow_down": '<path d="m17 35 31 31 31-31"/>',
     "arrow_left": '<path d="m61 17-31 31 31 31"/>',
     "arrow_right": '<path d="m35 17 31 31-31 31"/>',
+    "atlas": '<path d="M11 22c13-6 25-3 37 7 12-10 24-13 37-7v55c-13-5-25-2-37 8-12-10-24-13-37-8V22Z"/><path d="M48 29v56M22 37c7-2 13-1 19 3M22 49c7-2 13-1 19 3M56 40c6-4 12-5 19-4M56 52c6-4 12-5 19-4"/><circle cx="70" cy="66" r="9" stroke="#76c52b"/><path d="m70 58 3 7-3 9-3-9 3-7Z" fill="#76c52b" stroke="none"/>',
+    "achievements": '<path d="M48 12 59 34l24 4-17 17 4 24-22-11-22 11 4-24-17-17 24-4 11-22Z" fill="url(#gold)" stroke="#f6b817"/><circle cx="48" cy="49" r="12" stroke="#071c28"/><path d="m42 49 5 5 9-11" stroke="#071c28"/>',
+    "mastery": '<circle cx="48" cy="47" r="34"/><path d="M14 47h68M48 13c11 10 17 21 17 34S59 71 48 81c-11-10-17-21-17-34s6-24 17-34Z"/><path d="m68 58 4 8 9 1-6 6 2 9-9-4-8 4 2-9-7-6 9-1 4-8Z" fill="#76c52b" stroke="#76c52b"/>',
+    "wonders": '<path d="M10 78h76L60 35 48 52 36 17 10 78Z"/><path d="m36 17 7 20-8-5-8 6 9-21Z" fill="#76c52b" stroke="none"/><path d="m73 10 3 10 10 3-10 3-3 10-3-10-10-3 10-3 3-10Z" fill="#f6b817" stroke="#f6b817"/>',
+    "profile_add": '<circle cx="36" cy="31" r="15"/><path d="M10 78c2-20 11-30 26-30 9 0 16 4 20 12"/><circle cx="70" cy="66" r="17" stroke="#76c52b"/><path d="M70 56v20M60 66h20" stroke="#76c52b"/>',
+    "profile_import": '<circle cx="31" cy="30" r="14"/><path d="M9 75c2-18 10-27 22-27 9 0 15 4 19 12"/><path d="M70 14v43M55 42l15 15 15-15M52 78h36" stroke="#76c52b"/>',
 }
 
 TEMPLATE = """<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
 <defs>
- <linearGradient id="g" x2="1" y2="1"><stop stop-color="#6ff2ff"/><stop offset="1" stop-color="#20a8cf"/></linearGradient>
- <linearGradient id="gold" x2="1" y2="1"><stop stop-color="#ffe15a"/><stop offset="1" stop-color="#f39b08"/></linearGradient>
+ <linearGradient id="g" x1="8" y1="8" x2="88" y2="88"><stop stop-color="#7ef4ff"/><stop offset=".58" stop-color="#39d7ee"/><stop offset="1" stop-color="#1683a4"/></linearGradient>
+ <linearGradient id="gold" x2="1" y2="1"><stop stop-color="#fff08a"/><stop offset="1" stop-color="#f39b08"/></linearGradient>
 </defs>
-<g fill="none" stroke="url(#g)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">{body}</g>
+<circle cx="48" cy="48" r="43" fill="#071c28" opacity=".42"/>
+<path d="M19 17h12M65 79h12" stroke="#76c52b" stroke-width="4" stroke-linecap="round"/>
+<g fill="none" stroke="url(#g)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round">{body}</g>
 </svg>
 """
 

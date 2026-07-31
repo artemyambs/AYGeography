@@ -196,6 +196,8 @@ class ProgressionService:
             "world_mastery": self._world_mastery,
             "daily_streak": self._daily_streak,
             "active_days": self._active_days,
+            "unique_country_correct": self._unique_country_correct,
+            "balanced_mode_correct": self._balanced_mode_correct,
         }
 
     def country_mastery(self) -> dict[str, CountryMastery]:
@@ -400,4 +402,26 @@ class ProgressionService:
 
     def _active_days(self, rule, snapshot, mastery):
         current = len({str(row["started_at"])[:10] for row in snapshot.rounds})
+        return current, self._target(rule)
+
+    def _unique_country_correct(self, rule, snapshot, mastery):
+        countries = {
+            str(row["country_iso"])
+            for row in self.repository.lifetime_answer_countries()
+            if bool(row["is_correct"])
+        }
+        return len(countries), self._target(rule)
+
+    def _balanced_mode_correct(self, rule, snapshot, mastery):
+        correct_by_mode = defaultdict(int)
+        for row in snapshot.answers:
+            if bool(row["is_correct"]):
+                correct_by_mode[str(row["mode"])] += 1
+        current = min(
+            (
+                correct_by_mode[mode]
+                for mode in self.mode_registry.keys
+            ),
+            default=0,
+        )
         return current, self._target(rule)

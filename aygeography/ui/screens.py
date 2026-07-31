@@ -85,6 +85,8 @@ class BaseView:
         self.app = app
         self.manager = app.manager
         self._actions: dict[UIButton, object] = {}
+        self._press_pulses: list[tuple[pygame.Rect, float]] = []
+        self._pointer_position: tuple[int, int] | None = None
         self._create_sidebar_actions()
 
     def add_action(self, rect: pygame.Rect, action, object_id: str = "#hitbox") -> UIButton:
@@ -126,6 +128,86 @@ class BaseView:
 
     def handle_event(self, event: pygame.event.Event) -> None:
         pass
+
+    def record_pointer_event(self, event: pygame.event.Event) -> None:
+        if event.type in {
+            pygame.MOUSEMOTION,
+            pygame.MOUSEBUTTONDOWN,
+            pygame.MOUSEBUTTONUP,
+        }:
+            self._pointer_position = event.pos
+        if event.type != pygame.MOUSEBUTTONDOWN or event.button != 1:
+            return
+        rect = next(
+            (
+                button.rect
+                for button in self._actions
+                if button.rect.collidepoint(event.pos)
+            ),
+            None,
+        )
+        if rect is not None:
+            self._press_pulses.append((rect.copy(), self.app.clock()))
+
+    def interactive_at(self, position: tuple[int, int]) -> bool:
+        return any(
+            button.rect.collidepoint(position)
+            for button in self._actions
+        )
+
+    def set_pointer_position(self, position: tuple[int, int]) -> None:
+        self._pointer_position = position
+
+    def draw_interaction_effects(self, surface: pygame.Surface) -> None:
+        hovered_rect = next(
+            (
+                button.rect
+                for button in self._actions
+                if self._pointer_position is not None
+                and button.rect.collidepoint(self._pointer_position)
+            ),
+            None,
+        )
+        if hovered_rect is not None:
+            hover_layer = pygame.Surface(
+                surface.get_size(),
+                pygame.SRCALPHA,
+            )
+            hover_layer.fill((0, 0, 0, 0))
+            draw_native_rect(
+                hover_layer,
+                (57, 215, 238, 26),
+                hovered_rect,
+                border_radius=8,
+            )
+            draw_native_rect(
+                hover_layer,
+                (57, 215, 238, 130),
+                hovered_rect,
+                1,
+                border_radius=8,
+            )
+            surface.blit(hover_layer, (0, 0))
+        now = self.app.clock()
+        active: list[tuple[pygame.Rect, float]] = []
+        for rect, started in self._press_pulses:
+            progress = (now - started) / 0.24
+            if progress >= 1:
+                continue
+            active.append((rect, started))
+            expanded = rect.inflate(
+                round(14 * progress),
+                round(10 * progress),
+            )
+            colour = CYAN.lerp(BORDER, progress)
+            draw_native_rect(
+                surface,
+                colour,
+                expanded,
+                2,
+                border_radius=8,
+            )
+        self._press_pulses = active
 
     def update(self, delta: float) -> None:
         pass
@@ -975,6 +1057,11 @@ class GameView(BaseView):
         feedback_seconds = self.app.mode_registry.feedback_seconds(
             question.mode,
             record.is_correct,
+            (
+                question.content.water_area_kind
+                if isinstance(question.content, MapContent)
+                else ""
+            ),
         )
         self.advance_at = self.app.clock() + feedback_seconds
 
@@ -1779,13 +1866,20 @@ class InteractiveMapView(BaseView):
     def __init__(self, app) -> None:
         super().__init__(app)
         self.mouse_position: tuple[int, int] | None = None
-        self.map_rect = pygame.Rect(275, 155, 1210, 535)
+        self.map_rect = self._map_area()
         self.map_camera = MapCamera()
         self.map_buttons: dict[UIButton, tuple[str, pygame.Rect]] = {}
         self._dragging = False
         self._drag_origin = pygame.Vector2()
         self._drag_offset = pygame.Vector2()
+        self._click_origin = pygame.Vector2()
         self._build_map_actions()
+
+    def _map_area(self) -> pygame.Rect:
+        return pygame.Rect(275, 155, 1210, 535)
+
+    def _on_map_click(self, position: tuple[int, int]) -> None:
+        pass
 
     def _build_map_actions(self) -> None:
         left, right, bottom = (
@@ -1843,9 +1937,19 @@ class InteractiveMapView(BaseView):
                 self._dragging = True
                 self._drag_origin.update(event.pos)
                 self._drag_offset = self.map_camera.offset.copy()
+                self._click_origin.update(event.pos)
             return
         if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            was_click = (
+                self._dragging
+                and pygame.Vector2(event.pos).distance_to(
+                    self._click_origin
+                )
+                < 6
+            )
             self._dragging = False
+            if was_click:
+                self._on_map_click(event.pos)
             return
         if event.type != pygame.KEYDOWN:
             return
@@ -1900,6 +2004,33 @@ class AtlasView(InteractiveMapView):
             country.iso3: country.continent
             for country in app.catalog.all()
         }
+        self.selected_country: str | None = None
+        self._facts = app.wonder_catalog.facts_by_country()
+        self._area_ranks = self._rank_countries("area")
+        self._population_ranks = self._rank_countries("population")
+
+    def _map_area(self) -> pygame.Rect:
+        return pygame.Rect(275, 138, 1210, 462)
+
+    def _rank_countries(self, field: str) -> dict[str, int]:
+        ordered = sorted(
+            self.app.catalog.all(),
+            key=lambda country: getattr(country, field),
+            reverse=True,
+        )
+        return {
+            country.iso3: index
+            for index, country in enumerate(ordered, start=1)
+        }
+
+    def _on_map_click(self, position: tuple[int, int]) -> None:
+        selected = self.app.map_renderer.country_at(
+            position,
+            self.map_rect,
+            self.map_camera,
+        )
+        if selected in self._continents:
+            self.selected_country = selected
 
     def draw(self, surface: pygame.Surface) -> None:
         super().draw(surface)
@@ -1927,6 +2058,88 @@ class AtlasView(InteractiveMapView):
         self._draw_map_controls(surface)
         if hovered and hovered in self._continents:
             self._draw_country_card(surface, hovered)
+        self._draw_country_facts(surface)
+
+    def _draw_country_facts(self, surface: pygame.Surface) -> None:
+        rect = pygame.Rect(275, 620, 1210, 190)
+        panel(surface, rect, fill=PANEL, border=BORDER, radius=9)
+        if self.selected_country is None:
+            icon = self.app.assets.icon("atlas", (46, 46))
+            blit_centered(surface, icon, (rect.centerx, rect.top + 57))
+            draw_text(
+                surface,
+                "Нажмите на страну, чтобы открыть три факта",
+                (rect.centerx, rect.top + 112),
+                16,
+                MUTED,
+                anchor="center",
+            )
+            return
+        country = self.app.catalog.get(self.selected_country)
+        fact = self._facts[self.selected_country]
+        facts = (
+            fact.explanation,
+            (
+                f"{self._area_ranks[country.iso3]}-е место в мире "
+                f"по площади: {country.area:,} км²."
+            ).replace(",", " "),
+            (
+                f"{self._population_ranks[country.iso3]}-е место в мире "
+                f"по населению: {format_population(country.population)} человек."
+            ),
+        )
+        draw_text(
+            surface,
+            f"Три факта: {country.name}",
+            (rect.left + 18, rect.top + 14),
+            16,
+            TEXT,
+            bold=True,
+        )
+        for index, fact_text in enumerate(facts):
+            item = pygame.Rect(
+                rect.left + 18 + index * 395,
+                rect.top + 48,
+                376,
+                124,
+            )
+            panel(
+                surface,
+                item,
+                fill=PANEL_ALT,
+                border=CYAN_DARK,
+                radius=7,
+            )
+            draw_native_circle(
+                surface,
+                GREEN_DARK,
+                (item.left + 24, item.top + 24),
+                15,
+            )
+            draw_text(
+                surface,
+                str(index + 1),
+                (item.left + 24, item.top + 24),
+                12,
+                TEXT,
+                bold=True,
+                anchor="center",
+            )
+            wrapped = "\n".join(textwrap.wrap(fact_text, width=43))
+            draw_multiline(
+                surface,
+                wrapped,
+                pygame.Rect(
+                    item.left + 50,
+                    item.top + 12,
+                    item.width - 62,
+                    item.height - 24,
+                ),
+                11,
+                TEXT,
+                align="left",
+                line_gap=3,
+            )
 
     def _draw_country_card(
         self,
@@ -1945,12 +2158,12 @@ class AtlasView(InteractiveMapView):
             390,
             170 + max(0, len(language_lines) - 1) * 18,
         )
-        card.clamp_ip(pygame.Rect(225, 125, 1350, 680))
+        card.clamp_ip(self.map_rect.inflate(-12, -12))
         panel(
             surface,
             card,
-            fill=pygame.Color("#f8fcfd"),
-            border=pygame.Color("#4a7a86"),
+            fill=PANEL,
+            border=CYAN_DARK,
             radius=10,
         )
         flag = self.app.assets.image(
@@ -1962,8 +2175,8 @@ class AtlasView(InteractiveMapView):
             (card.left + 57, card.top + 48),
             (82, 52),
         )
-        dark = pygame.Color("#17343d")
-        secondary = pygame.Color("#4f6870")
+        dark = TEXT
+        secondary = MUTED
         draw_text(
             surface,
             country.name,
@@ -2462,7 +2675,7 @@ class ProfileDeleteView(BaseView):
 
 
 class ProfileSelectionView(BaseView):
-    PAGE_SIZE = 6
+    PAGE_SIZE = 2
 
     def _create_sidebar_actions(self) -> None:
         pass
@@ -2473,15 +2686,11 @@ class ProfileSelectionView(BaseView):
         self.profile_buttons: list[
             tuple[UIButton, pygame.Rect, object]
         ] = []
-        self.create_rect = pygame.Rect(485, 720, 290, 54)
-        self.import_rect = pygame.Rect(825, 720, 290, 54)
+        self.action_buttons: list[
+            tuple[UIButton, pygame.Rect, str]
+        ] = []
         self.previous_rect = pygame.Rect(260, 720, 70, 46)
         self.next_rect = pygame.Rect(1270, 720, 70, 46)
-        self.add_action(
-            self.create_rect,
-            lambda: app.show("profile_create"),
-        )
-        self.add_action(self.import_rect, app.import_profile)
         self.add_action(self.previous_rect, lambda: self._change_page(-1))
         self.add_action(self.next_rect, lambda: self._change_page(1))
         self._build_profile_actions()
@@ -2503,14 +2712,18 @@ class ProfileSelectionView(BaseView):
             self._actions.pop(button, None)
             button.kill()
         self.profile_buttons.clear()
+        for button, _, _ in self.action_buttons:
+            self._actions.pop(button, None)
+            button.kill()
+        self.action_buttons.clear()
         start = self.page * self.PAGE_SIZE
         for index, profile in enumerate(
             self.profiles[start : start + self.PAGE_SIZE]
         ):
-            column, row = index % 3, index // 3
+            column = index % 2
             rect = pygame.Rect(
-                230 + column * 390,
-                225 + row * 225,
+                405 + column * 390,
+                240,
                 350,
                 190,
             )
@@ -2519,6 +2732,15 @@ class ProfileSelectionView(BaseView):
                 lambda value=profile.id: self.app.select_profile(value),
             )
             self.profile_buttons.append((button, rect, profile))
+        action_y = 475 if self.profile_buttons else 285
+        actions = (
+            ("create", lambda: self.app.show("profile_create")),
+            ("import", self.app.import_profile),
+        )
+        for index, (kind, action) in enumerate(actions):
+            rect = pygame.Rect(405 + index * 390, action_y, 350, 190)
+            button = self.add_action(rect, action)
+            self.action_buttons.append((button, rect, kind))
 
     def draw(self, surface: pygame.Surface) -> None:
         surface.fill(BG)
@@ -2558,8 +2780,44 @@ class ProfileSelectionView(BaseView):
                 GREEN,
                 anchor="center",
             )
-        draw_button(surface, self.create_rect, "Создать профиль", size=16)
-        draw_button(surface, self.import_rect, "Импортировать", size=16)
+        action_content = {
+            "create": (
+                "profile_add",
+                "Создать новый профиль",
+                "Новый локальный игрок",
+            ),
+            "import": (
+                "profile_import",
+                "Импортировать профиль",
+                "Восстановить файл .ayprofile",
+            ),
+        }
+        for _, rect, kind in self.action_buttons:
+            panel(surface, rect)
+            icon_name, title, subtitle = action_content[kind]
+            icon = self.app.assets.icon(icon_name, (64, 64))
+            blit_centered(
+                surface,
+                icon,
+                (rect.centerx, rect.top + 62),
+            )
+            draw_text(
+                surface,
+                title,
+                (rect.centerx, rect.top + 125),
+                17,
+                TEXT,
+                bold=True,
+                anchor="center",
+            )
+            draw_text(
+                surface,
+                subtitle,
+                (rect.centerx, rect.top + 157),
+                12,
+                MUTED,
+                anchor="center",
+            )
         if self.page_count > 1:
             draw_button(surface, self.previous_rect, "‹", size=22)
             draw_button(surface, self.next_rect, "›", size=22)

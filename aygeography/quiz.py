@@ -11,6 +11,7 @@ from .config import (
     CONFIGS_DIR,
     MODE_FEEDBACK_SETTINGS,
     MODE_NAMES,
+    WATER_KIND_FEEDBACK_SETTINGS,
     WONDER_CATEGORY_WEIGHTS,
 )
 from .difficulty import DIFFICULTY_KEYS, DifficultyCatalog
@@ -919,6 +920,7 @@ class QuestionFactory:
             MODE_NAMES,
             MODE_FEEDBACK_SETTINGS,
             strategies,
+            WATER_KIND_FEEDBACK_SETTINGS,
         )
 
     def build(

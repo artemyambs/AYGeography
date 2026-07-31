@@ -12,6 +12,9 @@
       "countries": {"correct": 1.0, "incorrect": 1.5},
       "waters": {"correct": 3.0, "incorrect": 4.5},
       "wonders": {"correct": 6.0, "incorrect": 7.0}
+    },
+    "answer_feedback_seconds_by_water_kind": {
+      "river": {"correct": 8.0, "incorrect": 10.0}
     }
   },
   "colors": {

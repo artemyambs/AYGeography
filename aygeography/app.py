@@ -6,6 +6,7 @@ import os
 import time
 import zipfile
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Callable
 
 os.environ.setdefault("SDL_WINDOWS_DPI_AWARENESS", "permonitorv2")
@@ -179,9 +180,17 @@ class AYGeographyApp:
             else ProfileManager(SAVE_DIR, self.profile_progression)
         )
         self._profile_selected = self.profile_manager is None
+        self._bootstrap_directory: TemporaryDirectory[str] | None = None
         if self.profile_manager is not None:
-            default_profile = self.profile_manager.ensure_default()
-            repository = self.profile_manager.repository(default_profile.id)
+            profiles = self.profile_manager.profiles()
+            if profiles:
+                repository = self.profile_manager.repository(profiles[0].id)
+            else:
+                self._bootstrap_directory = TemporaryDirectory()
+                repository = GameRepository(
+                    Path(self._bootstrap_directory.name) / "bootstrap.db",
+                    self.profile_progression,
+                )
         assert repository is not None
         self.repository = repository
         self.progression_catalog = ProgressionCatalog(
@@ -217,6 +226,12 @@ class AYGeographyApp:
         self._toast = ""
         self._toast_colour = GREEN
         self._toast_until = 0.0
+        self._transition_surface: pygame.Surface | None = None
+        self._transition_started = 0.0
+        self._transition_duration = 0.24
+        self._achievement_queue = []
+        self._achievement_started = 0.0
+        self._cursor_is_hand = False
         self.show("profile_select" if self.profile_manager is not None else "home")
         if self.profile_manager is None and self._active_game_state is not None:
             self._offer_resume_game()
@@ -310,16 +325,22 @@ class AYGeographyApp:
 
     def _delete_profile(self, profile_id: str) -> None:
         assert self.profile_manager is not None
-        try:
-            self.profile_manager.delete(profile_id)
-        except ValueError as error:
-            self.toast(str(error), RED)
-            return
+        self.profile_manager.delete(profile_id)
         active_id = self.profile_manager.active_profile_id()
         if active_id:
             self.repository = self.profile_manager.repository(active_id)
             self.progression = self._create_progression_service()
-        self.show("profile")
+            self.show("profile")
+        else:
+            self._profile_selected = False
+            if self._bootstrap_directory is None:
+                self._bootstrap_directory = TemporaryDirectory()
+            self.repository = GameRepository(
+                Path(self._bootstrap_directory.name) / "bootstrap.db",
+                self.profile_progression,
+            )
+            self.progression = self._create_progression_service()
+            self.show("profile_select")
         self.toast("Профиль удалён", GREEN)
 
     def export_current_profile(self, destination: Path | None = None) -> None:
@@ -392,12 +413,18 @@ class AYGeographyApp:
             and name not in {"profile_select", "profile_create"}
         ):
             name = "profile_select"
+        previous_frame = self._capture_transition_frame()
         if isinstance(self.view, GameView):
             self._suspend_game(self.view)
         self.manager.clear_and_reset()
         self._confirmation = None
         self._confirmation_action = None
         self.view = VIEW_TYPES[name](self)
+        self._transition_surface = previous_frame
+        self._transition_started = self.clock()
+
+    def _capture_transition_frame(self) -> pygame.Surface | None:
+        return self.render().copy() if self.view is not None else None
 
     def show_game(self) -> None:
         if isinstance(self.view, GameView):
@@ -405,6 +432,7 @@ class AYGeographyApp:
         if self._active_game_state is None:
             self.show("home")
             return
+        previous_frame = self._capture_transition_frame()
         self.manager.clear_and_reset()
         try:
             restored_view = GameView.from_state(self, self._active_game_state)
@@ -417,6 +445,8 @@ class AYGeographyApp:
         self._confirmation = None
         self._confirmation_action = None
         self.view = restored_view
+        self._transition_surface = previous_frame
+        self._transition_started = self.clock()
 
     def start_game(self, config: GameConfig) -> None:
         try:
@@ -428,6 +458,7 @@ class AYGeographyApp:
         except ValueError as error:
             self.toast(str(error), RED)
             return
+        previous_frame = self._capture_transition_frame()
         self._clear_active_game()
         self.manager.clear_and_reset()
         self._confirmation = None
@@ -439,16 +470,22 @@ class AYGeographyApp:
                 difficulty=config.difficulty or "medium",
             ),
         )
+        self._transition_surface = previous_frame
+        self._transition_started = self.clock()
 
     def finish_game(self, result: RoundResult) -> None:
+        previous_frame = self._capture_transition_frame()
         self._clear_active_game()
         self.repository.save_round(result)
         unlocked = self.progression.sync()
         self.manager.clear_and_reset()
         self.view = ResultView(self, result)
+        self._transition_surface = previous_frame
+        self._transition_started = self.clock()
         self._notify_achievements(unlocked)
 
     def end_round(self, result: RoundResult) -> None:
+        previous_frame = self._capture_transition_frame()
         self._clear_active_game()
         if result.answers:
             self.repository.save_round(result)
@@ -457,13 +494,14 @@ class AYGeographyApp:
             unlocked = []
         self.view = None
         self.show("home")
+        self._transition_surface = previous_frame
+        self._transition_started = self.clock()
         self._notify_achievements(unlocked)
 
     def _notify_achievements(self, unlocked) -> None:
-        if len(unlocked) == 1:
-            self.toast(f"Достижение: {unlocked[0].title}", GREEN)
-        elif unlocked:
-            self.toast(f"Открыто достижений: {len(unlocked)}", GREEN)
+        if unlocked:
+            self._achievement_queue = list(unlocked)
+            self._achievement_started = self.clock()
 
     def _suspend_game(self, view: GameView) -> None:
         view.pause()
@@ -623,6 +661,8 @@ class AYGeographyApp:
                     action()
             return
         self.manager.process_events(translated)
+        if self.view is not None:
+            self.view.record_pointer_event(translated)
         if translated.type == pygame_gui.UI_BUTTON_PRESSED and self.view is not None:
             self.view.handle_button(translated.ui_element)
         if self.view is not None:
@@ -632,6 +672,35 @@ class AYGeographyApp:
         if self.view is not None:
             self.view.update(delta)
         self.manager.update(delta)
+        self._update_cursor()
+
+    def _update_cursor(self) -> None:
+        if self._headless:
+            return
+        position = self._logical_position(pygame.mouse.get_pos())
+        if self._confirmation is not None:
+            hand = (
+                self._confirmation.cancel_rect.collidepoint(position)
+                or self._confirmation.confirm_rect.collidepoint(position)
+            )
+        else:
+            hand = bool(
+                self.view is not None
+                and self.view.interactive_at(position)
+            )
+        if self.view is not None:
+            self.view.set_pointer_position(position)
+        if hand == self._cursor_is_hand:
+            return
+        try:
+            pygame.mouse.set_cursor(
+                pygame.SYSTEM_CURSOR_HAND
+                if hand
+                else pygame.SYSTEM_CURSOR_ARROW
+            )
+        except pygame.error:
+            return
+        self._cursor_is_hand = hand
 
     def render(self) -> pygame.Surface:
         self._ensure_render_surface()
@@ -641,6 +710,10 @@ class AYGeographyApp:
         self.logical.fill(BG)
         if self.view is not None:
             self.view.draw(self.logical)
+        self.manager.draw_ui(self.logical)
+        if self.view is not None:
+            self.view.draw_interaction_effects(self.logical)
+        self._draw_transition()
         if self._toast and self.clock() < self._toast_until:
             rect = pygame.Rect(550, 800, 500, 46)
             draw_native_rect(
@@ -657,9 +730,98 @@ class AYGeographyApp:
                 border_radius=8,
             )
             draw_text(self.logical, self._toast, rect.center, 15, self._toast_colour, bold=True, anchor="center")
+        self._draw_achievement_cards()
         if self._confirmation is not None:
-            self._confirmation.draw(self.logical)
+            self._confirmation.draw(
+                self.logical,
+                self._logical_position(pygame.mouse.get_pos()),
+            )
         return self.logical
+
+    def _draw_transition(self) -> None:
+        if self._transition_surface is None:
+            return
+        progress = (
+            self.clock() - self._transition_started
+        ) / self._transition_duration
+        if progress >= 1:
+            self._transition_surface = None
+            return
+        frame = self._transition_surface
+        if frame.get_size() != self.logical.get_size():
+            frame = pygame.transform.smoothscale(
+                frame,
+                self.logical.get_size(),
+            )
+        frame.set_alpha(round(255 * (1 - progress)))
+        self.logical.blit(
+            frame,
+            (-round(22 * progress), 0),
+        )
+
+    def _draw_achievement_cards(self) -> None:
+        if not self._achievement_queue:
+            return
+        group_duration = 3.4
+        elapsed = self.clock() - self._achievement_started
+        group_index = int(elapsed // group_duration)
+        start = group_index * 3
+        items = self._achievement_queue[start : start + 3]
+        if not items:
+            self._achievement_queue = []
+            return
+        local_time = elapsed % group_duration
+        enter = min(1.0, local_time / 0.42)
+        exit_progress = max(0.0, (local_time - 2.8) / 0.6)
+        eased = 1 - (1 - enter) ** 3
+        offset = round((1 - eased) * 520 - exit_progress * 580)
+        for index, definition in enumerate(items):
+            rect = pygame.Rect(
+                490 + offset,
+                215 + index * 142,
+                620,
+                120,
+            )
+            panel_colour = pygame.Color("#092633")
+            draw_native_rect(
+                self.logical,
+                panel_colour,
+                rect,
+                border_radius=10,
+            )
+            draw_native_rect(
+                self.logical,
+                GREEN,
+                rect,
+                2,
+                border_radius=10,
+            )
+            icon = self.assets.icon(definition.icon, (76, 76))
+            icon_rect = icon.get_rect(center=(rect.left + 66, rect.centery))
+            self.logical.blit(icon, icon_rect)
+            draw_text(
+                self.logical,
+                "НОВОЕ ДОСТИЖЕНИЕ",
+                (rect.left + 122, rect.top + 20),
+                11,
+                GREEN,
+                bold=True,
+            )
+            draw_text(
+                self.logical,
+                definition.title,
+                (rect.left + 122, rect.top + 43),
+                19,
+                TEXT,
+                bold=True,
+            )
+            draw_text(
+                self.logical,
+                definition.description,
+                (rect.left + 122, rect.top + 76),
+                12,
+                pygame.Color("#8fa6b1"),
+            )
 
     def present(self) -> None:
         frame = self.render()

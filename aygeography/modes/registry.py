@@ -30,6 +30,7 @@ class ModeRegistry:
         self,
         definitions: Iterable[ModeDefinition],
         strategies: Iterable[Any] = (),
+        feedback_variants: Mapping[str, object] | None = None,
     ) -> None:
         ordered = tuple(definitions)
         definitions_by_key = {item.key: item for item in ordered}
@@ -40,6 +41,9 @@ class ModeRegistry:
             definitions_by_key
         )
         self._strategies: dict[str, Any] = {}
+        self._feedback_variants = self._parse_feedback_variants(
+            feedback_variants or {}
+        )
         for strategy in strategies:
             self.register_strategy(strategy)
 
@@ -49,6 +53,7 @@ class ModeRegistry:
         labels: Mapping[str, object],
         feedback: Mapping[str, object],
         strategies: Iterable[Any] = (),
+        feedback_variants: Mapping[str, object] | None = None,
     ) -> ModeRegistry:
         if set(labels) != set(feedback):
             raise ValueError(
@@ -79,7 +84,29 @@ class ModeRegistry:
                     incorrect_feedback_seconds=incorrect,
                 )
             )
-        return cls(definitions, strategies)
+        return cls(definitions, strategies, feedback_variants)
+
+    @staticmethod
+    def _parse_feedback_variants(
+        values: Mapping[str, object],
+    ) -> Mapping[str, tuple[float, float]]:
+        result: dict[str, tuple[float, float]] = {}
+        for key, raw in values.items():
+            if not isinstance(raw, Mapping) or set(raw) != {
+                "correct",
+                "incorrect",
+            }:
+                raise ValueError(
+                    f"Некорректные задержки варианта: {key}"
+                )
+            correct = float(raw["correct"])
+            incorrect = float(raw["incorrect"])
+            if correct <= 0 or incorrect <= 0:
+                raise ValueError(
+                    f"Задержка варианта должна быть положительной: {key}"
+                )
+            result[str(key)] = correct, incorrect
+        return MappingProxyType(result)
 
     @property
     def definitions(self) -> tuple[ModeDefinition, ...]:
@@ -118,5 +145,13 @@ class ModeRegistry:
     def strategies(self) -> Mapping[str, Any]:
         return MappingProxyType(self._strategies)
 
-    def feedback_seconds(self, key: str, is_correct: bool) -> float:
+    def feedback_seconds(
+        self,
+        key: str,
+        is_correct: bool,
+        variant: str = "",
+    ) -> float:
+        if variant in self._feedback_variants:
+            correct, incorrect = self._feedback_variants[variant]
+            return correct if is_correct else incorrect
         return self.definition(key).feedback_seconds(is_correct)

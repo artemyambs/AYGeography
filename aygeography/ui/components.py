@@ -724,35 +724,49 @@ def draw_sidebar(
             bold=True,
             anchor="midleft",
         )
+    profile_card = pygame.Rect(12, 746, SIDEBAR_WIDTH - 24, 96)
+    panel(
+        surface,
+        profile_card,
+        fill=pygame.Color("#061c28"),
+        border=pygame.Color("#103747"),
+        radius=8,
+    )
     if avatar:
-        blit_image(surface, avatar, pygame.Rect(18, 756, 56, 56))
+        blit_image(surface, avatar, pygame.Rect(20, 754, 50, 50))
     else:
-        draw_native_circle(surface, CYAN_DARK, (46, 784), 27)
+        draw_native_circle(surface, CYAN_DARK, (45, 779), 24)
     nickname = str(profile.get("nickname", "ExplorerAY"))
     xp = int(profile.get("xp", 0))
     level = int(profile.get("level", 1))
     required_xp = max(1, int(profile.get("required_xp", 1000)))
     title = str(profile.get("title", "Новичок"))
-    draw_text(surface, nickname, (80, 764), 14, TEXT, bold=True)
-    draw_text(surface, title, (80, 784), 10, GREEN, bold=True)
-    draw_text(surface, f"Уровень {level}", (80, 802), 11, MUTED)
+    draw_text(surface, nickname, (79, 754), 13, TEXT, bold=True)
+    draw_text(surface, title, (79, 778), 9, GREEN, bold=True)
+    draw_text(surface, f"Уровень {level}", (20, 811), 10, MUTED)
     draw_text(
         surface,
         f"{xp:,} / {required_xp:,} XP".replace(",", " "),
-        (80, 818),
-        10,
+        (profile_card.right - 9, 811),
+        9,
         MUTED,
+        anchor="topright",
     )
     draw_native_rect(
         surface,
         PANEL_ALT,
-        (80, 834, 102, 5),
+        (20, 830, profile_card.width - 16, 5),
         border_radius=3,
     )
     draw_native_rect(
         surface,
         CYAN,
-        (80, 834, int(102 * min(1.0, xp / required_xp)), 5),
+        (
+            20,
+            830,
+            int((profile_card.width - 16) * min(1.0, xp / required_xp)),
+            5,
+        ),
         border_radius=3,
     )
 
@@ -1282,12 +1296,12 @@ class MapRenderer:
         hovered_country: str | None = None,
     ) -> None:
         palette = {
-            "Europe": "#79c7e3",
-            "Asia": "#f5c86b",
-            "Africa": "#e99b68",
-            "North America": "#75c58b",
-            "South America": "#a7d36f",
-            "Oceania": "#c69be1",
+            "Europe": "#176a83",
+            "Asia": "#82701d",
+            "Africa": "#8b4e2e",
+            "North America": "#34774d",
+            "South America": "#5f812d",
+            "Oceania": "#695087",
         }
         target = physical_rect(surface, rect)
         physical_camera = scaled_camera(camera, render_scale(surface))
@@ -1300,11 +1314,11 @@ class MapRenderer:
         )
         if key != self._atlas_cache_key or self._atlas_cache is None:
             canvas = pygame.Surface(target.size)
-            canvas.fill(pygame.Color("#bde7f2"))
+            canvas.fill(WATER)
             local = canvas.get_rect()
             for iso3, rings in self.geometry.items():
                 colour = pygame.Color(
-                    "#fff29a"
+                    "#76c52b"
                     if iso3 == hovered_country
                     else palette.get(continents.get(iso3, ""), "#b7c5c8")
                 )
@@ -1317,13 +1331,13 @@ class MapRenderer:
                         pygame.draw.polygon(canvas, colour, points)
                         pygame.draw.aalines(
                             canvas,
-                            pygame.Color("#476b73"),
+                            pygame.Color("#1683a4"),
                             True,
                             points,
                         )
             pygame.draw.rect(
                 canvas,
-                pygame.Color("#4a7a86"),
+                BORDER,
                 local,
                 2,
                 border_radius=7,

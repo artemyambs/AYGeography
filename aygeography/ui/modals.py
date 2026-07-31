@@ -50,7 +50,11 @@ class ConfirmationModal:
                 return "cancel"
         return None
 
-    def draw(self, surface: pygame.Surface) -> None:
+    def draw(
+        self,
+        surface: pygame.Surface,
+        mouse_position: tuple[int, int] | None = None,
+    ) -> None:
         overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
         overlay.fill((0, 7, 11, 220))
         surface.blit(overlay, (0, 0))
@@ -84,9 +88,44 @@ class ConfirmationModal:
             17,
             MUTED,
         )
-        draw_button(surface, self.cancel_rect, "Отмена", size=17)
+        cancel_hovered = bool(
+            mouse_position
+            and self.cancel_rect.collidepoint(mouse_position)
+        )
+        confirm_hovered = bool(
+            mouse_position
+            and self.confirm_rect.collidepoint(mouse_position)
+        )
+        if cancel_hovered:
+            panel(
+                surface,
+                self.cancel_rect,
+                fill=pygame.Color("#0b3141"),
+                border=CYAN,
+                radius=7,
+            )
+            draw_text(
+                surface,
+                "Отмена",
+                self.cancel_rect.center,
+                17,
+                TEXT,
+                anchor="center",
+            )
+        else:
+            draw_button(surface, self.cancel_rect, "Отмена", size=17)
         if self.danger:
-            panel(surface, self.confirm_rect, fill=PANEL, border=RED, radius=7)
+            panel(
+                surface,
+                self.confirm_rect,
+                fill=(
+                    pygame.Color("#3a1820")
+                    if confirm_hovered
+                    else PANEL
+                ),
+                border=RED,
+                radius=7,
+            )
             draw_text(
                 surface,
                 self.action_name,
@@ -97,10 +136,28 @@ class ConfirmationModal:
                 anchor="center",
             )
         else:
-            draw_button(
-                surface,
-                self.confirm_rect,
-                self.action_name,
-                primary=True,
-                size=17,
-            )
+            if confirm_hovered:
+                panel(
+                    surface,
+                    self.confirm_rect,
+                    fill=pygame.Color("#438f19"),
+                    border=CYAN,
+                    radius=7,
+                )
+                draw_text(
+                    surface,
+                    self.action_name,
+                    self.confirm_rect.center,
+                    17,
+                    TEXT,
+                    bold=True,
+                    anchor="center",
+                )
+            else:
+                draw_button(
+                    surface,
+                    self.confirm_rect,
+                    self.action_name,
+                    primary=True,
+                    size=17,
+                )

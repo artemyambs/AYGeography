@@ -11,17 +11,6 @@
     }
   },
   {
-    "id": "rounds_10",
-    "category": "Общие",
-    "title": "Исследователь",
-    "description": "Завершить 10 раундов",
-    "icon": "achievement_rounds_10",
-    "rule": {
-      "type": "round_count",
-      "target": 10
-    }
-  },
-  {
     "id": "rounds_50",
     "category": "Общие",
     "title": "Опытный исследователь",
@@ -52,17 +41,6 @@
     "rule": {
       "type": "correct_count",
       "target": 100
-    }
-  },
-  {
-    "id": "correct_1000",
-    "category": "Общие",
-    "title": "Большой эрудит",
-    "description": "Дать 1 000 правильных ответов",
-    "icon": "achievement_correct_1000",
-    "rule": {
-      "type": "correct_count",
-      "target": 1000
     }
   },
   {
@@ -110,18 +88,6 @@
     }
   },
   {
-    "id": "accuracy_95",
-    "category": "Точность",
-    "title": "Почти идеально",
-    "description": "Набрать 95% в раунде из 25 вопросов",
-    "icon": "achievement_accuracy_95",
-    "rule": {
-      "type": "round_accuracy",
-      "target": 95,
-      "min_questions": 25
-    }
-  },
-  {
     "id": "perfect_25",
     "category": "Точность",
     "title": "Идеальный раунд",
@@ -141,17 +107,6 @@
     "rule": {
       "type": "max_streak",
       "target": 10
-    }
-  },
-  {
-    "id": "streak_25",
-    "category": "Точность",
-    "title": "Уверенная серия",
-    "description": "Дать 25 правильных ответов подряд",
-    "icon": "achievement_streak_25",
-    "rule": {
-      "type": "max_streak",
-      "target": 25
     }
   },
   {
@@ -212,19 +167,6 @@
       "type": "difficulty_round_count",
       "difficulty": "hard",
       "target": 1
-    }
-  },
-  {
-    "id": "hard_accuracy_80",
-    "category": "Сложность",
-    "title": "Эксперт",
-    "description": "Набрать 80% в сложном раунде из 25 вопросов",
-    "icon": "achievement_hard_accuracy_80",
-    "rule": {
-      "type": "difficulty_accuracy",
-      "difficulty": "hard",
-      "target": 80,
-      "min_questions": 25
     }
   },
   {
@@ -395,17 +337,6 @@
     }
   },
   {
-    "id": "days_3",
-    "category": "Регулярность",
-    "title": "Три дня в пути",
-    "description": "Играть 3 дня подряд",
-    "icon": "achievement_days_3",
-    "rule": {
-      "type": "daily_streak",
-      "target": 3
-    }
-  },
-  {
     "id": "days_7",
     "category": "Регулярность",
     "title": "Неделя открытий",
@@ -425,6 +356,51 @@
     "rule": {
       "type": "active_days",
       "target": 20
+    }
+  },
+  {
+    "id": "wonders_50",
+    "category": "Режимы",
+    "title": "Охотник за чудесами",
+    "description": "Дать 50 правильных ответов в режиме «Чудеса света»",
+    "icon": "achievement_wonders_50",
+    "rule": {
+      "type": "mode_correct_count",
+      "mode": "wonders",
+      "target": 50
+    }
+  },
+  {
+    "id": "country_explorer_25",
+    "category": "Исследование",
+    "title": "Первые горизонты",
+    "description": "Правильно ответить на вопросы по 25 разным странам",
+    "icon": "achievement_country_explorer_25",
+    "rule": {
+      "type": "unique_country_correct",
+      "target": 25
+    }
+  },
+  {
+    "id": "country_explorer_100",
+    "category": "Исследование",
+    "title": "Гражданин мира",
+    "description": "Правильно ответить на вопросы по 100 разным странам",
+    "icon": "achievement_country_explorer_100",
+    "rule": {
+      "type": "unique_country_correct",
+      "target": 100
+    }
+  },
+  {
+    "id": "balanced_modes_10",
+    "category": "Исследование",
+    "title": "Географ-универсал",
+    "description": "Дать минимум 10 правильных ответов в каждом режиме",
+    "icon": "achievement_balanced_modes_10",
+    "rule": {
+      "type": "balanced_mode_correct",
+      "target": 10
     }
   }
 ]

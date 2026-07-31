@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
-    <linearGradient id="badge-21" x1="8" y1="8" x2="56" y2="56">
+    <linearGradient id="badge-16" x1="8" y1="8" x2="56" y2="56">
       <stop stop-color="#123541"/>
       <stop offset="1" stop-color="#061923"/>
     </linearGradient>
   </defs>
-  <circle cx="32" cy="32" r="29" fill="url(#badge-21)" stroke="#a83c56" stroke-width="2"/>
-  <circle cx="32" cy="32" r="25" fill="none" stroke="#f1845f" stroke-width="1" opacity=".45" stroke-dasharray="4 4" transform="rotate(267 32 32)"/>
+  <path d="M32 3 54 11l7 22-9 21-20 7-20-7-9-21 7-22L32 3Z" fill="url(#badge-16)" stroke="#a83c56" stroke-width="2"/>
+  <circle cx="32" cy="32" r="24" fill="none" stroke="#f1845f" stroke-width="1.3" opacity=".52" stroke-dasharray="3 5" transform="rotate(32 32 32)"/>
   <path d="m11 47 18-31 8 13 5-7 12 25H11Z" fill="#a83c56" opacity=".4" stroke="#f1845f" stroke-width="3"/><path d="M29 16v15m0-14h13l-4 5 4 5H29" fill="#f1845f" stroke="#f1845f" stroke-width="2"/>
-  <circle cx="26" cy="10" r="2" fill="#f1845f" opacity=".9"/>
+  <circle cx="15" cy="13" r="2" fill="#f1845f" opacity=".9"/>
 </svg>

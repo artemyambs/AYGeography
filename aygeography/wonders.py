@@ -22,7 +22,7 @@ class WonderCategory(StrEnum):
 EXPECTED_COUNTS = {
     WonderCategory.LANDMARK: 75,
     WonderCategory.PEAK: 15,
-    WonderCategory.FACT: 130,
+    WonderCategory.FACT: 195,
 }
 
 EXPECTED_DIFFICULTY_COUNTS = {
@@ -37,9 +37,9 @@ EXPECTED_DIFFICULTY_COUNTS = {
         "hard": 5,
     },
     WonderCategory.FACT: {
-        "easy": 44,
-        "medium": 43,
-        "hard": 43,
+        "easy": 65,
+        "medium": 65,
+        "hard": 65,
     },
 }
 
@@ -62,6 +62,8 @@ class WonderItem:
     image: str = ""
     prompt: str = ""
     point: tuple[float, float] | None = None
+    source: str = ""
+    source_url: str = ""
 
     @property
     def country_iso(self) -> str:
@@ -92,6 +94,13 @@ class WonderCatalog:
 
     def by_category(self, category: WonderCategory) -> list[WonderItem]:
         return [item for item in self._items if item.category == category]
+
+    def facts_by_country(self) -> dict[str, WonderItem]:
+        return {
+            iso3: item
+            for item in self.by_category(WonderCategory.FACT)
+            for iso3 in item.country_isos
+        }
 
     def country_name(self, iso3: str) -> str:
         return self._countries[iso3].name
@@ -155,6 +164,8 @@ class WonderCatalog:
             image=str(raw.get("image", "")),
             prompt=str(raw.get("prompt", "")).strip(),
             point=parsed_point,
+            source=str(raw.get("source", "")).strip(),
+            source_url=str(raw.get("source_url", "")).strip(),
         )
 
     def _validate(self) -> None:
@@ -203,6 +214,18 @@ class WonderCatalog:
         }
         if len(fact_prompts) != counts[WonderCategory.FACT]:
             raise ValueError("Тексты фактов должны быть уникальны")
+        covered_countries = {
+            iso3
+            for item in self._items
+            if item.category == WonderCategory.FACT
+            for iso3 in item.country_isos
+        }
+        missing_facts = set(self._countries) - covered_countries
+        if missing_facts:
+            raise ValueError(
+                "Нет фактов для стран: "
+                + ", ".join(sorted(missing_facts))
+            )
         for continent in valid_continents:
             available = [
                 item for item in self._items if continent in item.continents

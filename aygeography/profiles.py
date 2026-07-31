@@ -50,12 +50,6 @@ class ProfileManager:
         self._progression = progression
         self._profiles_dir.mkdir(parents=True, exist_ok=True)
 
-    def ensure_default(self) -> LocalProfile:
-        profiles = self.profiles()
-        if profiles:
-            return profiles[0]
-        return self.create("ExplorerAY", 0)
-
     def profiles(self) -> list[LocalProfile]:
         result: list[LocalProfile] = []
         for path in sorted(self._profiles_dir.glob("*.db")):
@@ -92,8 +86,6 @@ class ProfileManager:
 
     def delete(self, profile_id: str) -> None:
         profiles = self.profiles()
-        if len(profiles) <= 1:
-            raise ValueError("Нельзя удалить единственный профиль")
         path = self._profile_path(profile_id)
         if not path.exists():
             raise KeyError(profile_id)
@@ -104,9 +96,17 @@ class ProfileManager:
                 sidecar.unlink()
         if self.active_profile_id() == profile_id:
             replacement = next(
-                item for item in profiles if item.id != profile_id
+                (
+                    item
+                    for item in profiles
+                    if item.id != profile_id
+                ),
+                None,
             )
-            self.set_active_profile(replacement.id)
+            if replacement is None:
+                self._state_path.unlink(missing_ok=True)
+            else:
+                self.set_active_profile(replacement.id)
 
     def active_profile_id(self) -> str | None:
         try:

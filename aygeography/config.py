@@ -47,6 +47,9 @@ DIFFICULTY_NAMES = dict(APP_SETTINGS["labels"]["difficulty"])
 MODE_FEEDBACK_SETTINGS = dict(
     APP_SETTINGS["gameplay"]["answer_feedback_seconds_by_mode"]
 )
+WATER_KIND_FEEDBACK_SETTINGS = dict(
+    APP_SETTINGS["gameplay"]["answer_feedback_seconds_by_water_kind"]
+)
 # Deprecated compatibility alias; runtime behavior is owned by ModeRegistry.
 ANSWER_FEEDBACK_SECONDS = MODE_FEEDBACK_SETTINGS
 

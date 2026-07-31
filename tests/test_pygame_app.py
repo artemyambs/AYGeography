@@ -11,7 +11,11 @@ os.environ["SDL_AUDIODRIVER"] = "dummy"
 import pygame
 
 from aygeography.app import AYGeographyApp
-from aygeography.config import ANSWER_FEEDBACK_SECONDS, ASSETS_DIR
+from aygeography.config import (
+    ANSWER_FEEDBACK_SECONDS,
+    ASSETS_DIR,
+    WATER_KIND_FEEDBACK_SETTINGS,
+)
 from aygeography.domain.questions import (
     FlagContent,
     MapContent,
@@ -21,6 +25,7 @@ from aygeography.domain.questions import (
 )
 from aygeography.models import GameConfig
 from aygeography.formatting import format_population
+from aygeography.profiles import ProfileManager
 from aygeography.quiz import GameSession, WaterQuestionStrategy
 from aygeography.storage import GameRepository
 from aygeography.ui.components import (
@@ -402,9 +407,21 @@ class PygameAppTests(unittest.TestCase):
                         )
                         view = self.app.view
                         view._answer(view.active_question.correct_answer)
+                        variant = (
+                            view.active_question.content.water_area_kind
+                            if isinstance(
+                                view.active_question.content,
+                                MapContent,
+                            )
+                            else ""
+                        )
                         self.assertEqual(
                             100.0
-                            + ANSWER_FEEDBACK_SECONDS[mode]["correct"],
+                            + self.app.mode_registry.feedback_seconds(
+                                mode,
+                                True,
+                                variant,
+                            ),
                             view.advance_at,
                         )
                         view.handle_event(
@@ -414,6 +431,20 @@ class PygameAppTests(unittest.TestCase):
                             )
                         )
                         self.assertEqual(2, view.active_question_number)
+        finally:
+            self.app.clock_source = previous_clock
+
+    def test_rivers_use_their_own_feedback_timing(self):
+        previous_clock = self.app.clock_source
+        self.app.clock_source = lambda: 100.0
+        try:
+            view = self._show_water_question("river")
+            view._answer(view.active_question.correct_answer)
+            self.assertEqual(
+                100.0
+                + WATER_KIND_FEEDBACK_SETTINGS["river"]["correct"],
+                view.advance_at,
+            )
         finally:
             self.app.clock_source = previous_clock
 
@@ -869,6 +900,24 @@ class PygameAppTests(unittest.TestCase):
                         view.map_camera,
                     ),
                 )
+                if route == "atlas":
+                    view.handle_event(
+                        pygame.event.Event(
+                            pygame.MOUSEBUTTONDOWN,
+                            {"pos": country_position, "button": 1},
+                        )
+                    )
+                    view.handle_event(
+                        pygame.event.Event(
+                            pygame.MOUSEBUTTONUP,
+                            {"pos": country_position, "button": 1},
+                        )
+                    )
+                    self.assertEqual("RUS", view.selected_country)
+                    self.assertEqual(
+                        "RUS",
+                        view._facts["RUS"].country_iso,
+                    )
 
     def test_profile_avatar_grid_is_centered(self):
         self.app.show("profile")
@@ -1096,6 +1145,84 @@ class PygameAppTests(unittest.TestCase):
         for event in pygame.event.get():
             self.app.process_event(event)
         self.assertEqual("ModeSelectionView", type(self.app.view).__name__)
+
+    def test_buttons_have_a_visible_hover_effect(self):
+        self.app.show("modes")
+        self.app._transition_surface = None
+        view = self.app.view
+        target = next(iter(view._actions)).rect.center
+        before = pygame.image.tobytes(self.app.render(), "RGB")
+        view.record_pointer_event(
+            pygame.event.Event(
+                pygame.MOUSEMOTION,
+                {
+                    "pos": target,
+                    "rel": (0, 0),
+                    "buttons": (0, 0, 0),
+                },
+            )
+        )
+        after = pygame.image.tobytes(self.app.render(), "RGB")
+
+        self.assertNotEqual(before, after)
+
+    def test_button_press_and_section_change_start_animations(self):
+        previous_clock = self.app.clock_source
+        now = [100.0]
+        self.app.clock_source = lambda: now[0]
+        try:
+            self.app.show("home")
+            self.app._transition_surface = None
+            view = self.app.view
+            view.record_pointer_event(
+                pygame.event.Event(
+                    pygame.MOUSEBUTTONDOWN,
+                    {"pos": view.play_rect.center, "button": 1},
+                )
+            )
+            self.assertEqual(1, len(view._press_pulses))
+
+            self.app.show("statistics")
+            self.assertIsNotNone(self.app._transition_surface)
+            now[0] += 0.25
+            self.app.render()
+            self.assertIsNone(self.app._transition_surface)
+        finally:
+            self.app.clock_source = previous_clock
+
+    def test_profile_selector_uses_equal_cards_for_actions(self):
+        previous_manager = self.app.profile_manager
+        previous_selected = self.app._profile_selected
+        try:
+            with tempfile.TemporaryDirectory() as directory:
+                manager = ProfileManager(
+                    Path(directory),
+                    self.app.profile_progression,
+                )
+                manager.create("ExplorerAY", 0)
+                manager.create("Player Two", 1)
+                self.app.profile_manager = manager
+                self.app._profile_selected = False
+                self.app.show("profile_select")
+                view = self.app.view
+
+                profile_sizes = {
+                    rect.size
+                    for _, rect, _ in view.profile_buttons
+                }
+                action_sizes = {
+                    rect.size
+                    for _, rect, _ in view.action_buttons
+                }
+                self.assertEqual({(350, 190)}, profile_sizes)
+                self.assertEqual(profile_sizes, action_sizes)
+                self.assertFalse(hasattr(view, "create_rect"))
+                self.assertFalse(hasattr(view, "import_rect"))
+        finally:
+            self.app.view = None
+            self.app.profile_manager = previous_manager
+            self.app._profile_selected = previous_selected
+            self.app.show("home")
 
     def test_fullscreen_hover_uses_logical_mouse_coordinates(self):
         self.app.show("home")

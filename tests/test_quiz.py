@@ -95,13 +95,13 @@ class QuizTests(unittest.TestCase):
 
     def test_wonders_catalog_has_exact_content_distribution(self):
         items = self.wonders.all()
-        self.assertEqual(220, len(items))
+        self.assertEqual(285, len(items))
         self.assertEqual(
             Counter(EXPECTED_COUNTS),
             Counter(item.category for item in items),
         )
         self.assertEqual(
-            {"easy": 74, "medium": 73, "hard": 73},
+            {"easy": 95, "medium": 95, "hard": 95},
             dict(Counter(item.difficulty for item in items)),
         )
         self.assertEqual(
@@ -147,13 +147,20 @@ class QuizTests(unittest.TestCase):
                 )
 
     def test_wonders_extension_has_requested_content_and_image_sizes(self):
-        facts = self.wonders.by_category(WonderCategory.FACT)[-100:]
+        facts = [
+            item
+            for item in self.wonders.by_category(WonderCategory.FACT)
+            if item.source
+        ]
         landmarks = self.wonders.by_category(WonderCategory.LANDMARK)[-30:]
 
-        self.assertEqual(100, len({item.prompt for item in facts}))
+        self.assertEqual(65, len({item.prompt for item in facts}))
         self.assertEqual(
-            {"easy": 34, "medium": 33, "hard": 33},
+            {"easy": 21, "medium": 22, "hard": 22},
             dict(Counter(item.difficulty for item in facts)),
+        )
+        self.assertTrue(
+            all(item.source and item.source_url for item in facts)
         )
         self.assertEqual(
             {"easy": 10, "medium": 10, "hard": 10},
@@ -166,6 +173,18 @@ class QuizTests(unittest.TestCase):
                 for item in landmarks
             },
         )
+
+    def test_every_country_has_an_offline_fact(self):
+        facts = self.wonders.facts_by_country()
+
+        self.assertEqual(
+            {country.iso3 for country in self.catalog.all()},
+            set(facts),
+        )
+        for country in self.catalog.all():
+            item = facts[country.iso3]
+            self.assertTrue(item.explanation.strip(), country.iso3)
+            self.assertIn(country.name, item.explanation, country.iso3)
 
     def test_landmark_format_is_seeded_per_round(self):
         factory = QuestionFactory(wonder_catalog=self.wonders)

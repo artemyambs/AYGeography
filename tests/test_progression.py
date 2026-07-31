@@ -203,6 +203,56 @@ class ProgressionTests(unittest.TestCase):
         self.assertTrue(self.service.sync())
         self.assertEqual(self.service.sync(), [])
 
+    def test_new_exploration_achievements_are_data_driven(self):
+        definitions = {
+            item.id: item
+            for item in self.catalog.achievements
+        }
+        self.assertEqual(
+            "unique_country_correct",
+            definitions["country_explorer_25"].rule["type"],
+        )
+        self.assertEqual(
+            "balanced_mode_correct",
+            definitions["balanced_modes_10"].rule["type"],
+        )
+        removed = {
+            "rounds_10",
+            "correct_1000",
+            "accuracy_95",
+            "streak_25",
+            "hard_accuracy_80",
+            "days_3",
+        }
+        self.assertTrue(removed.isdisjoint(definitions))
+
+    def test_exploration_achievements_unlock_from_history(self):
+        answers = [
+            self._answer("flags", country.iso3)
+            for country in self.countries.all()[:25]
+        ]
+        answers.extend(
+            self._answer(mode)
+            for mode in self.service.mode_registry.keys
+            for _ in range(10)
+        )
+        self.repository.save_round(
+            RoundResult(
+                "2026-07-30T12:00:00",
+                120,
+                1000,
+                answers,
+            )
+        )
+
+        unlocked = {
+            item.id
+            for item in self.service.sync()
+        }
+
+        self.assertIn("country_explorer_25", unlocked)
+        self.assertIn("balanced_modes_10", unlocked)
+
     def test_old_database_receives_difficulty_column(self):
         old_path = Path(self.temporary.name) / "old.db"
         with closing(sqlite3.connect(old_path)) as db:

@@ -109,10 +109,17 @@ class LocalProfileTests(unittest.TestCase):
         self.assertEqual(3, repository.statistics("week")["total"]["rounds"])
         self.assertEqual(3, repository.statistics("all")["total"]["rounds"])
 
-    def test_cannot_delete_the_only_profile(self):
+    def test_empty_manager_does_not_create_a_profile(self):
+        self.assertEqual([], self.manager.profiles())
+
+    def test_the_only_profile_can_be_deleted(self):
         profile = self.manager.create("Один", 0)
-        with self.assertRaisesRegex(ValueError, "единственный"):
-            self.manager.delete(profile.id)
+        self.manager.set_active_profile(profile.id)
+
+        self.manager.delete(profile.id)
+
+        self.assertEqual([], self.manager.profiles())
+        self.assertIsNone(self.manager.active_profile_id())
 
 
 if __name__ == "__main__":

@@ -16,6 +16,7 @@ CATEGORY_COLOURS = {
     "Режимы": ("#59cde8", "#586fc8"),
     "Континенты": ("#9adf43", "#248a75"),
     "Регулярность": ("#b17ae6", "#5e55b9"),
+    "Исследование": ("#69e4b5", "#23866f"),
 }
 
 SYMBOL_BY_ID = {
@@ -56,6 +57,10 @@ SYMBOL_BY_ID = {
     "days_3": "calendar",
     "days_7": "sunrise",
     "active_20": "constellation",
+    "wonders_50": "spark",
+    "country_explorer_25": "telescope",
+    "country_explorer_100": "world_pin",
+    "balanced_modes_10": "balanced",
 }
 
 SYMBOLS = {
@@ -88,6 +93,9 @@ SYMBOLS = {
     "calendar": '<rect x="15" y="18" width="34" height="31" rx="5" fill="{accent2}" opacity=".3" stroke="{accent}" stroke-width="3"/><path d="M15 28h34M23 14v9m18-9v9" stroke="{accent}" stroke-width="3" stroke-linecap="round"/><path d="m23 38 5 5 12-12" fill="none" stroke="{accent2}" stroke-width="3"/>',
     "sunrise": '<path d="M12 44h40M20 40a12 12 0 0 1 24 0M32 14v8M15 24l6 6m28-6-6 6" fill="none" stroke="{accent}" stroke-width="3" stroke-linecap="round"/><path d="M23 40a9 9 0 0 1 18 0" fill="{accent2}" opacity=".6"/>',
     "constellation": '<path d="m16 40 9-17 13 7 10-13m-23 6 4 21 9-14 10 12" fill="none" stroke="{accent}" stroke-width="2"/><circle cx="16" cy="40" r="4" fill="{accent2}"/><circle cx="25" cy="23" r="3" fill="{accent}"/><circle cx="38" cy="30" r="4" fill="{accent2}"/><circle cx="48" cy="17" r="3" fill="{accent}"/><circle cx="29" cy="44" r="3" fill="{accent}"/><circle cx="48" cy="42" r="4" fill="{accent2}"/>',
+    "telescope": '<path d="m19 27 27-10 5 13-27 10-5-13Z" fill="{accent2}" opacity=".55" stroke="{accent}" stroke-width="3"/><path d="m42 31-8 18m8-18 9 18M17 28l-6 2 4 10 7-3" fill="none" stroke="{accent}" stroke-width="3" stroke-linecap="round"/>',
+    "world_pin": '<circle cx="29" cy="34" r="17" fill="{accent2}" opacity=".25" stroke="{accent}" stroke-width="3"/><path d="M12 34h34M29 17c6 5 9 11 9 17s-3 12-9 17c-6-5-9-11-9-17s3-12 9-17Z" fill="none" stroke="{accent}" stroke-width="2"/><path d="M49 25c7 0 12 5 12 12 0 9-12 19-12 19S37 46 37 37c0-7 5-12 12-12Z" fill="{accent2}" stroke="{accent}" stroke-width="2.5"/><circle cx="49" cy="37" r="4" fill="{accent}"/>',
+    "balanced": '<path d="M32 14v35M17 24h30M20 24l-8 17h16l-8-17Zm24 0-8 17h16l-8-17Z" fill="none" stroke="{accent}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 52h24" stroke="{accent2}" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="14" r="4" fill="{accent2}"/>',
 }
 
 for continent in (
@@ -118,8 +126,8 @@ def build_svg(achievement_id: str, category: str, index: int) -> str:
       <stop offset="1" stop-color="#061923"/>
     </linearGradient>
   </defs>
-  <circle cx="32" cy="32" r="29" fill="url(#badge-{index})" stroke="{accent2}" stroke-width="2"/>
-  <circle cx="32" cy="32" r="25" fill="none" stroke="{accent}" stroke-width="1" opacity=".45" stroke-dasharray="{3 + index % 4} {4 + index % 3}" transform="rotate({marker_angle} 32 32)"/>
+  <path d="M32 3 54 11l7 22-9 21-20 7-20-7-9-21 7-22L32 3Z" fill="url(#badge-{index})" stroke="{accent2}" stroke-width="2"/>
+  <circle cx="32" cy="32" r="24" fill="none" stroke="{accent}" stroke-width="1.3" opacity=".52" stroke-dasharray="{3 + index % 4} {4 + index % 3}" transform="rotate({marker_angle} 32 32)"/>
   {symbol}
   <circle cx="{15 + index % 4 * 11}" cy="{10 + index % 3 * 3}" r="2" fill="{accent}" opacity=".9"/>
 </svg>
@@ -128,6 +136,8 @@ def build_svg(achievement_id: str, category: str, index: int) -> str:
 
 def main() -> None:
     achievements = json.loads(ACHIEVEMENTS_PATH.read_text(encoding="utf-8"))
+    for path in ICONS_DIR.glob("achievement_*.svg"):
+        path.unlink()
     for index, item in enumerate(achievements):
         achievement_id = str(item["id"])
         icon_name = f"achievement_{achievement_id}"
