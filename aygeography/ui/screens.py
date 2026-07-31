@@ -85,7 +85,6 @@ class BaseView:
         self.app = app
         self.manager = app.manager
         self._actions: dict[UIButton, object] = {}
-        self._press_pulses: list[tuple[pygame.Rect, float]] = []
         self._pointer_position: tuple[int, int] | None = None
         self._create_sidebar_actions()
 
@@ -116,9 +115,16 @@ class BaseView:
             "exit": self.app.request_exit,
         }
         for index, key in enumerate(routes):
+            if key == self.active:
+                continue
             self.add_action(
                 pygame.Rect(12, 156 + index * 54, SIDEBAR_WIDTH - 24, 44),
                 routes[key],
+            )
+        if self.active != "profile":
+            self.add_action(
+                pygame.Rect(12, 746, SIDEBAR_WIDTH - 24, 96),
+                lambda: self.app.show("profile"),
             )
 
     def handle_button(self, element) -> None:
@@ -136,22 +142,10 @@ class BaseView:
             pygame.MOUSEBUTTONUP,
         }:
             self._pointer_position = event.pos
-        if event.type != pygame.MOUSEBUTTONDOWN or event.button != 1:
-            return
-        rect = next(
-            (
-                button.rect
-                for button in self._actions
-                if button.rect.collidepoint(event.pos)
-            ),
-            None,
-        )
-        if rect is not None:
-            self._press_pulses.append((rect.copy(), self.app.clock()))
 
     def interactive_at(self, position: tuple[int, int]) -> bool:
         return any(
-            button.rect.collidepoint(position)
+            button.relative_rect.collidepoint(position)
             for button in self._actions
         )
 
@@ -161,10 +155,12 @@ class BaseView:
     def draw_interaction_effects(self, surface: pygame.Surface) -> None:
         hovered_rect = next(
             (
-                button.rect
+                button.relative_rect
                 for button in self._actions
                 if self._pointer_position is not None
-                and button.rect.collidepoint(self._pointer_position)
+                and button.relative_rect.collidepoint(
+                    self._pointer_position
+                )
             ),
             None,
         )
@@ -188,26 +184,6 @@ class BaseView:
                 border_radius=8,
             )
             surface.blit(hover_layer, (0, 0))
-        now = self.app.clock()
-        active: list[tuple[pygame.Rect, float]] = []
-        for rect, started in self._press_pulses:
-            progress = (now - started) / 0.24
-            if progress >= 1:
-                continue
-            active.append((rect, started))
-            expanded = rect.inflate(
-                round(14 * progress),
-                round(10 * progress),
-            )
-            colour = CYAN.lerp(BORDER, progress)
-            draw_native_rect(
-                surface,
-                colour,
-                expanded,
-                2,
-                border_radius=8,
-            )
-        self._press_pulses = active
 
     def update(self, delta: float) -> None:
         pass
@@ -1559,7 +1535,7 @@ class StatisticsView(BaseView):
         total = stats["total"]
         draw_text(
             surface,
-            "Период статистики",
+            "Статистика",
             (250, 27),
             15,
             TEXT,
@@ -2053,7 +2029,7 @@ class AtlasView(InteractiveMapView):
             self.map_rect,
             self._continents,
             self.map_camera,
-            hovered,
+            None if self._dragging else hovered or self.selected_country,
         )
         self._draw_map_controls(surface)
         if hovered and hovered in self._continents:
@@ -2388,21 +2364,39 @@ class ProfileView(BaseView):
         self.app.assets.clear_profile_cache()
         self.app.toast("Профиль сохранён", GREEN)
 
+    @staticmethod
+    def _draw_entry(
+        surface: pygame.Surface,
+        entry: UITextEntryLine,
+        rect: pygame.Rect,
+    ) -> None:
+        value = entry.get_text()
+        panel(surface, rect, fill=PANEL_ALT, border=CYAN_DARK)
+        draw_text(
+            surface,
+            value or "Введите имя",
+            (rect.left + 15, rect.centery),
+            17,
+            TEXT if value else MUTED,
+            anchor="midleft",
+        )
+        if entry.is_focused and entry.cursor_on:
+            edit_position = max(0, min(len(value), entry.edit_position))
+            prefix_width = font(17).size(value[:edit_position])[0]
+            cursor_x = min(rect.right - 10, rect.left + 15 + prefix_width)
+            draw_native_rect(
+                surface,
+                TEXT,
+                (cursor_x, rect.centery - 12, 1, 24),
+            )
+
     def draw(self, surface: pygame.Surface) -> None:
         super().draw(surface)
         profile = self.app.repository.profile()
         avatar = self.app.assets.avatar(self.selected)
         blit_centered(surface, avatar, (520, 235), (170, 170))
         draw_text(surface, "Профиль игрока", (825, 150), 27, TEXT, bold=True, anchor="center")
-        panel(surface, self.entry_rect, fill=PANEL_ALT, border=CYAN_DARK)
-        draw_text(
-            surface,
-            self.entry.get_text() or "Введите имя",
-            (self.entry_rect.left + 15, self.entry_rect.centery),
-            17,
-            TEXT if self.entry.get_text() else MUTED,
-            anchor="midleft",
-        )
+        self._draw_entry(surface, self.entry, self.entry_rect)
         xp = int(profile["xp"])
         progress = self.app.profile_progression.progress(
             int(profile["level"]),
@@ -2522,15 +2516,7 @@ class ProfileCreateView(BaseView):
     def draw(self, surface: pygame.Surface) -> None:
         super().draw(surface)
         self.draw_page_title(surface, "Новый профиль")
-        panel(surface, self.entry_rect, fill=PANEL_ALT, border=CYAN_DARK)
-        draw_text(
-            surface,
-            self.entry.get_text() or "Введите имя",
-            (self.entry_rect.left + 15, self.entry_rect.centery),
-            17,
-            TEXT if self.entry.get_text() else MUTED,
-            anchor="midleft",
-        )
+        ProfileView._draw_entry(surface, self.entry, self.entry_rect)
         draw_text(
             surface,
             "Выберите аватар",

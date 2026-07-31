@@ -39,6 +39,8 @@ from aygeography.ui.components import (
     RIVER_RENDER_SCALE,
     MapCamera,
     MapRenderer,
+    draw_native_rect,
+    font,
 )
 from aygeography.ui.screens import (
     CAPITAL_LABEL_FONT_SIZE,
@@ -118,6 +120,35 @@ class PygameAppTests(unittest.TestCase):
             self.app.display = previous_display
             self.app.show("home")
             self.app.render()
+
+    def test_profile_entry_draws_caret_inside_scaled_field(self):
+        self.app.show("profile")
+        view = self.app.view
+        view.entry.set_text("Test")
+        view.entry.edit_position = len("Test")
+        view.entry.focus()
+        view.entry.cursor_on = True
+        expected_x = (
+            view.entry_rect.left
+            + 15
+            + font(17).size("Test")[0]
+        )
+        expected_rect = (
+            expected_x,
+            view.entry_rect.centery - 12,
+            1,
+            24,
+        )
+
+        with patch(
+            "aygeography.ui.screens.draw_native_rect",
+            wraps=draw_native_rect,
+        ) as draw_rect:
+            view.draw(pygame.Surface((1920, 1080)))
+
+        self.assertTrue(
+            any(call.args[2] == expected_rect for call in draw_rect.call_args_list)
+        )
 
     def test_selection_rows_are_centered_in_content_area(self):
         self.app.show("modes")
@@ -243,7 +274,9 @@ class PygameAppTests(unittest.TestCase):
             "zoom_out",
         )
         for name in icon_names:
-            self.assertEqual((32, 32), self.app.assets.icon(name).get_size(), name)
+            icon = self.app.assets.icon(name)
+            self.assertEqual((32, 32), icon.get_size(), name)
+            self.assertEqual(0, icon.get_at((0, 0)).a, name)
         achievement_icons = {
             item.icon for item in self.app.progression_catalog.achievements
         }
@@ -257,6 +290,10 @@ class PygameAppTests(unittest.TestCase):
                 self.app.assets.icon(name, (40, 40)).get_size(),
                 name,
             )
+
+        logo = pygame.image.load(ASSETS_DIR / "logo.png")
+        self.assertEqual((1024, 1024), logo.get_size())
+        self.assertEqual(0, logo.get_at((0, 0)).a)
 
     def test_achievement_and_mastery_views_render(self):
         self.app.show("achievements")
@@ -1166,7 +1203,55 @@ class PygameAppTests(unittest.TestCase):
 
         self.assertNotEqual(before, after)
 
-    def test_button_press_and_section_change_start_animations(self):
+    def test_active_sidebar_item_is_not_a_second_navigation_target(self):
+        self.app.show("statistics")
+        self.app._transition_surface = None
+        view = self.app.view
+        active_rect = pygame.Rect(12, 156 + 2 * 54, 181, 44)
+
+        self.assertFalse(view.interactive_at(active_rect.center))
+        self.assertIsNone(self.app._transition_surface)
+
+    def test_sidebar_mini_profile_opens_profile_view(self):
+        self.app.show("statistics")
+        view = self.app.view
+        mini_profile_rect = pygame.Rect(12, 746, 181, 96)
+        button = next(
+            button
+            for button in view._actions
+            if button.relative_rect == mini_profile_rect
+        )
+
+        view.handle_button(button)
+
+        self.assertEqual("profile", self.app.view.active)
+
+    def test_atlas_hover_reuses_cached_world_view(self):
+        self.app.show("atlas")
+        view = self.app.view
+        target = pygame.Surface(LOGICAL_SIZE)
+        self.app.map_renderer.draw_atlas_map(
+            target,
+            view.map_rect,
+            view._continents,
+            view.map_camera,
+            "RUS",
+        )
+        cached_view = self.app.map_renderer._atlas_view_cache
+        cached_layers = self.app.map_renderer._atlas_base_layers
+
+        self.app.map_renderer.draw_atlas_map(
+            target,
+            view.map_rect,
+            view._continents,
+            view.map_camera,
+            "BRA",
+        )
+
+        self.assertIs(cached_view, self.app.map_renderer._atlas_view_cache)
+        self.assertIs(cached_layers, self.app.map_renderer._atlas_base_layers)
+
+    def test_section_change_starts_animation_without_button_press_pulse(self):
         previous_clock = self.app.clock_source
         now = [100.0]
         self.app.clock_source = lambda: now[0]
@@ -1180,7 +1265,7 @@ class PygameAppTests(unittest.TestCase):
                     {"pos": view.play_rect.center, "button": 1},
                 )
             )
-            self.assertEqual(1, len(view._press_pulses))
+            self.assertFalse(hasattr(view, "_press_pulses"))
 
             self.app.show("statistics")
             self.assertIsNotNone(self.app._transition_surface)

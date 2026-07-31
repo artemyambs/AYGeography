@@ -22,7 +22,7 @@
   "#hitbox": {
     "colours": {
       "normal_bg": "#00000000",
-      "hovered_bg": "#39d7ee35",
+      "hovered_bg": "#00000000",
       "disabled_bg": "#00000000",
       "selected_bg": "#00000000",
       "active_bg": "#ffffff08",
@@ -31,7 +31,7 @@
       "selected_text": "#00000000",
       "disabled_text": "#00000000",
       "normal_border": "#00000000",
-      "hovered_border": "#39d7ee80",
+      "hovered_border": "#00000000",
       "active_border": "#00000000"
     },
     "misc": {
@@ -47,7 +47,8 @@
       "normal_text": "#00000000",
       "selected_text": "#00000000",
       "selected_bg": "#00000000",
-      "normal_border": "#00000000"
+      "normal_border": "#00000000",
+      "text_cursor": "#00000000"
     },
     "font": {
       "name": "Segoe UI",

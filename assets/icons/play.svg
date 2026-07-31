@@ -3,7 +3,5 @@
  <linearGradient id="g" x1="8" y1="8" x2="88" y2="88"><stop stop-color="#7ef4ff"/><stop offset=".58" stop-color="#39d7ee"/><stop offset="1" stop-color="#1683a4"/></linearGradient>
  <linearGradient id="gold" x2="1" y2="1"><stop stop-color="#fff08a"/><stop offset="1" stop-color="#f39b08"/></linearGradient>
 </defs>
-<circle cx="48" cy="48" r="43" fill="#071c28" opacity=".42"/>
-<path d="M19 17h12M65 79h12" stroke="#76c52b" stroke-width="4" stroke-linecap="round"/>
 <g fill="none" stroke="url(#g)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><path d="m30 15 50 33-50 33Z" fill="url(#g)" stroke="none"/></g>
 </svg>

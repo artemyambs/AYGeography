@@ -9,7 +9,7 @@ from typing import Iterable
 
 import pygame
 
-from ..config import COLORS
+from ..config import ASSETS_DIR, COLORS
 from ..domain.questions import MapOverlay
 from ..waters import WaterCatalog
 
@@ -480,126 +480,23 @@ def draw_checkbox(
         )
 
 
-def draw_logo(surface: pygame.Surface, center: tuple[int, int], radius: int = 48) -> None:
-    scale = render_scale(surface)
+@lru_cache(maxsize=1)
+def _logo_source() -> pygame.Surface:
+    return pygame.image.load(ASSETS_DIR / "logo.png")
+
+
+def draw_logo(
+    surface: pygame.Surface,
+    center: tuple[int, int],
+    radius: int = 48,
+) -> None:
+    size = max(1, round(radius * 2 * render_scale(surface)))
+    logo = pygame.transform.smoothscale(
+        _logo_source(),
+        (size, size),
+    )
     x, y = physical_point(surface, center)
-    radius = max(1, round(radius * scale))
-    margin = max(1, round(10 * scale))
-    overlay = pygame.Surface(
-        (radius * 2 + margin * 2, radius * 2 + margin * 2),
-        pygame.SRCALPHA,
-    )
-    c = radius + margin
-    unit = lambda value: max(1, round(value * scale))
-
-    pygame.draw.circle(
-        overlay,
-        (0, 0, 0, 75),
-        (c + unit(2), c + unit(3)),
-        radius,
-    )
-    for extra, alpha in ((8, 16), (4, 34)):
-        pygame.draw.circle(
-            overlay,
-            (*CYAN[:3], alpha),
-            (c, c),
-            radius + unit(extra),
-        )
-    pygame.draw.circle(overlay, pygame.Color("#041a25"), (c, c), radius)
-    pygame.draw.circle(
-        overlay,
-        CYAN,
-        (c, c),
-        radius,
-        unit(2),
-    )
-    pygame.draw.circle(
-        overlay,
-        pygame.Color("#0a6075"),
-        (c, c),
-        radius - unit(5),
-        unit(1),
-    )
-
-    globe_radius = radius - unit(10)
-    globe_rect = pygame.Rect(
-        c - globe_radius,
-        c - globe_radius,
-        globe_radius * 2,
-        globe_radius * 2,
-    )
-    grid = pygame.Color("#13778b")
-    pygame.draw.circle(overlay, pygame.Color("#062d3b"), (c, c), globe_radius)
-    pygame.draw.circle(overlay, grid, (c, c), globe_radius, unit(1))
-    pygame.draw.ellipse(
-        overlay,
-        grid,
-        pygame.Rect(
-            c - globe_radius // 2,
-            c - globe_radius,
-            globe_radius,
-            globe_radius * 2,
-        ),
-        unit(1),
-    )
-    pygame.draw.ellipse(
-        overlay,
-        grid,
-        pygame.Rect(
-            c - globe_radius,
-            c - globe_radius // 2,
-            globe_radius * 2,
-            globe_radius,
-        ),
-        unit(1),
-    )
-
-    needle = [
-        (c, c - globe_radius + unit(3)),
-        (c + unit(7), c - unit(4)),
-        (c, c - unit(9)),
-        (c - unit(7), c - unit(4)),
-    ]
-    pygame.draw.polygon(overlay, GREEN, needle)
-    pygame.draw.polygon(
-        overlay,
-        pygame.Color("#1d5362"),
-        [
-            (c, c + globe_radius - unit(3)),
-            (c + unit(6), c + unit(4)),
-            (c, c + unit(9)),
-            (c - unit(6), c + unit(4)),
-        ],
-    )
-
-    band = pygame.Rect(c - unit(36), c - unit(14), unit(72), unit(29))
-    pygame.draw.rect(
-        overlay,
-        pygame.Color("#03131d"),
-        band,
-        border_radius=unit(7),
-    )
-    pygame.draw.rect(
-        overlay,
-        pygame.Color("#0c5265"),
-        band,
-        unit(1),
-        border_radius=unit(7),
-    )
-    logo_font_size = max(unit(18), radius // 2)
-    image = font(logo_font_size, True).render("AYG", True, TEXT)
-    overlay.blit(
-        image,
-        image.get_rect(center=(c, c)),
-    )
-    pygame.draw.line(
-        overlay,
-        GREEN,
-        (c - unit(15), c + unit(17)),
-        (c + unit(15), c + unit(17)),
-        unit(2),
-    )
-    surface.blit(overlay, (x - c, y - c))
+    surface.blit(logo, logo.get_rect(center=(x, y)))
 
 
 def _nav_icon(surface: pygame.Surface, name: str, center: tuple[int, int], colour: pygame.Color) -> None:
@@ -881,8 +778,15 @@ class MapRenderer:
         self._view_cache: pygame.Surface | None = None
         self._mastery_cache_key: tuple | None = None
         self._mastery_cache: pygame.Surface | None = None
-        self._atlas_cache_key: tuple | None = None
-        self._atlas_cache: pygame.Surface | None = None
+        self._atlas_base_key: tuple | None = None
+        self._atlas_base_layers: dict[int, pygame.Surface] = {}
+        self._atlas_continents: dict[str, str] = {}
+        self._atlas_palette: dict[str, str] = {}
+        self._atlas_view_key: tuple | None = None
+        self._atlas_view_cache: pygame.Surface | None = None
+        self._atlas_highlight_cache: dict[
+            tuple, tuple[pygame.Surface, tuple[int, int]]
+        ] = {}
 
     def focus_country(
         self,
@@ -1305,36 +1209,33 @@ class MapRenderer:
         }
         target = physical_rect(surface, rect)
         physical_camera = scaled_camera(camera, render_scale(surface))
-        key = (
+        continent_key = tuple(sorted(continents.items()))
+        base_key = (target.size, continent_key)
+        if base_key != self._atlas_base_key:
+            self._atlas_continents = continents.copy()
+            self._atlas_palette = palette.copy()
+            self._atlas_base_layers = self._build_atlas_layers(
+                target.size,
+                continents,
+                palette,
+            )
+            self._atlas_base_key = base_key
+            self._atlas_view_key = None
+            self._atlas_view_cache = None
+            self._atlas_highlight_cache.clear()
+
+        view_key = (
             target.size,
             round(physical_camera.zoom, 4),
             round(physical_camera.offset.x, 2),
             round(physical_camera.offset.y, 2),
-            hovered_country,
         )
-        if key != self._atlas_cache_key or self._atlas_cache is None:
-            canvas = pygame.Surface(target.size)
-            canvas.fill(WATER)
+        if view_key != self._atlas_view_key or self._atlas_view_cache is None:
+            canvas = self._sample_atlas_view(
+                target.size,
+                physical_camera,
+            )
             local = canvas.get_rect()
-            for iso3, rings in self.geometry.items():
-                colour = pygame.Color(
-                    "#76c52b"
-                    if iso3 == hovered_country
-                    else palette.get(continents.get(iso3, ""), "#b7c5c8")
-                )
-                for ring in rings:
-                    points = [
-                        self.project(point, local, physical_camera)
-                        for point in ring
-                    ]
-                    if len(points) >= 3:
-                        pygame.draw.polygon(canvas, colour, points)
-                        pygame.draw.aalines(
-                            canvas,
-                            pygame.Color("#1683a4"),
-                            True,
-                            points,
-                        )
             pygame.draw.rect(
                 canvas,
                 BORDER,
@@ -1342,9 +1243,207 @@ class MapRenderer:
                 2,
                 border_radius=7,
             )
-            self._atlas_cache_key = key
-            self._atlas_cache = canvas
-        surface.blit(self._atlas_cache, target)
+            self._atlas_view_key = view_key
+            self._atlas_view_cache = canvas
+
+        surface.blit(self._atlas_view_cache, target)
+        if hovered_country in self.geometry:
+            highlight, position = self._atlas_highlight(
+                target.size,
+                physical_camera,
+                hovered_country,
+            )
+            surface.blit(
+                highlight,
+                (target.left + position[0], target.top + position[1]),
+            )
+
+    def _atlas_highlight(
+        self,
+        size: tuple[int, int],
+        camera: MapCamera,
+        iso3: str,
+    ) -> tuple[pygame.Surface, tuple[int, int]]:
+        key = (
+            size,
+            round(camera.zoom, 4),
+            round(camera.offset.x, 2),
+            round(camera.offset.y, 2),
+            iso3,
+        )
+        cached = self._atlas_highlight_cache.get(key)
+        if cached is not None:
+            return cached
+
+        map_rect = pygame.Rect((0, 0), size)
+        polygons = [
+            [self.project(point, map_rect, camera) for point in ring]
+            for ring in self.geometry[iso3]
+            if len(ring) >= 3
+        ]
+        bounds = [
+            pygame.Rect(
+                min(point[0] for point in points),
+                min(point[1] for point in points),
+                max(point[0] for point in points)
+                - min(point[0] for point in points)
+                + 1,
+                max(point[1] for point in points)
+                - min(point[1] for point in points)
+                + 1,
+            )
+            for points in polygons
+        ]
+        region = bounds[0].unionall(bounds).inflate(6, 6).clip(map_rect)
+        if region.width <= 0 or region.height <= 0:
+            result = pygame.Surface((1, 1), pygame.SRCALPHA), (0, 0)
+        else:
+            layer = pygame.Surface(region.size, pygame.SRCALPHA)
+            for points in polygons:
+                local_points = [
+                    (x - region.left, y - region.top)
+                    for x, y in points
+                ]
+                pygame.draw.polygon(
+                    layer,
+                    pygame.Color("#76c52bcc"),
+                    local_points,
+                )
+                pygame.draw.lines(
+                    layer,
+                    pygame.Color("#67e8f9"),
+                    True,
+                    local_points,
+                    2,
+                )
+                pygame.draw.aalines(
+                    layer,
+                    pygame.Color("#d7ff72"),
+                    True,
+                    local_points,
+                )
+            result = layer, region.topleft
+        if len(self._atlas_highlight_cache) >= 12:
+            self._atlas_highlight_cache.pop(
+                next(iter(self._atlas_highlight_cache))
+            )
+        self._atlas_highlight_cache[key] = result
+        return result
+
+    def _build_atlas_layers(
+        self,
+        size: tuple[int, int],
+        continents: dict[str, str],
+        palette: dict[str, str],
+    ) -> dict[int, pygame.Surface]:
+        """Rasterize country geometry once; camera movement reuses these layers."""
+        return {
+            1: self._render_atlas_layer(
+                size,
+                1,
+                continents,
+                palette,
+            )
+        }
+
+    def _render_atlas_layer(
+        self,
+        size: tuple[int, int],
+        detail: int,
+        continents: dict[str, str],
+        palette: dict[str, str],
+    ) -> pygame.Surface:
+        detailed_size = (size[0] * detail, size[1] * detail)
+        detailed = pygame.Surface(detailed_size)
+        detailed.fill(WATER)
+        detailed_rect = detailed.get_rect()
+        border_colour = pygame.Color("#1683a4")
+        for iso3, rings in self.geometry.items():
+            colour = pygame.Color(
+                palette.get(continents.get(iso3, ""), "#b7c5c8")
+            )
+            for ring in rings:
+                points = [self.project(point, detailed_rect) for point in ring]
+                if len(points) >= 3:
+                    pygame.draw.polygon(detailed, colour, points)
+                    pygame.draw.lines(
+                        detailed,
+                        border_colour,
+                        True,
+                        points,
+                        max(1, detail),
+                    )
+        return detailed
+
+    def _sample_atlas_view(
+        self,
+        size: tuple[int, int],
+        camera: MapCamera,
+    ) -> pygame.Surface:
+        """Crop only the visible raster area instead of scaling the whole world."""
+        canvas = pygame.Surface(size)
+        canvas.fill(WATER)
+        width, height = size
+        world = pygame.Rect(
+            round(width / 2 + camera.offset.x - width * camera.zoom / 2),
+            round(height / 2 + camera.offset.y - height * camera.zoom / 2),
+            max(1, round(width * camera.zoom)),
+            max(1, round(height * camera.zoom)),
+        )
+        visible = canvas.get_rect().clip(world)
+        if not visible.width or not visible.height:
+            return canvas
+
+        detail = 1 if camera.zoom <= 1.5 else 2 if camera.zoom <= 3.0 else 4
+        source = self._atlas_base_layers.get(detail)
+        if source is None:
+            source = self._render_atlas_layer(
+                size,
+                detail,
+                self._atlas_continents,
+                self._atlas_palette,
+            )
+            self._atlas_base_layers[detail] = source
+        source_rect = pygame.Rect(
+            max(
+                0,
+                math.floor(
+                    (visible.left - world.left) / world.width
+                    * source.get_width()
+                ),
+            ),
+            max(
+                0,
+                math.floor(
+                    (visible.top - world.top) / world.height
+                    * source.get_height()
+                ),
+            ),
+            1,
+            1,
+        )
+        source_right = min(
+            source.get_width(),
+            math.ceil(
+                (visible.right - world.left) / world.width
+                * source.get_width()
+            ),
+        )
+        source_bottom = min(
+            source.get_height(),
+            math.ceil(
+                (visible.bottom - world.top) / world.height
+                * source.get_height()
+            ),
+        )
+        source_rect.width = max(1, source_right - source_rect.left)
+        source_rect.height = max(1, source_bottom - source_rect.top)
+        cropped = source.subsurface(source_rect)
+        canvas.blit(
+            pygame.transform.scale(cropped, visible.size),
+            visible,
+        )
+        return canvas
 
     def country_at(
         self,

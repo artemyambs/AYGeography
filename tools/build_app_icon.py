@@ -25,7 +25,7 @@ PREVIEW_PATH = ROOT / "assets" / "app_icon.png"
 
 def _render_logo() -> pygame.Surface:
     canvas = pygame.Surface((1600, 1600), pygame.SRCALPHA)
-    draw_logo(canvas, (800, 800), 650)
+    draw_logo(canvas, (800, 800), 690)
     return canvas
 
 
