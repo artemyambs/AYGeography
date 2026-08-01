@@ -233,6 +233,7 @@ class Question:
     content: QuestionContentType = field(default_factory=ChoiceContent)
     country_isos: tuple[str, ...] = field(default_factory=tuple)
     sampled_difficulty: str | None = None
+    scoring_difficulty: str | None = None
 
     @property
     def subjects(self) -> tuple[str, ...]:
@@ -269,6 +270,7 @@ class Question:
             "content": self.content.to_state(),
             "country_isos": list(self.country_isos),
             "sampled_difficulty": self.sampled_difficulty,
+            "scoring_difficulty": self.scoring_difficulty,
         }
 
     @classmethod
@@ -301,4 +303,5 @@ class Question:
                 "sampled_difficulty",
                 legacy_difficulty,
             ),
+            scoring_difficulty=state.get("scoring_difficulty"),
         )

@@ -443,10 +443,13 @@ class WonderQuestionStrategy(QuestionStrategy):
         rng: random.Random,
     ) -> Question:
         if item.category == WonderCategory.LANDMARK:
-            return self._landmark(item, eligible_items, countries, rng)
-        if item.category == WonderCategory.PEAK:
-            return self._peak(item, eligible_items, rng)
-        return self._fact(item, countries, rng)
+            question = self._landmark(item, eligible_items, countries, rng)
+        elif item.category == WonderCategory.PEAK:
+            question = self._peak(item, eligible_items, rng)
+        else:
+            question = self._fact(item, countries, rng)
+        question.scoring_difficulty = "medium"
+        return question
 
     def _landmark(
         self,
@@ -519,14 +522,15 @@ class WonderQuestionStrategy(QuestionStrategy):
         countries: list[Country],
         rng: random.Random,
     ) -> Question:
-        correct = self.catalog.country_name(item.country_iso)
+        del countries, rng
+        correct = "Правда" if item.truth_value else "Ложь"
         return Question(
             key=f"wonders:{item.key}",
             mode=self.mode,
             prompt=item.prompt,
             country_iso=item.country_iso,
             country_isos=item.country_isos,
-            options=self._country_options(correct, item, countries, rng),
+            options=["Правда", "Ложь"],
             correct_answer=correct,
             content=WonderContent(
                 category=item.category.value,
@@ -548,7 +552,6 @@ class WonderQuestionStrategy(QuestionStrategy):
                 and candidate.key != item.key
             ),
             key=lambda candidate: (
-                candidate.difficulty != item.difficulty,
                 not bool(set(candidate.continents) & set(item.continents)),
                 candidate.key,
             ),
@@ -561,11 +564,10 @@ class WonderQuestionStrategy(QuestionStrategy):
         rng: random.Random,
     ) -> list[str]:
         ranked = self._ranked_items(item, items)
-        grouped: dict[tuple[bool, bool], list[str]] = defaultdict(list)
+        grouped: dict[bool, list[str]] = defaultdict(list)
         for candidate in ranked:
-            rank = (
-                candidate.difficulty != item.difficulty,
-                not bool(set(candidate.continents) & set(item.continents)),
+            rank = not bool(
+                set(candidate.continents) & set(item.continents)
             )
             grouped[rank].append(candidate.name)
         candidates: list[str] = []
@@ -784,30 +786,22 @@ class WonderPreparedQuestionPool(PreparedQuestionPool):
     ) -> None:
         self.strategy = strategy
         self.context = context
-        self.difficulty = difficulty
+        del difficulty
         self.rng = rng
         self.items = strategy.catalog.eligible(
             context.continents,
             context.wrong_isos,
         )
-        self.queues: dict[
-            WonderCategory,
-            dict[str, list[WonderItem]],
-        ] = {
-            category: {
-                level: [
-                    item
-                    for item in self.items
-                    if item.category == category
-                    and item.difficulty == level
-                ]
-                for level in DIFFICULTY_KEYS
-            }
+        self.queues: dict[WonderCategory, list[WonderItem]] = {
+            category: [
+                item
+                for item in self.items
+                if item.category == category
+            ]
             for category in WonderCategory
         }
-        for levels in self.queues.values():
-            for queue in levels.values():
-                rng.shuffle(queue)
+        for queue in self.queues.values():
+            rng.shuffle(queue)
         self.category_cycle = self._build_category_cycle()
         self.schedule: list[WonderCategory] = []
 
@@ -836,8 +830,8 @@ class WonderPreparedQuestionPool(PreparedQuestionPool):
     def plan(self, count: int) -> None:
         super().plan(count)
         remaining = {
-            category: sum(len(queue) for queue in levels.values())
-            for category, levels in self.queues.items()
+            category: len(queue)
+            for category, queue in self.queues.items()
         }
         schedule: list[WonderCategory] = []
         cycle_index = 0
@@ -865,28 +859,13 @@ class WonderPreparedQuestionPool(PreparedQuestionPool):
         if not self.schedule:
             raise ValueError("Очередь wonders не подготовлена")
         category = self.schedule.pop(0)
-        levels = self.queues[category]
-        available = {level for level, queue in levels.items() if queue}
-        if self.context.difficulty is None:
-            level = self.rng.choice(sorted(available))
-            sampled_level: str | None = None
-        else:
-            level = self.difficulty.choose_available(
-                self.context.difficulty,
-                available,
-                self.rng,
-            )
-            sampled_level = level
-        item = levels[level].pop()
-        question = self.strategy.create_item(
+        item = self.queues[category].pop()
+        return self.strategy.create_item(
             item,
             self.items,
             self.context.candidate_pool,
             self.rng,
         )
-        if sampled_level is not None:
-            question.sampled_difficulty = sampled_level
-        return question
 
 
 class QuestionFactory:

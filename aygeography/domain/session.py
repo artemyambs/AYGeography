@@ -23,7 +23,15 @@ class GameSession:
         if difficulty not in DIFFICULTY_KEYS:
             raise ValueError(f"Неизвестный уровень сложности: {difficulty}")
         self.questions = questions
-        self.difficulty = difficulty
+        self.difficulty = (
+            "medium"
+            if questions
+            and all(
+                question.scoring_difficulty == "medium"
+                for question in questions
+            )
+            else difficulty
+        )
         self._score_rules = score_rules
         self.index = 0
         self.score = 0
@@ -44,7 +52,10 @@ class GameSession:
         correct = value == question.correct_answer
         remaining = max(0, QUESTION_TIME_SECONDS - elapsed_seconds)
         points = (
-            self._score_rules.points(self.difficulty, remaining)
+            self._score_rules.points(
+                question.scoring_difficulty or self.difficulty,
+                remaining,
+            )
             if correct
             else 0
         )

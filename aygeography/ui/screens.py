@@ -591,6 +591,7 @@ class QuestionCountView(SelectionView):
             else min(self.available_counts, default=10)
         )
         self.selected_difficulty = app.pending_difficulty
+        self.difficulty_ignored_for_wonders = "wonders" in app.pending_modes
         self.cards: dict[int, pygame.Rect] = {}
         card_w, gap = 205, 24
         row_width = 4 * card_w + 3 * gap
@@ -715,6 +716,15 @@ class QuestionCountView(SelectionView):
                 17,
                 TEXT,
                 bold=True,
+                anchor="center",
+            )
+        if self.difficulty_ignored_for_wonders:
+            draw_text(
+                surface,
+                "Не влияется на режим «Чудеса света»",
+                (CONTENT.centerx, 554),
+                13,
+                MUTED,
                 anchor="center",
             )
         draw_button(
@@ -1043,6 +1053,16 @@ class GameView(BaseView):
                 )
             prefix = "Верно!" if record.is_correct else "Неверно."
             self.feedback = f"{prefix} {' • '.join(values)} человек"
+            self.feedback_colour = GREEN if record.is_correct else RED
+        elif (
+            isinstance(question.content, WonderContent)
+            and question.content.style == "wonder_fact"
+        ):
+            self.feedback = (
+                "Ответ правильный"
+                if record.is_correct
+                else "Ответ неверный"
+            )
             self.feedback_colour = GREEN if record.is_correct else RED
         elif record.is_correct:
             self.feedback = f"Верно!  +{record.points} очков"
@@ -2053,6 +2073,7 @@ class AtlasView(InteractiveMapView):
         self._facts = app.wonder_catalog.facts_by_country()
         self._area_ranks = self._rank_countries("area")
         self._population_ranks = self._rank_countries("population")
+        self._gdp_ranks = self._rank_countries("gdp_per_capita")
 
     def _map_area(self) -> pygame.Rect:
         return pygame.Rect(275, 138, 1210, 462)
@@ -2060,7 +2081,7 @@ class AtlasView(InteractiveMapView):
     def _rank_countries(self, field: str) -> dict[str, int]:
         ordered = sorted(
             self.app.catalog.all(),
-            key=lambda country: getattr(country, field),
+            key=lambda country: getattr(country, field) or -1,
             reverse=True,
         )
         return {
@@ -2122,26 +2143,21 @@ class AtlasView(InteractiveMapView):
             return
         country = self.app.catalog.get(self.selected_country)
         fact = self._facts[self.selected_country]
+        statistic_title, statistic_text = self._distinctive_stat(country)
         facts = (
-            fact.explanation,
-            (
-                f"{self._area_ranks[country.iso3]}-е место в мире "
-                f"по площади: {country.area:,} км²."
-            ).replace(",", " "),
-            (
-                f"{self._population_ranks[country.iso3]}-е место в мире "
-                f"по населению: {format_population(country.population)} человек."
-            ),
+            (country.official_name, fact.country),
+            (f"{country.capital} (столица)", fact.capital),
+            (statistic_title, statistic_text),
         )
         draw_text(
             surface,
-            f"Три факта: {country.name}",
+            country.name,
             (rect.left + 18, rect.top + 14),
             16,
             TEXT,
             bold=True,
         )
-        for index, fact_text in enumerate(facts):
+        for index, (title, fact_text) in enumerate(facts):
             item = pygame.Rect(
                 rect.left + 18 + index * 395,
                 rect.top + 48,
@@ -2170,21 +2186,68 @@ class AtlasView(InteractiveMapView):
                 bold=True,
                 anchor="center",
             )
-            wrapped = "\n".join(textwrap.wrap(fact_text, width=43))
+            title_wrapped = "\n".join(textwrap.wrap(title, width=38))
+            draw_multiline(
+                surface,
+                title_wrapped,
+                pygame.Rect(
+                    item.left + 50,
+                    item.top + 8,
+                    item.width - 62,
+                    32,
+                ),
+                12,
+                TEXT,
+                bold=True,
+                align="left",
+                line_gap=1,
+            )
+            wrapped = "\n".join(textwrap.wrap(fact_text, width=47))
             draw_multiline(
                 surface,
                 wrapped,
                 pygame.Rect(
                     item.left + 50,
-                    item.top + 12,
+                    item.top + 42,
                     item.width - 62,
-                    item.height - 24,
+                    item.height - 50,
                 ),
-                11,
+                10,
                 TEXT,
                 align="left",
-                line_gap=3,
+                line_gap=2,
             )
+
+    def _distinctive_stat(self, country) -> tuple[str, str]:
+        total = len(self.app.catalog.all())
+        candidates = [
+            (
+                "Площадь",
+                self._area_ranks[country.iso3],
+                f"{country.area:,} км²".replace(",", " "),
+                "площади",
+            ),
+            (
+                "Население",
+                self._population_ranks[country.iso3],
+                f"{format_population(country.population)} человек",
+                "населению",
+            ),
+        ]
+        if country.gdp_per_capita is not None:
+            candidates.append(
+                (
+                    "ВВП на душу населения",
+                    self._gdp_ranks[country.iso3],
+                    f"{format_population(country.gdp_per_capita)} $",
+                    "ВВП на душу населения",
+                )
+            )
+        title, rank, value, label = min(
+            candidates,
+            key=lambda item: min(item[1], total - item[1]),
+        )
+        return title, f"{rank}-е место в мире по {label}: {value}."
 
     def _draw_country_card(
         self,

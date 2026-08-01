@@ -22,15 +22,35 @@ class CountryCatalog:
                 "Некорректное население стран: "
                 + ", ".join(sorted(invalid_population))
             )
+        invalid_gdp = [
+            iso3
+            for iso3, data in raw_countries.items()
+            if data.get("GDP_per_capita") is not None
+            and (
+                not isinstance(data["GDP_per_capita"], int)
+                or int(data["GDP_per_capita"]) <= 0
+            )
+        ]
+        if invalid_gdp:
+            raise ValueError(
+                "Некорректный ВВП на душу населения: "
+                + ", ".join(sorted(invalid_gdp))
+            )
         self._countries = {
             iso3: Country(
                 iso3=iso3,
                 name=data["name_ru"],
                 name_en=data["name_en"],
+                official_name=data["official_name"],
                 capital=data["capital"],
                 continent=data["continent"],
                 population=int(data["population"]),
                 area=int(data["area"]),
+                gdp_per_capita=(
+                    int(data["GDP_per_capita"])
+                    if data.get("GDP_per_capita") is not None
+                    else None
+                ),
                 official_languages=tuple(
                     str(language)
                     for language in data["official_languages"]

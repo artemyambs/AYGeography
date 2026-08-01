@@ -1,7 +1,6 @@
 [
     {
         "id":  "everest",
-        "category":  "peak",
         "name":  "Эверест",
         "country_isos":  [
                              "NPL",
@@ -10,7 +9,6 @@
         "continents":  [
                            "Asia"
                        ],
-        "difficulty":  "easy",
         "point":  [
                       86.925,
                       27.988
@@ -19,7 +17,6 @@
     },
     {
         "id":  "kilimanjaro",
-        "category":  "peak",
         "name":  "Килиманджаро",
         "country_isos":  [
                              "TZA"
@@ -27,7 +24,6 @@
         "continents":  [
                            "Africa"
                        ],
-        "difficulty":  "easy",
         "point":  [
                       37.355,
                       -3.067
@@ -36,7 +32,6 @@
     },
     {
         "id":  "elbrus",
-        "category":  "peak",
         "name":  "Эльбрус",
         "country_isos":  [
                              "RUS"
@@ -44,7 +39,6 @@
         "continents":  [
                            "Europe"
                        ],
-        "difficulty":  "easy",
         "point":  [
                       42.439,
                       43.349
@@ -53,7 +47,6 @@
     },
     {
         "id":  "denali",
-        "category":  "peak",
         "name":  "Денали",
         "country_isos":  [
                              "USA"
@@ -61,7 +54,6 @@
         "continents":  [
                            "North America"
                        ],
-        "difficulty":  "easy",
         "point":  [
                       -151.007,
                       63.069
@@ -70,7 +62,6 @@
     },
     {
         "id":  "aconcagua",
-        "category":  "peak",
         "name":  "Аконкагуа",
         "country_isos":  [
                              "ARG"
@@ -78,7 +69,6 @@
         "continents":  [
                            "South America"
                        ],
-        "difficulty":  "easy",
         "point":  [
                       -70.011,
                       -32.653
@@ -87,7 +77,6 @@
     },
     {
         "id":  "mont_blanc",
-        "category":  "peak",
         "name":  "Монблан",
         "country_isos":  [
                              "FRA",
@@ -96,7 +85,6 @@
         "continents":  [
                            "Europe"
                        ],
-        "difficulty":  "medium",
         "point":  [
                       6.865,
                       45.833
@@ -105,7 +93,6 @@
     },
     {
         "id":  "matterhorn",
-        "category":  "peak",
         "name":  "Маттерхорн",
         "country_isos":  [
                              "CHE",
@@ -114,7 +101,6 @@
         "continents":  [
                            "Europe"
                        ],
-        "difficulty":  "medium",
         "point":  [
                       7.658,
                       45.977
@@ -123,7 +109,6 @@
     },
     {
         "id":  "fuji",
-        "category":  "peak",
         "name":  "Фудзи",
         "country_isos":  [
                              "JPN"
@@ -131,7 +116,6 @@
         "continents":  [
                            "Asia"
                        ],
-        "difficulty":  "medium",
         "point":  [
                       138.727,
                       35.361
@@ -140,7 +124,6 @@
     },
     {
         "id":  "kosciuszko",
-        "category":  "peak",
         "name":  "Косцюшко",
         "country_isos":  [
                              "AUS"
@@ -148,7 +131,6 @@
         "continents":  [
                            "Oceania"
                        ],
-        "difficulty":  "medium",
         "point":  [
                       148.263,
                       -36.456
@@ -157,7 +139,6 @@
     },
     {
         "id":  "mauna_kea",
-        "category":  "peak",
         "name":  "Мауна-Кеа",
         "country_isos":  [
                              "USA"
@@ -165,7 +146,6 @@
         "continents":  [
                            "Oceania"
                        ],
-        "difficulty":  "medium",
         "point":  [
                       -155.468,
                       19.821
@@ -174,7 +154,6 @@
     },
     {
         "id":  "k2",
-        "category":  "peak",
         "name":  "К2",
         "country_isos":  [
                              "PAK",
@@ -183,7 +162,6 @@
         "continents":  [
                            "Asia"
                        ],
-        "difficulty":  "hard",
         "point":  [
                       76.514,
                       35.881
@@ -192,7 +170,6 @@
     },
     {
         "id":  "annapurna",
-        "category":  "peak",
         "name":  "Аннапурна I",
         "country_isos":  [
                              "NPL"
@@ -200,7 +177,6 @@
         "continents":  [
                            "Asia"
                        ],
-        "difficulty":  "hard",
         "point":  [
                       83.821,
                       28.596
@@ -209,7 +185,6 @@
     },
     {
         "id":  "chimborazo",
-        "category":  "peak",
         "name":  "Чимборасо",
         "country_isos":  [
                              "ECU"
@@ -217,7 +192,6 @@
         "continents":  [
                            "South America"
                        ],
-        "difficulty":  "hard",
         "point":  [
                       -78.818,
                       -1.469
@@ -226,7 +200,6 @@
     },
     {
         "id":  "stanley",
-        "category":  "peak",
         "name":  "Гора Стэнли",
         "country_isos":  [
                              "UGA",
@@ -235,7 +208,6 @@
         "continents":  [
                            "Africa"
                        ],
-        "difficulty":  "hard",
         "point":  [
                       29.872,
                       0.386
@@ -244,7 +216,6 @@
     },
     {
         "id":  "aoraki",
-        "category":  "peak",
         "name":  "Аораки / Маунт-Кук",
         "country_isos":  [
                              "NZL"
@@ -252,7 +223,6 @@
         "continents":  [
                            "Oceania"
                        ],
-        "difficulty":  "hard",
         "point":  [
                       170.141,
                       -43.595

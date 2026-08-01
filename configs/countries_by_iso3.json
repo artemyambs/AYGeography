@@ -9,6 +9,7 @@
     "capital": "Москва",
     "population": 144820423,
     "area": 17098246,
+    "GDP_per_capita": 49568,
     "official_languages": [
       "русский"
     ]
@@ -23,6 +24,7 @@
     "capital": "Канберра",
     "population": 26713205,
     "area": 7692024,
+    "GDP_per_capita": 71934,
     "official_languages": [
       "английский"
     ]
@@ -37,6 +39,7 @@
     "capital": "Вена",
     "population": 9120813,
     "area": 83879,
+    "GDP_per_capita": 76778,
     "official_languages": [
       "немецкий"
     ]
@@ -51,6 +54,7 @@
     "capital": "Баку",
     "population": 10336577,
     "area": 86600,
+    "GDP_per_capita": 26113,
     "official_languages": [
       "азербайджанский",
       "русский"
@@ -66,6 +70,7 @@
     "capital": "Тирана",
     "population": 2791765,
     "area": 28748,
+    "GDP_per_capita": 28221,
     "official_languages": [
       "албанский"
     ]
@@ -80,6 +85,7 @@
     "capital": "Алжир",
     "population": 46814308,
     "area": 2381741,
+    "GDP_per_capita": 18586,
     "official_languages": [
       "арабский"
     ]
@@ -94,6 +100,7 @@
     "capital": "Луанда",
     "population": 37885849,
     "area": 1246700,
+    "GDP_per_capita": 10251,
     "official_languages": [
       "португальский"
     ]
@@ -108,6 +115,7 @@
     "capital": "Андорра-ла-Велья",
     "population": 81938,
     "area": 468,
+    "GDP_per_capita": 79567,
     "official_languages": [
       "каталанский"
     ]
@@ -122,6 +130,7 @@
     "capital": "Сент-Джонс",
     "population": 93772,
     "area": 442,
+    "GDP_per_capita": 35832,
     "official_languages": [
       "английский"
     ]
@@ -136,6 +145,7 @@
     "capital": "Буэнос-Айрес",
     "population": 45696159,
     "area": 2780400,
+    "GDP_per_capita": 32587,
     "official_languages": [
       "гуарани",
       "испанский"
@@ -151,6 +161,7 @@
     "capital": "Ереван",
     "population": 2973840,
     "area": 29743,
+    "GDP_per_capita": 24754,
     "official_languages": [
       "армянский"
     ]
@@ -165,6 +176,7 @@
     "capital": "Кабул",
     "population": 42647492,
     "area": 652230,
+    "GDP_per_capita": 2236,
     "official_languages": [
       "дари",
       "пушту",
@@ -181,6 +193,7 @@
     "capital": "Нассау",
     "population": 401283,
     "area": 13943,
+    "GDP_per_capita": 41258,
     "official_languages": [
       "английский"
     ]
@@ -195,6 +208,7 @@
     "capital": "Дакка",
     "population": 173562364,
     "area": 147570,
+    "GDP_per_capita": 10154,
     "official_languages": [
       "бенгальский"
     ]
@@ -209,6 +223,7 @@
     "capital": "Бриджтаун",
     "population": 282467,
     "area": 430,
+    "GDP_per_capita": 25894,
     "official_languages": [
       "английский"
     ]
@@ -223,6 +238,7 @@
     "capital": "Манама",
     "population": 1607049,
     "area": 765,
+    "GDP_per_capita": 70997,
     "official_languages": [
       "арабский"
     ]
@@ -237,6 +253,7 @@
     "capital": "Бельмопан",
     "population": 417072,
     "area": 22966,
+    "GDP_per_capita": 14966,
     "official_languages": [
       "белизский креольский",
       "английский",
@@ -253,6 +270,7 @@
     "capital": "Минск",
     "population": 9056696,
     "area": 207600,
+    "GDP_per_capita": 34716,
     "official_languages": [
       "белорусский",
       "русский"
@@ -268,6 +286,7 @@
     "capital": "Брюссель",
     "population": 11738763,
     "area": 30528,
+    "GDP_per_capita": 74676,
     "official_languages": [
       "немецкий",
       "французский",
@@ -284,6 +303,7 @@
     "capital": "Порто-Ново",
     "population": 14462724,
     "area": 112622,
+    "GDP_per_capita": 4817,
     "official_languages": [
       "французский"
     ]
@@ -298,6 +318,7 @@
     "capital": "София",
     "population": 6757689,
     "area": 110879,
+    "GDP_per_capita": 44451,
     "official_languages": [
       "болгарский"
     ]
@@ -312,6 +333,7 @@
     "capital": "Сукре",
     "population": 12413315,
     "area": 1098581,
+    "GDP_per_capita": 12873,
     "official_languages": [
       "аймара",
       "гуарани",
@@ -329,6 +351,7 @@
     "capital": "Сараево",
     "population": 3164253,
     "area": 51197,
+    "GDP_per_capita": 25814,
     "official_languages": [
       "боснийский",
       "хорватский",
@@ -345,6 +368,7 @@
     "capital": "Габороне",
     "population": 2521139,
     "area": 581730,
+    "GDP_per_capita": 20698,
     "official_languages": [
       "английский",
       "тсвана"
@@ -360,6 +384,7 @@
     "capital": "Бразилиа",
     "population": 211998573,
     "area": 8515767,
+    "GDP_per_capita": 23433,
     "official_languages": [
       "португальский"
     ]
@@ -374,6 +399,7 @@
     "capital": "Бандар-Сери-Бегаван",
     "population": 462721,
     "area": 5765,
+    "GDP_per_capita": 92430,
     "official_languages": [
       "малайский"
     ]
@@ -388,6 +414,7 @@
     "capital": "Уагадугу",
     "population": 23548781,
     "area": 274200,
+    "GDP_per_capita": 3072,
     "official_languages": [
       "французский"
     ]
@@ -402,6 +429,7 @@
     "capital": "Гитега",
     "population": 14047786,
     "area": 27834,
+    "GDP_per_capita": 1248,
     "official_languages": [
       "французский",
       "кирунди"
@@ -417,6 +445,7 @@
     "capital": "Тхимпху",
     "population": 791524,
     "area": 38394,
+    "GDP_per_capita": 19594,
     "official_languages": [
       "дзонг-кэ"
     ]
@@ -431,6 +460,7 @@
     "capital": "Порт-Вила",
     "population": 327777,
     "area": 12189,
+    "GDP_per_capita": 4525,
     "official_languages": [
       "бислама",
       "английский",
@@ -447,6 +477,7 @@
     "capital": "Ватикан",
     "population": 496,
     "area": 0,
+    "GDP_per_capita": null,
     "official_languages": [
       "итальянский",
       "латинский"
@@ -462,6 +493,7 @@
     "capital": "Лондон",
     "population": 69138192,
     "area": 242495,
+    "GDP_per_capita": 64606,
     "official_languages": [
       "английский"
     ]
@@ -476,6 +508,7 @@
     "capital": "Будапешт",
     "population": 9676135,
     "area": 93030,
+    "GDP_per_capita": 49838,
     "official_languages": [
       "венгерский"
     ]
@@ -490,6 +523,7 @@
     "capital": "Каракас",
     "population": 28405543,
     "area": 916445,
+    "GDP_per_capita": 21283,
     "official_languages": [
       "испанский"
     ]
@@ -504,6 +538,7 @@
     "capital": "Дили",
     "population": 1400638,
     "area": 14874,
+    "GDP_per_capita": 4809,
     "official_languages": [
       "португальский",
       "тетум"
@@ -519,6 +554,7 @@
     "capital": "Ханой",
     "population": 100987686,
     "area": 331210,
+    "GDP_per_capita": 18088,
     "official_languages": [
       "вьетнамский"
     ]
@@ -533,6 +569,7 @@
     "capital": "Либревиль",
     "population": 2538952,
     "area": 267668,
+    "GDP_per_capita": 22218,
     "official_languages": [
       "французский"
     ]
@@ -547,6 +584,7 @@
     "capital": "Порт-о-Пренс",
     "population": 11772557,
     "area": 27750,
+    "GDP_per_capita": 3134,
     "official_languages": [
       "французский",
       "гаитянский"
@@ -562,6 +600,7 @@
     "capital": "Джорджтаун",
     "population": 831087,
     "area": 214969,
+    "GDP_per_capita": 97899,
     "official_languages": [
       "английский"
     ]
@@ -576,6 +615,7 @@
     "capital": "Банжул",
     "population": 2759988,
     "area": 11295,
+    "GDP_per_capita": 3706,
     "official_languages": [
       "английский"
     ]
@@ -590,6 +630,7 @@
     "capital": "Аккра",
     "population": 34427414,
     "area": 238533,
+    "GDP_per_capita": 8610,
     "official_languages": [
       "английский"
     ]
@@ -604,6 +645,7 @@
     "capital": "Гватемала",
     "population": 18406359,
     "area": 108889,
+    "GDP_per_capita": 15197,
     "official_languages": [
       "испанский"
     ]
@@ -618,6 +660,7 @@
     "capital": "Конакри",
     "population": 14754785,
     "area": 245857,
+    "GDP_per_capita": 4935,
     "official_languages": [
       "французский"
     ]
@@ -632,6 +675,7 @@
     "capital": "Бисау",
     "population": 2201352,
     "area": 36125,
+    "GDP_per_capita": 3293,
     "official_languages": [
       "португальский",
       "верхнегвинейский креольский"
@@ -647,6 +691,7 @@
     "capital": "Берлин",
     "population": 84552242,
     "area": 357022,
+    "GDP_per_capita": 75407,
     "official_languages": [
       "немецкий"
     ]
@@ -661,6 +706,7 @@
     "capital": "Тегусигальпа",
     "population": 10825703,
     "area": 112492,
+    "GDP_per_capita": 7871,
     "official_languages": [
       "испанский"
     ]
@@ -675,6 +721,7 @@
     "capital": "Сент-Джорджес",
     "population": 117207,
     "area": 344,
+    "GDP_per_capita": 21346,
     "official_languages": [
       "английский"
     ]
@@ -689,6 +736,7 @@
     "capital": "Афины",
     "population": 10047817,
     "area": 131957,
+    "GDP_per_capita": 45264,
     "official_languages": [
       "греческий"
     ]
@@ -703,6 +751,7 @@
     "capital": "Тбилиси",
     "population": 3807670,
     "area": 69700,
+    "GDP_per_capita": 29414,
     "official_languages": [
       "грузинский"
     ]
@@ -717,6 +766,7 @@
     "capital": "Копенгаген",
     "population": 5977412,
     "area": 43094,
+    "GDP_per_capita": 83218,
     "official_languages": [
       "датский"
     ]
@@ -731,6 +781,7 @@
     "capital": "Джибути",
     "population": 1168722,
     "area": 23200,
+    "GDP_per_capita": 8452,
     "official_languages": [
       "арабский",
       "французский"
@@ -746,6 +797,7 @@
     "capital": "Розо",
     "population": 66205,
     "area": 751,
+    "GDP_per_capita": 22713,
     "official_languages": [
       "английский"
     ]
@@ -760,6 +812,7 @@
     "capital": "Санто-Доминго",
     "population": 11427557,
     "area": 48671,
+    "GDP_per_capita": 28721,
     "official_languages": [
       "испанский"
     ]
@@ -774,6 +827,7 @@
     "capital": "Каир",
     "population": 116538258,
     "area": 1002450,
+    "GDP_per_capita": 20204,
     "official_languages": [
       "арабский"
     ]
@@ -788,6 +842,7 @@
     "capital": "Лусака",
     "population": 21314956,
     "area": 752612,
+    "GDP_per_capita": 4379,
     "official_languages": [
       "английский"
     ]
@@ -802,6 +857,7 @@
     "capital": "Хараре",
     "population": 16634373,
     "area": 390757,
+    "GDP_per_capita": 6470,
     "official_languages": [
       "чибарве",
       "английский",
@@ -830,6 +886,7 @@
     "capital": "Иерусалим",
     "population": 9387021,
     "area": 20770,
+    "GDP_per_capita": 59717,
     "official_languages": [
       "арабский",
       "иврит"
@@ -845,6 +902,7 @@
     "capital": "Нью-Дели",
     "population": 1450935791,
     "area": 3287263,
+    "GDP_per_capita": 11748,
     "official_languages": [
       "английский",
       "хинди",
@@ -861,6 +919,7 @@
     "capital": "Джакарта",
     "population": 283487931,
     "area": 1904569,
+    "GDP_per_capita": 17660,
     "official_languages": [
       "индонезийский"
     ]
@@ -875,6 +934,7 @@
     "capital": "Амман",
     "population": 11552876,
     "area": 89342,
+    "GDP_per_capita": 12632,
     "official_languages": [
       "арабский"
     ]
@@ -889,6 +949,7 @@
     "capital": "Багдад",
     "population": 46042015,
     "area": 438317,
+    "GDP_per_capita": 14267,
     "official_languages": [
       "арабский",
       "арамейский",
@@ -905,6 +966,7 @@
     "capital": "Тегеран",
     "population": 91567738,
     "area": 1648195,
+    "GDP_per_capita": 19699,
     "official_languages": [
       "персидский"
     ]
@@ -919,6 +981,7 @@
     "capital": "Дублин",
     "population": 5255017,
     "area": 70273,
+    "GDP_per_capita": 155089,
     "official_languages": [
       "английский",
       "ирландский"
@@ -934,6 +997,7 @@
     "capital": "Рейкьявик",
     "population": 393396,
     "area": 103000,
+    "GDP_per_capita": 83431,
     "official_languages": [
       "исландский"
     ]
@@ -948,6 +1012,7 @@
     "capital": "Мадрид",
     "population": 47910526,
     "area": 505990,
+    "GDP_per_capita": 59868,
     "official_languages": [
       "испанский"
     ]
@@ -962,6 +1027,7 @@
     "capital": "Рим",
     "population": 59342867,
     "area": 301340,
+    "GDP_per_capita": 62803,
     "official_languages": [
       "итальянский"
     ]
@@ -976,6 +1042,7 @@
     "capital": "Сана",
     "population": 40583164,
     "area": 527968,
+    "GDP_per_capita": 3164,
     "official_languages": [
       "арабский"
     ]
@@ -990,6 +1057,7 @@
     "capital": "Прая",
     "population": 524877,
     "area": 4033,
+    "GDP_per_capita": 12165,
     "official_languages": [
       "португальский"
     ]
@@ -1004,6 +1072,7 @@
     "capital": "Астана",
     "population": 20592571,
     "area": 2724900,
+    "GDP_per_capita": 44293,
     "official_languages": [
       "казахский",
       "русский"
@@ -1019,6 +1088,7 @@
     "capital": "Пномпень",
     "population": 17638801,
     "area": 181035,
+    "GDP_per_capita": 8543,
     "official_languages": [
       "кхмерский"
     ]
@@ -1033,6 +1103,7 @@
     "capital": "Яунде",
     "population": 29123744,
     "area": 475442,
+    "GDP_per_capita": 5788,
     "official_languages": [
       "английский",
       "французский"
@@ -1048,6 +1119,7 @@
     "capital": "Оттава",
     "population": 39742430,
     "area": 9984670,
+    "GDP_per_capita": 66746,
     "official_languages": [
       "английский",
       "французский"
@@ -1063,6 +1135,7 @@
     "capital": "Доха",
     "population": 3048423,
     "area": 11586,
+    "GDP_per_capita": 128883,
     "official_languages": [
       "арабский"
     ]
@@ -1077,6 +1150,7 @@
     "capital": "Найроби",
     "population": 56432944,
     "area": 580367,
+    "GDP_per_capita": 7016,
     "official_languages": [
       "английский",
       "суахили"
@@ -1092,6 +1166,7 @@
     "capital": "Никосия",
     "population": 1358282,
     "area": 9251,
+    "GDP_per_capita": 64575,
     "official_languages": [
       "греческий",
       "турецкий"
@@ -1107,6 +1182,7 @@
     "capital": "Бишкек",
     "population": 7186009,
     "area": 199951,
+    "GDP_per_capita": 9220,
     "official_languages": [
       "киргизский",
       "русский"
@@ -1122,6 +1198,7 @@
     "capital": "Южная Тарава",
     "population": 134518,
     "area": 811,
+    "GDP_per_capita": 3937,
     "official_languages": [
       "английский",
       "гилбертский"
@@ -1137,6 +1214,7 @@
     "capital": "Пекин",
     "population": 1419321278,
     "area": 9596961,
+    "GDP_per_capita": 29333,
     "official_languages": [
       "китайский"
     ]
@@ -1151,6 +1229,7 @@
     "capital": "Богота",
     "population": 52886363,
     "area": 1141748,
+    "GDP_per_capita": 22640,
     "official_languages": [
       "испанский"
     ]
@@ -1165,6 +1244,7 @@
     "capital": "Морони",
     "population": 866628,
     "area": 1862,
+    "GDP_per_capita": 4238,
     "official_languages": [
       "арабский",
       "французский",
@@ -1181,6 +1261,7 @@
     "capital": "Киншаса",
     "population": 109276265,
     "area": 2344858,
+    "GDP_per_capita": 1920,
     "official_languages": [
       "французский",
       "киконго",
@@ -1199,6 +1280,7 @@
     "capital": "Браззавиль",
     "population": 6332961,
     "area": 342000,
+    "GDP_per_capita": 7248,
     "official_languages": [
       "французский",
       "киконго",
@@ -1215,6 +1297,7 @@
     "capital": "Пхеньян",
     "population": 26498823,
     "area": 120538,
+    "GDP_per_capita": 600,
     "official_languages": [
       "корейский"
     ]
@@ -1229,6 +1312,7 @@
     "capital": "Сан-Хосе",
     "population": 5129910,
     "area": 51100,
+    "GDP_per_capita": 33815,
     "official_languages": [
       "испанский"
     ]
@@ -1243,6 +1327,7 @@
     "capital": "Ямусукро",
     "population": 31934230,
     "area": 322463,
+    "GDP_per_capita": 8209,
     "official_languages": [
       "французский"
     ]
@@ -1257,6 +1342,7 @@
     "capital": "Гавана",
     "population": 10979783,
     "area": 109884,
+    "GDP_per_capita": 23700,
     "official_languages": [
       "испанский"
     ]
@@ -1271,6 +1357,7 @@
     "capital": "Эль-Кувейт",
     "population": 4934507,
     "area": 17818,
+    "GDP_per_capita": 56468,
     "official_languages": [
       "арабский"
     ]
@@ -1285,6 +1372,7 @@
     "capital": "Вьентьян",
     "population": 7769819,
     "area": 236800,
+    "GDP_per_capita": 10383,
     "official_languages": [
       "лаосский"
     ]
@@ -1299,6 +1387,7 @@
     "capital": "Рига",
     "population": 1871871,
     "area": 64589,
+    "GDP_per_capita": 46137,
     "official_languages": [
       "латышский"
     ]
@@ -1313,6 +1402,7 @@
     "capital": "Масеру",
     "population": 2337423,
     "area": 30355,
+    "GDP_per_capita": 3184,
     "official_languages": [
       "английский",
       "сесото"
@@ -1328,6 +1418,7 @@
     "capital": "Монровия",
     "population": 5612817,
     "area": 111369,
+    "GDP_per_capita": 1981,
     "official_languages": [
       "английский"
     ]
@@ -1342,6 +1433,7 @@
     "capital": "Бейрут",
     "population": 5805962,
     "area": 10452,
+    "GDP_per_capita": 11917,
     "official_languages": [
       "арабский",
       "французский"
@@ -1357,6 +1449,7 @@
     "capital": "Триполи",
     "population": 7381023,
     "area": 1759540,
+    "GDP_per_capita": 16521,
     "official_languages": [
       "арабский"
     ]
@@ -1371,6 +1464,7 @@
     "capital": "Вильнюс",
     "population": 2859110,
     "area": 65300,
+    "GDP_per_capita": 56838,
     "official_languages": [
       "литовский"
     ]
@@ -1385,6 +1479,7 @@
     "capital": "Вадуц",
     "population": 39870,
     "area": 160,
+    "GDP_per_capita": 210600,
     "official_languages": [
       "немецкий"
     ]
@@ -1399,6 +1494,7 @@
     "capital": "Люксембург",
     "population": 673036,
     "area": 2586,
+    "GDP_per_capita": 156542,
     "official_languages": [
       "немецкий",
       "французский",
@@ -1415,6 +1511,7 @@
     "capital": "Порт-Луи",
     "population": 1271169,
     "area": 2040,
+    "GDP_per_capita": 33667,
     "official_languages": [
       "английский",
       "французский",
@@ -1431,6 +1528,7 @@
     "capital": "Нуакшот",
     "population": 5169395,
     "area": 1030700,
+    "GDP_per_capita": 7676,
     "official_languages": [
       "арабский"
     ]
@@ -1445,6 +1543,7 @@
     "capital": "Антананариву",
     "population": 31964956,
     "area": 587041,
+    "GDP_per_capita": 1952,
     "official_languages": [
       "французский",
       "малагасийский"
@@ -1460,6 +1559,7 @@
     "capital": "Лилонгве",
     "population": 21655286,
     "area": 118484,
+    "GDP_per_capita": 1899,
     "official_languages": [
       "английский",
       "чева"
@@ -1475,6 +1575,7 @@
     "capital": "Куала-Лумпур",
     "population": 35557673,
     "area": 330803,
+    "GDP_per_capita": 41498,
     "official_languages": [
       "английский",
       "малайский"
@@ -1490,6 +1591,7 @@
     "capital": "Бамако",
     "population": 24478595,
     "area": 1240192,
+    "GDP_per_capita": 3503,
     "official_languages": [
       "французский"
     ]
@@ -1504,6 +1606,7 @@
     "capital": "Мале",
     "population": 527799,
     "area": 298,
+    "GDP_per_capita": 28555,
     "official_languages": [
       "дивехи"
     ]
@@ -1518,6 +1621,7 @@
     "capital": "Валлетта",
     "population": 539607,
     "area": 316,
+    "GDP_per_capita": 72210,
     "official_languages": [
       "английский",
       "мальтийский"
@@ -1533,6 +1637,7 @@
     "capital": "Рабат",
     "population": 38081173,
     "area": 446550,
+    "GDP_per_capita": 11112,
     "official_languages": [
       "арабский",
       "берберский"
@@ -1548,6 +1653,7 @@
     "capital": "Маджуро",
     "population": 37548,
     "area": 181,
+    "GDP_per_capita": 8964,
     "official_languages": [
       "английский",
       "маршалльский"
@@ -1563,6 +1669,7 @@
     "capital": "Мехико",
     "population": 130861007,
     "area": 1964375,
+    "GDP_per_capita": 25868,
     "official_languages": [
       "испанский"
     ]
@@ -1577,6 +1684,7 @@
     "capital": "Паликир",
     "population": 113160,
     "area": 702,
+    "GDP_per_capita": 4604,
     "official_languages": [
       "английский"
     ]
@@ -1591,6 +1699,7 @@
     "capital": "Мапуту",
     "population": 34631766,
     "area": 801590,
+    "GDP_per_capita": 1698,
     "official_languages": [
       "португальский"
     ]
@@ -1605,6 +1714,7 @@
     "capital": "Кишинёв",
     "population": 3034961,
     "area": 33851,
+    "GDP_per_capita": 19996,
     "official_languages": [
       "молдавский"
     ]
@@ -1619,6 +1729,7 @@
     "capital": "Монако",
     "population": 38631,
     "area": 2,
+    "GDP_per_capita": 270100,
     "official_languages": [
       "французский"
     ]
@@ -1633,6 +1744,7 @@
     "capital": "Улан-Батор",
     "population": 3475540,
     "area": 1564116,
+    "GDP_per_capita": 20798,
     "official_languages": [
       "монгольский"
     ]
@@ -1647,6 +1759,7 @@
     "capital": "Нейпьидо",
     "population": 54500091,
     "area": 676578,
+    "GDP_per_capita": 6012,
     "official_languages": [
       "бирманский"
     ]
@@ -1661,6 +1774,7 @@
     "capital": "Виндхук",
     "population": 3030131,
     "area": 825615,
+    "GDP_per_capita": 11986,
     "official_languages": [
       "африкаанс",
       "немецкий",
@@ -1683,6 +1797,7 @@
     "capital": "Ярен",
     "population": 11947,
     "area": 21,
+    "GDP_per_capita": 14200,
     "official_languages": [
       "английский",
       "науру"
@@ -1698,6 +1813,7 @@
     "capital": "Катманду",
     "population": 29651054,
     "area": 147516,
+    "GDP_per_capita": 6175,
     "official_languages": [
       "непальский"
     ]
@@ -1712,6 +1828,7 @@
     "capital": "Ниамей",
     "population": 27032412,
     "area": 1267000,
+    "GDP_per_capita": 2177,
     "official_languages": [
       "французский"
     ]
@@ -1726,6 +1843,7 @@
     "capital": "Абуджа",
     "population": 232679478,
     "area": 923768,
+    "GDP_per_capita": 9532,
     "official_languages": [
       "английский"
     ]
@@ -1740,6 +1858,7 @@
     "capital": "Амстердам",
     "population": 18228742,
     "area": 41543,
+    "GDP_per_capita": 87320,
     "official_languages": [
       "нидерландский"
     ]
@@ -1754,6 +1873,7 @@
     "capital": "Манагуа",
     "population": 6916140,
     "area": 130373,
+    "GDP_per_capita": 9284,
     "official_languages": [
       "испанский"
     ]
@@ -1768,6 +1888,7 @@
     "capital": "Веллингтон",
     "population": 5213944,
     "area": 268838,
+    "GDP_per_capita": 57350,
     "official_languages": [
       "английский",
       "маори",
@@ -1784,6 +1905,7 @@
     "capital": "Осло",
     "population": 5576660,
     "area": 323802,
+    "GDP_per_capita": 104044,
     "official_languages": [
       "нюнорск",
       "норвежский букмол",
@@ -1800,6 +1922,7 @@
     "capital": "Абу-Даби",
     "population": 11027129,
     "area": 83600,
+    "GDP_per_capita": 79344,
     "official_languages": [
       "арабский"
     ]
@@ -1814,6 +1937,7 @@
     "capital": "Маскат",
     "population": 5281538,
     "area": 309500,
+    "GDP_per_capita": 42295,
     "official_languages": [
       "арабский"
     ]
@@ -1828,6 +1952,7 @@
     "capital": "Исламабад",
     "population": 251269164,
     "area": 881912,
+    "GDP_per_capita": 6573,
     "official_languages": [
       "английский",
       "урду"
@@ -1843,6 +1968,7 @@
     "capital": "Нгерулмуд",
     "population": 17695,
     "area": 459,
+    "GDP_per_capita": 23052,
     "official_languages": [
       "английский",
       "палау"
@@ -1858,6 +1984,7 @@
     "capital": "Восточный Иерусалим (де-юре), Рамалла (де-факто)",
     "population": 5495443,
     "area": 6020,
+    "GDP_per_capita": 5000,
     "official_languages": [
       "арабский"
     ]
@@ -1872,6 +1999,7 @@
     "capital": "Панама",
     "population": 4515577,
     "area": 75420,
+    "GDP_per_capita": 43902,
     "official_languages": [
       "испанский"
     ]
@@ -1886,6 +2014,7 @@
     "capital": "Порт-Морсби",
     "population": 10576502,
     "area": 462840,
+    "GDP_per_capita": 5215,
     "official_languages": [
       "английский",
       "хиримоту",
@@ -1902,6 +2031,7 @@
     "capital": "Асунсьон",
     "population": 6929153,
     "area": 406752,
+    "GDP_per_capita": 20181,
     "official_languages": [
       "гуарани",
       "испанский"
@@ -1917,6 +2047,7 @@
     "capital": "Лима",
     "population": 34217848,
     "area": 1285216,
+    "GDP_per_capita": 18816,
     "official_languages": [
       "аймара",
       "кечуа",
@@ -1933,6 +2064,7 @@
     "capital": "Варшава",
     "population": 38539201,
     "area": 312696,
+    "GDP_per_capita": 54262,
     "official_languages": [
       "польский"
     ]
@@ -1947,6 +2079,7 @@
     "capital": "Лиссабон",
     "population": 10425292,
     "area": 92090,
+    "GDP_per_capita": 53146,
     "official_languages": [
       "португальский"
     ]
@@ -1961,6 +2094,7 @@
     "capital": "Кигали",
     "population": 14256567,
     "area": 26338,
+    "GDP_per_capita": 4164,
     "official_languages": [
       "английский",
       "французский",
@@ -1977,6 +2111,7 @@
     "capital": "Бухарест",
     "population": 19015088,
     "area": 238397,
+    "GDP_per_capita": 50895,
     "official_languages": [
       "румынский"
     ]
@@ -1991,6 +2126,7 @@
     "capital": "Сан-Сальвадор",
     "population": 6338193,
     "area": 21041,
+    "GDP_per_capita": 14101,
     "official_languages": [
       "испанский"
     ]
@@ -2005,6 +2141,7 @@
     "capital": "Апиа",
     "population": 218019,
     "area": 2842,
+    "GDP_per_capita": 9319,
     "official_languages": [
       "английский",
       "самоанский"
@@ -2020,6 +2157,7 @@
     "capital": "Сан-Марино",
     "population": 33581,
     "area": 61,
+    "GDP_per_capita": 78810,
     "official_languages": [
       "итальянский"
     ]
@@ -2034,6 +2172,7 @@
     "capital": "Сан-Томе",
     "population": 235536,
     "area": 964,
+    "GDP_per_capita": 6388,
     "official_languages": [
       "португальский"
     ]
@@ -2048,6 +2187,7 @@
     "capital": "Эр-Рияд",
     "population": 33962757,
     "area": 2149690,
+    "GDP_per_capita": 73784,
     "official_languages": [
       "арабский"
     ]
@@ -2062,6 +2202,7 @@
     "capital": "Скопье",
     "population": 1823009,
     "area": 25713,
+    "GDP_per_capita": 28029,
     "official_languages": [
       "македонский"
     ]
@@ -2076,6 +2217,7 @@
     "capital": "Виктория",
     "population": 130418,
     "area": 455,
+    "GDP_per_capita": 35854,
     "official_languages": [
       "сейшельский креольский",
       "английский",
@@ -2092,6 +2234,7 @@
     "capital": "Дакар",
     "population": 18501984,
     "area": 196722,
+    "GDP_per_capita": 5463,
     "official_languages": [
       "французский"
     ]
@@ -2106,6 +2249,7 @@
     "capital": "Кингстаун",
     "population": 100616,
     "area": 389,
+    "GDP_per_capita": 22799,
     "official_languages": [
       "английский"
     ]
@@ -2120,6 +2264,7 @@
     "capital": "Бастер",
     "population": 46843,
     "area": 261,
+    "GDP_per_capita": 36777,
     "official_languages": [
       "английский"
     ]
@@ -2134,6 +2279,7 @@
     "capital": "Кастри",
     "population": 179744,
     "area": 616,
+    "GDP_per_capita": 28674,
     "official_languages": [
       "английский"
     ]
@@ -2148,6 +2294,7 @@
     "capital": "Белград",
     "population": 6736216,
     "area": 77474,
+    "GDP_per_capita": 33910,
     "official_languages": [
       "сербский"
     ]
@@ -2162,6 +2309,7 @@
     "capital": "Сингапур",
     "population": 5832387,
     "area": 728,
+    "GDP_per_capita": 163354,
     "official_languages": [
       "английский",
       "малайский",
@@ -2179,6 +2327,7 @@
     "capital": "Дамаск",
     "population": 24672760,
     "area": 185180,
+    "GDP_per_capita": 4905,
     "official_languages": [
       "арабский"
     ]
@@ -2193,6 +2342,7 @@
     "capital": "Братислава",
     "population": 5506760,
     "area": 49037,
+    "GDP_per_capita": 49309,
     "official_languages": [
       "словацкий"
     ]
@@ -2207,6 +2357,7 @@
     "capital": "Любляна",
     "population": 2118697,
     "area": 20273,
+    "GDP_per_capita": 59245,
     "official_languages": [
       "словенский"
     ]
@@ -2221,6 +2372,7 @@
     "capital": "Вашингтон",
     "population": 345426571,
     "area": 9833520,
+    "GDP_per_capita": 90027,
     "official_languages": [
       "английский"
     ]
@@ -2235,6 +2387,7 @@
     "capital": "Хониара",
     "population": 819198,
     "area": 28896,
+    "GDP_per_capita": 2788,
     "official_languages": [
       "английский"
     ]
@@ -2249,6 +2402,7 @@
     "capital": "Могадишо",
     "population": 19009151,
     "area": 637657,
+    "GDP_per_capita": 1643,
     "official_languages": [
       "арабский",
       "сомали"
@@ -2264,6 +2418,7 @@
     "capital": "Хартум",
     "population": 50448963,
     "area": 1861484,
+    "GDP_per_capita": 2192,
     "official_languages": [
       "арабский",
       "английский"
@@ -2279,6 +2434,7 @@
     "capital": "Парамарибо",
     "population": 634431,
     "area": 163820,
+    "GDP_per_capita": 22652,
     "official_languages": [
       "нидерландский"
     ]
@@ -2293,6 +2449,7 @@
     "capital": "Фритаун",
     "population": 8642022,
     "area": 71740,
+    "GDP_per_capita": 3717,
     "official_languages": [
       "английский"
     ]
@@ -2307,6 +2464,7 @@
     "capital": "Душанбе",
     "population": 10590927,
     "area": 143100,
+    "GDP_per_capita": 5923,
     "official_languages": [
       "русский",
       "таджикский"
@@ -2322,6 +2480,7 @@
     "capital": "Бангкок",
     "population": 71668011,
     "area": 513120,
+    "GDP_per_capita": 26250,
     "official_languages": [
       "тайский"
     ]
@@ -2336,6 +2495,7 @@
     "capital": "Додома",
     "population": 68560157,
     "area": 945087,
+    "GDP_per_capita": 4471,
     "official_languages": [
       "английский",
       "суахили"
@@ -2351,6 +2511,7 @@
     "capital": "Ломе",
     "population": 9515236,
     "area": 56785,
+    "GDP_per_capita": 4079,
     "official_languages": [
       "французский"
     ]
@@ -2365,6 +2526,7 @@
     "capital": "Нукуалофа",
     "population": 104175,
     "area": 747,
+    "GDP_per_capita": 8675,
     "official_languages": [
       "английский",
       "тонганский"
@@ -2380,6 +2542,7 @@
     "capital": "Порт-оф-Спейн",
     "population": 1507782,
     "area": 5130,
+    "GDP_per_capita": 37121,
     "official_languages": [
       "английский"
     ]
@@ -2394,6 +2557,7 @@
     "capital": "Фунафути",
     "population": 9646,
     "area": 26,
+    "GDP_per_capita": 6759,
     "official_languages": [
       "английский",
       "тувалу"
@@ -2409,6 +2573,7 @@
     "capital": "Тунис",
     "population": 12277109,
     "area": 163610,
+    "GDP_per_capita": 15233,
     "official_languages": [
       "арабский"
     ]
@@ -2423,6 +2588,7 @@
     "capital": "Ашхабад",
     "population": 7494498,
     "area": 488100,
+    "GDP_per_capita": 22602,
     "official_languages": [
       "русский",
       "туркменский"
@@ -2438,6 +2604,7 @@
     "capital": "Анкара",
     "population": 87473805,
     "area": 783562,
+    "GDP_per_capita": 45288,
     "official_languages": [
       "турецкий"
     ]
@@ -2452,6 +2619,7 @@
     "capital": "Кампала",
     "population": 50015092,
     "area": 241038,
+    "GDP_per_capita": 3488,
     "official_languages": [
       "английский",
       "суахили"
@@ -2467,6 +2635,7 @@
     "capital": "Ташкент",
     "population": 36361859,
     "area": 447400,
+    "GDP_per_capita": 13601,
     "official_languages": [
       "русский",
       "узбекский"
@@ -2482,6 +2651,7 @@
     "capital": "Киев",
     "population": 37860221,
     "area": 603500,
+    "GDP_per_capita": 18905,
     "official_languages": [
       "украинский"
     ]
@@ -2496,6 +2666,7 @@
     "capital": "Монтевидео",
     "population": 3386588,
     "area": 176215,
+    "GDP_per_capita": 38315,
     "official_languages": [
       "испанский"
     ]
@@ -2510,6 +2681,7 @@
     "capital": "Сува",
     "population": 928784,
     "area": 18274,
+    "GDP_per_capita": 16338,
     "official_languages": [
       "английский",
       "фиджи",
@@ -2526,6 +2698,7 @@
     "capital": "Манила",
     "population": 115843670,
     "area": 300000,
+    "GDP_per_capita": 12577,
     "official_languages": [
       "английский",
       "филиппинский"
@@ -2541,6 +2714,7 @@
     "capital": "Хельсинки",
     "population": 5617310,
     "area": 338424,
+    "GDP_per_capita": 65884,
     "official_languages": [
       "финский",
       "шведский"
@@ -2556,6 +2730,7 @@
     "capital": "Париж",
     "population": 66548530,
     "area": 551695,
+    "GDP_per_capita": 63975,
     "official_languages": [
       "французский"
     ]
@@ -2570,6 +2745,7 @@
     "capital": "Загреб",
     "population": 3875325,
     "area": 56594,
+    "GDP_per_capita": 50946,
     "official_languages": [
       "хорватский"
     ]
@@ -2584,6 +2760,7 @@
     "capital": "Банги",
     "population": 5330690,
     "area": 622984,
+    "GDP_per_capita": 1314,
     "official_languages": [
       "французский",
       "санго"
@@ -2599,6 +2776,7 @@
     "capital": "Нджамена",
     "population": 20299123,
     "area": 1284000,
+    "GDP_per_capita": 2903,
     "official_languages": [
       "арабский",
       "французский"
@@ -2614,6 +2792,7 @@
     "capital": "Подгорица",
     "population": 638479,
     "area": 13812,
+    "GDP_per_capita": 35423,
     "official_languages": [
       "черногорский"
     ]
@@ -2628,6 +2807,7 @@
     "capital": "Прага",
     "population": 10735859,
     "area": 78865,
+    "GDP_per_capita": 60487,
     "official_languages": [
       "чешский",
       "словацкий"
@@ -2643,6 +2823,7 @@
     "capital": "Сантьяго",
     "population": 19764771,
     "area": 756102,
+    "GDP_per_capita": 37774,
     "official_languages": [
       "испанский"
     ]
@@ -2657,6 +2838,7 @@
     "capital": "Берн",
     "population": 8921981,
     "area": 41284,
+    "GDP_per_capita": 102513,
     "official_languages": [
       "французский",
       "швейцарский немецкий",
@@ -2674,6 +2856,7 @@
     "capital": "Стокгольм",
     "population": 10606999,
     "area": 450295,
+    "GDP_per_capita": 72529,
     "official_languages": [
       "шведский"
     ]
@@ -2688,6 +2871,7 @@
     "capital": "Шри-Джаяварденепура-Котте",
     "population": 23103565,
     "area": 65610,
+    "GDP_per_capita": 17065,
     "official_languages": [
       "сингальский",
       "тамильский"
@@ -2703,6 +2887,7 @@
     "capital": "Кито",
     "population": 18135478,
     "area": 283561,
+    "GDP_per_capita": 16757,
     "official_languages": [
       "испанский"
     ]
@@ -2717,6 +2902,7 @@
     "capital": "Малабо",
     "population": 1892516,
     "area": 28051,
+    "GDP_per_capita": 16133,
     "official_languages": [
       "французский",
       "португальский",
@@ -2733,6 +2919,7 @@
     "capital": "Асмэра",
     "population": 3535603,
     "area": 117600,
+    "GDP_per_capita": 1742,
     "official_languages": [
       "арабский",
       "английский",
@@ -2749,6 +2936,7 @@
     "capital": "Мбабане",
     "population": 1242822,
     "area": 17364,
+    "GDP_per_capita": 12529,
     "official_languages": [
       "английский",
       "свати"
@@ -2764,6 +2952,7 @@
     "capital": "Таллин",
     "population": 1360546,
     "area": 45228,
+    "GDP_per_capita": 52106,
     "official_languages": [
       "эстонский"
     ]
@@ -2778,6 +2967,7 @@
     "capital": "Аддис-Абеба",
     "population": 132059767,
     "area": 1104300,
+    "GDP_per_capita": 3622,
     "official_languages": [
       "амхарский"
     ]
@@ -2792,6 +2982,7 @@
     "capital": "Претория",
     "population": 64007187,
     "area": 1221037,
+    "GDP_per_capita": 15906,
     "official_languages": [
       "африкаанс",
       "английский",
@@ -2816,6 +3007,7 @@
     "capital": "Сеул",
     "population": 51717590,
     "area": 100210,
+    "GDP_per_capita": 63125,
     "official_languages": [
       "корейский"
     ]
@@ -2830,6 +3022,7 @@
     "capital": "Джуба",
     "population": 11943408,
     "area": 644329,
+    "GDP_per_capita": 1155,
     "official_languages": [
       "английский"
     ]
@@ -2844,6 +3037,7 @@
     "capital": "Кингстон",
     "population": 2839175,
     "area": 10991,
+    "GDP_per_capita": 13291,
     "official_languages": [
       "английский",
       "ямайский креольский"
@@ -2859,6 +3053,7 @@
     "capital": "Токио",
     "population": 123753041,
     "area": 377975,
+    "GDP_per_capita": 55422,
     "official_languages": [
       "японский"
     ]

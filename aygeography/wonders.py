@@ -9,7 +9,6 @@ from typing import Any, Iterable
 
 import pygame
 
-from .difficulty import DIFFICULTY_KEYS
 from .models import Country
 
 
@@ -22,25 +21,7 @@ class WonderCategory(StrEnum):
 EXPECTED_COUNTS = {
     WonderCategory.LANDMARK: 75,
     WonderCategory.PEAK: 15,
-    WonderCategory.FACT: 195,
-}
-
-EXPECTED_DIFFICULTY_COUNTS = {
-    WonderCategory.LANDMARK: {
-        "easy": 25,
-        "medium": 25,
-        "hard": 25,
-    },
-    WonderCategory.PEAK: {
-        "easy": 5,
-        "medium": 5,
-        "hard": 5,
-    },
-    WonderCategory.FACT: {
-        "easy": 65,
-        "medium": 65,
-        "hard": 65,
-    },
+    WonderCategory.FACT: 585,
 }
 
 CONTENT_FILES = {
@@ -57,17 +38,24 @@ class WonderItem:
     name: str
     country_isos: tuple[str, ...]
     continents: tuple[str, ...]
-    difficulty: str
     explanation: str
     image: str = ""
     prompt: str = ""
     point: tuple[float, float] | None = None
     source: str = ""
     source_url: str = ""
+    truth_value: bool | None = None
 
     @property
     def country_iso(self) -> str:
         return self.country_isos[0]
+
+
+@dataclass(frozen=True, slots=True)
+class CountryFacts:
+    country_iso: str
+    country: str
+    capital: str
 
 
 class WonderCatalog:
@@ -82,10 +70,13 @@ class WonderCatalog:
         self.path = path
         self.assets_dir = assets_dir
         self._countries = {country.iso3: country for country in countries}
-        self._items = tuple(
-            self._parse(item)
-            for category, file_name in CONTENT_FILES.items()
-            for item in self._load_file(category, file_name)
+        self._country_facts, fact_items = self._load_facts(
+            CONTENT_FILES[WonderCategory.FACT]
+        )
+        self._items = tuple(fact_items) + tuple(
+            self._parse(category, item)
+            for category in (WonderCategory.LANDMARK, WonderCategory.PEAK)
+            for item in self._load_file(CONTENT_FILES[category])
         )
         self._validate()
 
@@ -95,12 +86,8 @@ class WonderCatalog:
     def by_category(self, category: WonderCategory) -> list[WonderItem]:
         return [item for item in self._items if item.category == category]
 
-    def facts_by_country(self) -> dict[str, WonderItem]:
-        return {
-            iso3: item
-            for item in self.by_category(WonderCategory.FACT)
-            for iso3 in item.country_isos
-        }
+    def facts_by_country(self) -> dict[str, CountryFacts]:
+        return dict(self._country_facts)
 
     def country_name(self, iso3: str) -> str:
         return self._countries[iso3].name
@@ -125,27 +112,20 @@ class WonderCatalog:
                 return mistakes
         return result
 
-    def _load_file(
-        self,
-        category: WonderCategory,
-        file_name: str,
-    ) -> list[dict[str, Any]]:
+    def _load_file(self, file_name: str) -> list[dict[str, Any]]:
         file_path = self.path / file_name
         raw = json.loads(file_path.read_text(encoding="utf-8"))
         if not isinstance(raw, list):
             raise ValueError(f"{file_name} должен содержать список")
-        if any(
-            not isinstance(item, dict)
-            or item.get("category") != category.value
-            for item in raw
-        ):
-            raise ValueError(
-                f"{file_name} должен содержать только {category.value}"
-            )
+        if any(not isinstance(item, dict) for item in raw):
+            raise ValueError(f"{file_name} должен содержать объекты")
         return raw
 
-    def _parse(self, raw: dict[str, Any]) -> WonderItem:
-        category = WonderCategory(str(raw["category"]))
+    def _parse(
+        self,
+        category: WonderCategory,
+        raw: dict[str, Any],
+    ) -> WonderItem:
         point = raw.get("point")
         parsed_point = (
             (float(point[0]), float(point[1])) if point is not None else None
@@ -156,7 +136,6 @@ class WonderCatalog:
             name=str(raw["name"]).strip(),
             country_isos=tuple(str(value) for value in raw["country_isos"]),
             continents=tuple(str(value) for value in raw["continents"]),
-            difficulty=str(raw["difficulty"]),
             explanation=self._with_country_context(
                 str(raw["explanation"]).strip(),
                 tuple(str(value) for value in raw["country_isos"]),
@@ -168,6 +147,54 @@ class WonderCatalog:
             source_url=str(raw.get("source_url", "")).strip(),
         )
 
+    def _load_facts(
+        self,
+        file_name: str,
+    ) -> tuple[dict[str, CountryFacts], list[WonderItem]]:
+        country_facts: dict[str, CountryFacts] = {}
+        items: list[WonderItem] = []
+        for raw in self._load_file(file_name):
+            iso3 = str(raw["country_iso"])
+            if iso3 not in self._countries:
+                raise ValueError(f"Некорректный ISO3 в фактах: {iso3}")
+            if iso3 in country_facts:
+                raise ValueError(f"Факты страны повторяются: {iso3}")
+            facts = raw.get("facts")
+            questions = raw.get("questions")
+            if not isinstance(facts, dict) or not isinstance(questions, list):
+                raise ValueError(f"Некорректная карточка фактов: {iso3}")
+            country_facts[iso3] = CountryFacts(
+                country_iso=iso3,
+                country=str(facts.get("country", "")).strip(),
+                capital=str(facts.get("capital", "")).strip(),
+            )
+            if not country_facts[iso3].country or not country_facts[iso3].capital:
+                raise ValueError(f"Неполные справочные факты: {iso3}")
+            if len(questions) != 3:
+                raise ValueError(f"Для страны требуется три вопроса: {iso3}")
+            country = self._countries[iso3]
+            for index, question in enumerate(questions, start=1):
+                if not isinstance(question, dict):
+                    raise ValueError(f"Некорректный вопрос фактов: {iso3}")
+                answer = question.get("answer")
+                if not isinstance(answer, bool):
+                    raise ValueError(f"Некорректный ответ фактов: {iso3}")
+                items.append(
+                    WonderItem(
+                        key=f"fact_{iso3.lower()}_{index}",
+                        category=WonderCategory.FACT,
+                        name=country.name,
+                        country_isos=(iso3,),
+                        continents=(country.continent,),
+                        prompt=str(question.get("statement", "")).strip(),
+                        explanation=str(
+                            question.get("explanation", "")
+                        ).strip(),
+                        truth_value=answer,
+                    )
+                )
+        return country_facts, items
+
     def _validate(self) -> None:
         keys = [item.key for item in self._items]
         if len(keys) != len(set(keys)):
@@ -175,16 +202,6 @@ class WonderCatalog:
         counts = Counter(item.category for item in self._items)
         if counts != Counter(EXPECTED_COUNTS):
             raise ValueError(f"Некорректное количество wonders: {dict(counts)}")
-        for category, expected in EXPECTED_DIFFICULTY_COUNTS.items():
-            category_counts = Counter(
-                item.difficulty
-                for item in self._items
-                if item.category == category
-            )
-            if category_counts != Counter(expected):
-                raise ValueError(
-                    f"Некорректная сложность {category}: {dict(category_counts)}"
-                )
         valid_continents = {
             country.continent for country in self._countries.values()
         }
@@ -226,6 +243,12 @@ class WonderCatalog:
                 "Нет фактов для стран: "
                 + ", ".join(sorted(missing_facts))
             )
+        if set(self._country_facts) != set(self._countries):
+            missing = set(self._countries) - set(self._country_facts)
+            raise ValueError(
+                "Нет справочных фактов для стран: "
+                + ", ".join(sorted(missing))
+            )
         for continent in valid_continents:
             available = [
                 item for item in self._items if continent in item.continents
@@ -251,8 +274,6 @@ class WonderCatalog:
     ) -> None:
         if not item.key or not item.name or not item.explanation:
             raise ValueError(f"Неполная карточка wonders: {item.key}")
-        if item.difficulty not in DIFFICULTY_KEYS:
-            raise ValueError(f"Некорректная сложность: {item.key}")
         if not item.country_isos or not set(item.country_isos) <= set(
             self._countries
         ):
@@ -263,8 +284,10 @@ class WonderCatalog:
             self._validate_image(item)
         elif item.category == WonderCategory.PEAK:
             self._validate_point(item)
-        elif item.category == WonderCategory.FACT and not item.prompt:
-            raise ValueError(f"Для факта отсутствует текст: {item.key}")
+        elif item.category == WonderCategory.FACT and (
+            not item.prompt or item.truth_value is None
+        ):
+            raise ValueError(f"Для факта отсутствует утверждение: {item.key}")
 
     def _with_country_context(
         self,

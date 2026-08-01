@@ -297,6 +297,16 @@ class PygameAppTests(unittest.TestCase):
         self.assertEqual("medium", view.selected_difficulty)
         self.assertEqual({"easy", "medium", "hard"}, set(view.difficulty_cards))
 
+    def test_question_count_explains_wonder_difficulty(self):
+        self.app.pending_modes = ["wonders"]
+        self.app.show("question_count")
+        with patch("aygeography.ui.screens.draw_text") as draw_text_mock:
+            self.app.render()
+        self.assertIn(
+            "Не влияется на режим «Чудеса света»",
+            [call.args[1] for call in draw_text_mock.call_args_list],
+        )
+
     def test_mode_selection_defaults_to_countries_and_waters(self):
         self.assertEqual(["countries", "waters"], self.app.pending_modes)
         self.app.show("modes")
@@ -494,6 +504,86 @@ class PygameAppTests(unittest.TestCase):
                 category,
             )
 
+    def test_wonder_fact_uses_flag_true_false_and_explicit_feedback(self):
+        questions = self.app.question_factory.build(
+            GameConfig(
+                ["wonders"],
+                list(self.app.catalog.continents),
+                25,
+                difficulty="hard",
+            ),
+            self.app.catalog,
+            seed=17,
+        )
+        question = next(
+            item
+            for item in questions
+            if isinstance(item.content, WonderContent)
+            and item.content.category == "fact"
+        )
+        self.assertEqual(["Правда", "Ложь"], question.options)
+        self.app.manager.clear_and_reset()
+        self.app.view = GameView(self.app, GameSession([question], "hard"))
+        with patch(
+            "aygeography.ui.presenters.draw_question_flag"
+        ) as flag_mock:
+            self.app.render()
+        flag_mock.assert_called_once()
+        self.assertEqual(question.country_iso, flag_mock.call_args.args[2])
+
+        view = self.app.view
+        view._answer(question.correct_answer)
+        self.assertEqual("Ответ правильный", view.feedback)
+        self.assertEqual(GREEN, view.feedback_colour)
+        self.assertEqual((question.country_iso,), view.session.answers[0].subjects)
+
+        incorrect = next(
+            value for value in question.options if value != question.correct_answer
+        )
+        self.app.manager.clear_and_reset()
+        self.app.view = GameView(self.app, GameSession([question], "easy"))
+        self.app.view._answer(incorrect)
+        self.assertEqual("Ответ неверный", self.app.view.feedback)
+        self.assertEqual(RED, self.app.view.feedback_colour)
+
+    def test_atlas_uses_new_fact_titles_and_distinctive_stat(self):
+        self.app.show("atlas")
+        view = self.app.view
+        country = self.app.catalog.get("RUS")
+        view.selected_country = country.iso3
+        title, text = view._distinctive_stat(country)
+        scores = {
+            "Площадь": min(
+                view._area_ranks[country.iso3],
+                195 - view._area_ranks[country.iso3],
+            ),
+            "Население": min(
+                view._population_ranks[country.iso3],
+                195 - view._population_ranks[country.iso3],
+            ),
+            "ВВП на душу населения": min(
+                view._gdp_ranks[country.iso3],
+                195 - view._gdp_ranks[country.iso3],
+            ),
+        }
+        self.assertEqual(min(scores, key=scores.get), title)
+        self.assertIn("место в мире", text)
+
+        with (
+            patch("aygeography.ui.screens.draw_text") as draw_text_mock,
+            patch("aygeography.ui.screens.draw_multiline") as multiline_mock,
+        ):
+            view.draw(pygame.Surface(LOGICAL_SIZE))
+        labels = [call.args[1] for call in draw_text_mock.call_args_list]
+        blocks = [
+            call.args[1].replace("\n", " ")
+            for call in multiline_mock.call_args_list
+        ]
+        self.assertIn(country.name, labels)
+        self.assertNotIn(f"Три факта: {country.name}", labels)
+        self.assertIn(country.official_name, blocks)
+        self.assertIn(f"{country.capital} (столица)", blocks)
+
     def test_wonder_feedback_text_has_one_left_edge(self):
         self.app.start_game(
             GameConfig(
@@ -673,14 +763,14 @@ class PygameAppTests(unittest.TestCase):
         )
         self.assertEqual(2, view.active_question_number)
 
-    def test_question_count_disables_unsupported_wonder_rounds(self):
+    def test_question_count_supports_more_wonder_facts(self):
         self.app.pending_modes = ["wonders"]
         self.app.pending_continents = ["Europe"]
         self.app.pending_count = 100
         self.app.show("question_count")
         view = self.app.view
         self.assertIn(10, view.available_counts)
-        self.assertNotIn(100, view.available_counts)
+        self.assertIn(100, view.available_counts)
 
     def test_number_keys_choose_matching_answer(self):
         number_keys = (

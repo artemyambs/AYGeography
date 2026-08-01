@@ -129,21 +129,31 @@ class WonderMapPresenter(WonderPresenter):
 
 class WonderFactPresenter(WonderPresenter):
     owns_prompt = True
-    answer_top = 540
+
+    @classmethod
+    def answer_rects(cls) -> list[pygame.Rect]:
+        width = 390
+        gap = 24
+        start_x = CONTENT.centerx - (2 * width + gap) // 2
+        return [
+            pygame.Rect(start_x + index * (width + gap), 590, width, 52)
+            for index in range(2)
+        ]
 
     @classmethod
     def draw(cls, surface: pygame.Surface, app, question) -> None:
-        fact_rect = pygame.Rect(450, 180, 940, 270)
+        draw_question_flag(surface, app, question.country_iso, (CONTENT.centerx, 240))
+        fact_rect = pygame.Rect(450, 365, 940, 160)
         panel(surface, fact_rect, fill=PANEL_ALT, border=CYAN_DARK)
-        wrapped = "\n".join(textwrap.wrap(question.prompt, width=58))
+        wrapped = "\n".join(textwrap.wrap(question.prompt, width=72))
         draw_multiline(
             surface,
             wrapped,
-            fact_rect.inflate(-70, -45),
-            25,
+            fact_rect.inflate(-60, -32),
+            22,
             TEXT,
             bold=True,
-            line_gap=10,
+            line_gap=7,
         )
 
 

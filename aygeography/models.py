@@ -10,10 +10,12 @@ class Country:
     iso3: str
     name: str
     name_en: str
+    official_name: str
     capital: str
     continent: str
     population: int
     area: int
+    gdp_per_capita: int | None
     official_languages: tuple[str, ...]
 
 

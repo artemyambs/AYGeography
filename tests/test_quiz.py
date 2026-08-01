@@ -95,22 +95,19 @@ class QuizTests(unittest.TestCase):
 
     def test_wonders_catalog_has_exact_content_distribution(self):
         items = self.wonders.all()
-        self.assertEqual(285, len(items))
+        self.assertEqual(675, len(items))
         self.assertEqual(
             Counter(EXPECTED_COUNTS),
             Counter(item.category for item in items),
         )
-        self.assertEqual(
-            {"easy": 95, "medium": 95, "hard": 95},
-            dict(Counter(item.difficulty for item in items)),
-        )
+        self.assertTrue(all(not hasattr(item, "difficulty") for item in items))
         self.assertEqual(
             {"landmark": 3, "peak": 1, "fact": 2},
             WONDER_CATEGORY_WEIGHTS,
         )
         self.assertEqual("Чудеса света", MODE_NAMES["wonders"])
 
-    def test_wonders_builds_unique_weighted_round_with_six_options(self):
+    def test_wonders_builds_unique_weighted_round(self):
         questions = QuestionFactory(
             wonder_catalog=self.wonders
         ).build(
@@ -132,13 +129,19 @@ class QuizTests(unittest.TestCase):
             )),
         )
         for question in questions:
-            self.assertEqual(6, len(question.options))
-            self.assertEqual(6, len(set(question.options)))
+            expected_count = (
+                2 if question.content.category == "fact" else 6
+            )
+            self.assertEqual(expected_count, len(question.options))
+            self.assertEqual(expected_count, len(set(question.options)))
             self.assertIn(question.correct_answer, question.options)
             self.assertTrue(question.explanation)
+            self.assertEqual("medium", question.scoring_difficulty)
 
-    def test_every_wonder_explanation_names_all_related_countries(self):
+    def test_visual_wonder_explanations_name_all_related_countries(self):
         for item in self.wonders.all():
+            if item.category == WonderCategory.FACT:
+                continue
             for iso3 in item.country_isos:
                 self.assertIn(
                     self.wonders.country_name(iso3),
@@ -147,25 +150,12 @@ class QuizTests(unittest.TestCase):
                 )
 
     def test_wonders_extension_has_requested_content_and_image_sizes(self):
-        facts = [
-            item
-            for item in self.wonders.by_category(WonderCategory.FACT)
-            if item.source
-        ]
+        facts = self.wonders.by_category(WonderCategory.FACT)
         landmarks = self.wonders.by_category(WonderCategory.LANDMARK)[-30:]
 
-        self.assertEqual(65, len({item.prompt for item in facts}))
-        self.assertEqual(
-            {"easy": 21, "medium": 22, "hard": 22},
-            dict(Counter(item.difficulty for item in facts)),
-        )
-        self.assertTrue(
-            all(item.source and item.source_url for item in facts)
-        )
-        self.assertEqual(
-            {"easy": 10, "medium": 10, "hard": 10},
-            dict(Counter(item.difficulty for item in landmarks)),
-        )
+        self.assertEqual(585, len({item.prompt for item in facts}))
+        self.assertEqual(390, sum(item.truth_value is True for item in facts))
+        self.assertEqual(195, sum(item.truth_value is False for item in facts))
         self.assertEqual(
             {(960, 540)},
             {
@@ -183,8 +173,49 @@ class QuizTests(unittest.TestCase):
         )
         for country in self.catalog.all():
             item = facts[country.iso3]
-            self.assertTrue(item.explanation.strip(), country.iso3)
-            self.assertIn(country.name, item.explanation, country.iso3)
+            self.assertEqual(country.iso3, item.country_iso)
+            self.assertTrue(item.country.strip(), country.iso3)
+            self.assertTrue(item.capital.strip(), country.iso3)
+
+    def test_wonder_difficulty_does_not_change_questions_or_scoring(self):
+        factory = QuestionFactory(wonder_catalog=self.wonders)
+        configs = [
+            GameConfig(
+                ["wonders"],
+                list(self.catalog.continents),
+                25,
+                difficulty=difficulty,
+            )
+            for difficulty in ("easy", "hard")
+        ]
+        easy, hard = [
+            factory.build(config, self.catalog, seed=31)
+            for config in configs
+        ]
+        self.assertEqual(
+            [question.key for question in easy],
+            [question.key for question in hard],
+        )
+        easy_session = GameSession([easy[0]], difficulty="easy")
+        hard_session = GameSession([hard[0]], difficulty="hard")
+        self.assertEqual(
+            easy_session.answer(easy[0].correct_answer, 10).points,
+            hard_session.answer(hard[0].correct_answer, 10).points,
+        )
+        self.assertEqual("medium", easy_session.result().difficulty)
+        self.assertEqual("medium", hard_session.result().difficulty)
+
+    def test_wonder_config_items_do_not_contain_removed_fields(self):
+        for file_name in ("peak.json", "landmark.json"):
+            items = json.loads(
+                (CONFIGS_DIR / "wonders" / file_name).read_text(
+                    encoding="utf-8"
+                )
+            )
+            self.assertTrue(items)
+            self.assertTrue(
+                all("difficulty" not in item and "category" not in item for item in items)
+            )
 
     def test_landmark_format_is_seeded_per_round(self):
         factory = QuestionFactory(wonder_catalog=self.wonders)
