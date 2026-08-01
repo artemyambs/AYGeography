@@ -1,3 +1,3 @@
-from .registry import ModeDefinition, ModeRegistry
+from .registry import ModeDefinition, ModeDescriptor, ModeRegistry, ModeStrategy
 
-__all__ = ["ModeDefinition", "ModeRegistry"]
+__all__ = ["ModeDefinition", "ModeDescriptor", "ModeRegistry", "ModeStrategy"]

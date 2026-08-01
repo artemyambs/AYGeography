@@ -10,7 +10,7 @@ from typing import Mapping
 class SQLiteDatabase:
     """Owns SQLite connections and ordered, idempotent migrations."""
 
-    SCHEMA_VERSION = 3
+    SCHEMA_VERSION = 4
 
     def __init__(
         self,
@@ -78,6 +78,8 @@ class SQLiteDatabase:
                 is_correct INTEGER NOT NULL,
                 seconds REAL NOT NULL,
                 points INTEGER NOT NULL,
+                question_key TEXT NOT NULL DEFAULT '',
+                question_payload TEXT NOT NULL DEFAULT '{}',
                 FOREIGN KEY(round_id) REFERENCES rounds(id) ON DELETE CASCADE
             );
             CREATE TABLE IF NOT EXISTS answer_countries (
@@ -99,6 +101,16 @@ class SQLiteDatabase:
                 achievement_id TEXT PRIMARY KEY,
                 unlocked_at TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS review_items (
+                question_key TEXT PRIMARY KEY,
+                mode TEXT NOT NULL,
+                question_payload TEXT NOT NULL,
+                failed_at TEXT NOT NULL,
+                status TEXT NOT NULL CHECK(status IN ('pending', 'resolved')),
+                failure_count INTEGER NOT NULL DEFAULT 1,
+                resolved_at TEXT,
+                updated_at TEXT NOT NULL
+            );
             """
         )
 
@@ -114,6 +126,18 @@ class SQLiteDatabase:
             "rounds",
             "difficulty",
             "TEXT NOT NULL DEFAULT 'medium'",
+        )
+        self._ensure_column(
+            db,
+            "answers",
+            "question_key",
+            "TEXT NOT NULL DEFAULT ''",
+        )
+        self._ensure_column(
+            db,
+            "answers",
+            "question_payload",
+            "TEXT NOT NULL DEFAULT '{}'",
         )
         db.execute(
             """
@@ -137,6 +161,10 @@ class SQLiteDatabase:
                 ON answers(mode);
             CREATE INDEX IF NOT EXISTS idx_answer_countries_country_iso
                 ON answer_countries(country_iso);
+            CREATE INDEX IF NOT EXISTS idx_answers_question_key
+                ON answers(question_key);
+            CREATE INDEX IF NOT EXISTS idx_review_items_status_failed_at
+                ON review_items(status, failed_at);
             """
         )
 

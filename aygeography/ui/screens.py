@@ -13,7 +13,6 @@ from ..config import (
     ASSETS_DIR,
     CONTINENT_NAMES,
     DIFFICULTY_NAMES,
-    QUESTION_TIME_SECONDS,
 )
 from ..domain.questions import (
     FlagContent,
@@ -63,6 +62,7 @@ from .components import (
     physical_rect,
     render_scale,
 )
+from .controllers import GameStateCodec
 from .layout import (
     CAPITAL_LABEL_FONT_SIZE,
     CONTENT,
@@ -79,7 +79,7 @@ from .layout import (
     draw_question_flag,
     primary_action_rect,
 )
-from .presenters import QUESTION_PRESENTERS
+from .view_models import ResultSummary
 
 
 class BaseView:
@@ -242,6 +242,10 @@ class HomeView(BaseView):
         super().__init__(app)
         self.play_rect = primary_action_rect(460, 450)
         self.add_action(self.play_rect, lambda: app.show("modes"))
+        self.review_count = app.pending_review_count()
+        self.review_rect = primary_action_rect(460, 525)
+        if self.review_count:
+            self.add_action(self.review_rect, app.start_review_game)
 
     def draw(self, surface: pygame.Surface) -> None:
         super().draw(surface)
@@ -266,6 +270,13 @@ class HomeView(BaseView):
             icon,
             (self.play_rect.left + 48, self.play_rect.centery),
         )
+        if self.review_count:
+            draw_button(
+                surface,
+                self.review_rect,
+                f"ПОВТОРИТЬ ОШИБКИ · {self.review_count}",
+                size=15,
+            )
 
 
 class SelectionView(BaseView):
@@ -749,8 +760,9 @@ class QuestionCountView(SelectionView):
 
 
 class GameView(BaseView):
-    STATE_VERSION = 4
-    LEGACY_STATE_VERSIONS = frozenset({3})
+    STATE_CODEC = GameStateCodec()
+    STATE_VERSION = STATE_CODEC.VERSION
+    LEGACY_STATE_VERSIONS = STATE_CODEC.LEGACY_VERSIONS
     ANSWER_KEY_INDEX = {
         pygame.K_1: 0,
         pygame.K_2: 1,
@@ -819,11 +831,11 @@ class GameView(BaseView):
 
     @classmethod
     def from_state(cls, app, state: dict[str, Any]) -> GameView:
-        version = int(state.get("version", 0))
-        if version != cls.STATE_VERSION and version not in cls.LEGACY_STATE_VERSIONS:
-            raise ValueError("Неподдерживаемая версия сохранённой игры")
-        session = GameSession.from_state(state["session"])
-        return cls(app, session, restored_state=state["view"])
+        session, view_state = cls.STATE_CODEC.decode(
+            state,
+            app.score_rules,
+        )
+        return cls(app, session, restored_state=view_state)
 
     def to_state(self) -> dict[str, Any]:
         now = self.app.clock()
@@ -834,10 +846,9 @@ class GameView(BaseView):
             if self.advance_at is not None
             else None
         )
-        return {
-            "version": self.STATE_VERSION,
-            "session": self.session.to_state(),
-            "view": {
+        return self.STATE_CODEC.encode(
+            self.session,
+            {
                 "displayed_index": self.active_question_number - 1,
                 "question_elapsed": question_elapsed,
                 "paused": True,
@@ -849,7 +860,7 @@ class GameView(BaseView):
                     "offset": list(self.map_camera.offset),
                 },
             },
-        }
+        )
 
     def _build_question_actions(self) -> None:
         question = self.active_question
@@ -858,7 +869,7 @@ class GameView(BaseView):
             self._build_map_actions()
         if not question.options:
             return
-        presenter = QUESTION_PRESENTERS.get(question.presenter_key)
+        presenter = self.app.presenter_registry.get(question.presenter_key)
         if presenter is not None:
             for value, rect in zip(question.options, presenter.answer_rects()):
                 button = self.add_action(
@@ -1033,9 +1044,12 @@ class GameView(BaseView):
     def _answer(self, value: str) -> None:
         if self.advance_at is not None or self.paused:
             return
-        elapsed = min(QUESTION_TIME_SECONDS, self.app.clock() - self.question_started)
+        elapsed = min(
+            self.app.question_time_seconds,
+            self.app.clock() - self.question_started,
+        )
         question = self.active_question
-        record = self.session.answer(value, elapsed)
+        record = self.app.answer_question(self.session, value, elapsed)
         population_values = (
             question.content.values
             if isinstance(question.content, PopulationContent)
@@ -1158,7 +1172,11 @@ class GameView(BaseView):
         if not self.paused and self.advance_at is not None and now >= self.advance_at:
             self._next()
             return
-        if not self.paused and self.advance_at is None and now - self.question_started >= QUESTION_TIME_SECONDS:
+        if (
+            not self.paused
+            and self.advance_at is None
+            and now - self.question_started >= self.app.question_time_seconds
+        ):
             self._answer("")
 
     def handle_event(self, event: pygame.event.Event) -> None:
@@ -1253,7 +1271,10 @@ class GameView(BaseView):
         draw_text(surface, "Очки", (288, 18), 12, MUTED)
         draw_text(surface, str(self.session.score), (288, 37), 17, TEXT, bold=True)
         elapsed = self.app.clock() - self.question_started if not self.paused else self.pause_started - self.question_started
-        remaining = max(0, math.ceil(QUESTION_TIME_SECONDS - elapsed))
+        remaining = max(
+            0,
+            math.ceil(self.app.question_time_seconds - elapsed),
+        )
         draw_native_circle(surface, CYAN_DARK, (462, 35), 29, 3)
         draw_text(surface, str(remaining), (462, 29), 18, TEXT, bold=True, anchor="center")
         draw_text(surface, "сек", (462, 48), 9, MUTED, anchor="center")
@@ -1330,7 +1351,7 @@ class GameView(BaseView):
             isinstance(question.content, FlagContent)
             and question.content.capital_layout
         )
-        presenter = QUESTION_PRESENTERS.get(question.presenter_key)
+        presenter = self.app.presenter_registry.get(question.presenter_key)
         if capital_layout:
             self._draw_capital_question(surface)
         elif presenter is None or not getattr(presenter, "owns_prompt", False):
@@ -1463,34 +1484,21 @@ class ResultView(BaseView):
     def __init__(self, app, result: RoundResult) -> None:
         super().__init__(app)
         self.result = result
+        self.summary = ResultSummary.create(result, app.result_ratings)
         self.wrong_rect = pygame.Rect(390, 750, 300, 58)
         self.home_rect = pygame.Rect(720, 750, 300, 58)
-        if any(not answer.is_correct for answer in result.answers):
+        self.review_count = app.pending_review_count()
+        if self.review_count:
             self.add_action(self.wrong_rect, self._wrong)
         self.add_action(self.home_rect, lambda: app.show("home"))
 
     def _wrong(self) -> None:
-        wrong = self.app.repository.wrong_country_isos()
-        self.app.start_game(
-            GameConfig(
-                list(self.app.mode_registry.keys),
-                list(CONTINENT_NAMES),
-                min(25, max(10, len(wrong))),
-                wrong_only=True,
-            )
-        )
-
-    @staticmethod
-    def _max_streak(result: RoundResult) -> int:
-        best = current = 0
-        for answer in result.answers:
-            current = current + 1 if answer.is_correct else 0
-            best = max(best, current)
-        return best
+        self.app.start_review_game()
 
     def draw(self, surface: pygame.Surface) -> None:
         super().draw(surface)
         result = self.result
+        summary = self.summary
         trophy_center = (565, 255)
         draw_native_ellipse(surface, (79, 50, 2), (450, 365, 230, 26))
         draw_native_rect(surface, YELLOW, (535, 340, 60, 65), border_radius=8)
@@ -1500,9 +1508,9 @@ class ResultView(BaseView):
         draw_native_polygon(surface, YELLOW, [(490, 175), (640, 175), (610, 340), (520, 340)])
         draw_native_circle(surface, pygame.Color("#ffda42"), trophy_center, 48)
         draw_text(surface, "★", trophy_center, 48, pygame.Color("#9a6700"), bold=True, anchor="center")
-        draw_text(surface, "Отличный результат!", (565, 470), PAGE_TITLE_FONT_SIZE, TEXT, bold=True, anchor="center")
+        accuracy = summary.accuracy_percent
+        draw_text(surface, summary.title, (565, 470), PAGE_TITLE_FONT_SIZE, TEXT, bold=True, anchor="center")
         draw_text(surface, f"{result.score} XP", (565, 520), 35, GREEN, bold=True, anchor="center")
-        accuracy = round(result.accuracy * 100)
         draw_native_circle(surface, PANEL_ALT, (565, 630), 55)
         draw_native_circle(surface, GREEN, (565, 630), 55, 5)
         draw_text(surface, f"{accuracy}%", (565, 630), 22, TEXT, bold=True, anchor="center")
@@ -1510,7 +1518,7 @@ class ResultView(BaseView):
         metrics = [
             ("timer", "Среднее время ответа", f"{result.average_seconds:05.2f}"),
             ("timer", "Всего времени", f"{int(result.duration_seconds) // 60:02d}:{int(result.duration_seconds) % 60:02d}"),
-            ("streak", "Макс. серия", str(self._max_streak(result))),
+            ("streak", "Макс. серия", str(summary.max_streak)),
             ("trophy", "Получено очков", str(result.score)),
         ]
         for index, (icon_name, title, value) in enumerate(metrics):
@@ -1520,8 +1528,13 @@ class ResultView(BaseView):
             blit_centered(surface, icon, (rect.left + 35, rect.centery))
             draw_text(surface, title, (rect.left + 65, rect.top + 18), 13, MUTED)
             draw_text(surface, value, (rect.left + 65, rect.top + 43), 23, TEXT, bold=True)
-        if any(not answer.is_correct for answer in result.answers):
-            draw_button(surface, self.wrong_rect, "Ошибочные вопросы", size=16)
+        if self.review_count:
+            draw_button(
+                surface,
+                self.wrong_rect,
+                f"Повторить ошибки · {self.review_count}",
+                size=16,
+            )
         draw_button(surface, self.home_rect, "В главное меню", primary=True, size=16)
 
 

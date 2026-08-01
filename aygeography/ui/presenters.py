@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import textwrap
+from types import MappingProxyType
+from typing import Iterable, Mapping, Protocol
 
 import pygame
 
@@ -26,6 +28,12 @@ from .layout import (
     blit_centered,
     draw_question_flag,
 )
+
+
+class QuestionPresenter(Protocol):
+    def answer_rects(self) -> list[pygame.Rect]: ...
+
+    def draw(self, surface: pygame.Surface, app, question) -> None: ...
 
 
 class PopulationComparisonPresenter:
@@ -216,10 +224,49 @@ class WonderFactPresenter(WonderPresenter):
         )
 
 
-QUESTION_PRESENTERS = {
-    PopulationComparisonPresenter.key: PopulationComparisonPresenter(),
-    "wonder_landmark_name": WonderPhotoPresenter(),
-    "wonder_landmark_country": WonderPhotoPresenter(),
-    "wonder_map": WonderMapPresenter(),
-    "wonder_fact": WonderFactPresenter(),
-}
+class QuestionPresenterRegistry:
+    """UI-side registry validated against declarative mode descriptors."""
+
+    def __init__(
+        self,
+        presenters: Mapping[str, QuestionPresenter],
+    ) -> None:
+        self._presenters = dict(presenters)
+
+    @classmethod
+    def default(cls) -> QuestionPresenterRegistry:
+        return cls(
+            {
+                PopulationComparisonPresenter.key: PopulationComparisonPresenter(),
+                "wonder_landmark_name": WonderPhotoPresenter(),
+                "wonder_landmark_country": WonderPhotoPresenter(),
+                "wonder_map": WonderMapPresenter(),
+                "wonder_fact": WonderFactPresenter(),
+            }
+        )
+
+    def get(self, key: str) -> QuestionPresenter | None:
+        return self._presenters.get(key)
+
+    def validate(self, descriptors: Iterable[object]) -> None:
+        declared = {
+            key
+            for descriptor in descriptors
+            for key in getattr(descriptor, "presenter_keys", ())
+        }
+        missing = declared - set(self._presenters)
+        undeclared = set(self._presenters) - declared
+        if missing or undeclared:
+            raise ValueError(
+                "Некорректная регистрация presenters: "
+                f"missing={sorted(missing)}, undeclared={sorted(undeclared)}"
+            )
+
+    @property
+    def presenters(self) -> Mapping[str, QuestionPresenter]:
+        return MappingProxyType(self._presenters)
+
+
+DEFAULT_QUESTION_PRESENTERS = QuestionPresenterRegistry.default()
+# Compatibility alias for extensions using the old mapping.
+QUESTION_PRESENTERS = DEFAULT_QUESTION_PRESENTERS.presenters

@@ -5,9 +5,11 @@ import sqlite3
 from contextlib import closing
 from datetime import date, datetime, timedelta
 from pathlib import Path
+from typing import cast
 
 from .config import CONFIGS_DIR
-from .models import RoundResult
+from .domain.review import ReviewItem, ReviewStatus
+from .models import AnswerRecord, RoundResult
 from .persistence import SQLiteDatabase
 from .profile_progress import ProfileProgression
 
@@ -110,8 +112,9 @@ class GameRepository:
                     """
                     INSERT INTO answers(
                         round_id, mode, country_iso, prompt, answer,
-                        correct_answer, is_correct, seconds, points
-                    ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        correct_answer, is_correct, seconds, points,
+                        question_key, question_payload
+                    ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         round_id,
@@ -123,6 +126,12 @@ class GameRepository:
                         int(item.is_correct),
                         item.seconds,
                         item.points,
+                        item.question_key,
+                        json.dumps(
+                            item.question_state,
+                            ensure_ascii=False,
+                            separators=(",", ":"),
+                        ),
                     ),
                 )
                 answer_id = int(answer_cursor.lastrowid)
@@ -136,6 +145,7 @@ class GameRepository:
                         for country_iso in dict.fromkeys(item.subjects)
                     ],
                 )
+                self._update_review_item(db, item)
             profile = db.execute(
                 "SELECT level, xp FROM profile WHERE id=1"
             ).fetchone()
@@ -150,6 +160,111 @@ class GameRepository:
             )
             db.commit()
         self._profile_cache = None
+
+    @staticmethod
+    def _update_review_item(
+        db: sqlite3.Connection,
+        answer: AnswerRecord,
+    ) -> None:
+        """Update learning state in the same transaction as the answer."""
+        if not answer.question_key or not answer.question_state:
+            return
+        now = datetime.now().isoformat(timespec="seconds")
+        if answer.is_correct:
+            db.execute(
+                """
+                UPDATE review_items
+                SET status='resolved', resolved_at=?, updated_at=?
+                WHERE question_key=? AND status='pending'
+                """,
+                (now, now, answer.question_key),
+            )
+            return
+        payload = json.dumps(
+            answer.question_state,
+            ensure_ascii=False,
+            separators=(",", ":"),
+        )
+        db.execute(
+            """
+            INSERT INTO review_items(
+                question_key, mode, question_payload, failed_at,
+                status, failure_count, resolved_at, updated_at
+            ) VALUES(?, ?, ?, ?, 'pending', 1, NULL, ?)
+            ON CONFLICT(question_key) DO UPDATE SET
+                mode=excluded.mode,
+                question_payload=excluded.question_payload,
+                failed_at=excluded.failed_at,
+                status='pending',
+                failure_count=review_items.failure_count + 1,
+                resolved_at=NULL,
+                updated_at=excluded.updated_at
+            """,
+            (answer.question_key, answer.mode, payload, now, now),
+        )
+
+    def review_items(
+        self,
+        status: ReviewStatus | None = None,
+    ) -> list[ReviewItem]:
+        parameters: tuple[str, ...] = ()
+        where = ""
+        if status is not None:
+            if status not in ("pending", "resolved"):
+                raise ValueError(f"Неизвестный статус повторения: {status}")
+            where = "WHERE status=?"
+            parameters = (status,)
+        with closing(self._connect()) as db:
+            rows = db.execute(
+                f"""
+                SELECT question_key, mode, question_payload, failed_at,
+                       status, failure_count, resolved_at
+                FROM review_items
+                {where}
+                ORDER BY failed_at, question_key
+                """,
+                parameters,
+            ).fetchall()
+        result: list[ReviewItem] = []
+        for row in rows:
+            try:
+                payload = json.loads(row["question_payload"])
+            except (json.JSONDecodeError, TypeError) as error:
+                raise ValueError(
+                    f"Повреждено состояние вопроса: {row['question_key']}"
+                ) from error
+            if not isinstance(payload, dict):
+                raise ValueError(
+                    f"Повреждено состояние вопроса: {row['question_key']}"
+                )
+            review_status = str(row["status"])
+            if review_status not in ("pending", "resolved"):
+                raise ValueError(
+                    f"Поврежден статус вопроса: {row['question_key']}"
+                )
+            result.append(
+                ReviewItem(
+                    question_key=str(row["question_key"]),
+                    mode=str(row["mode"]),
+                    failed_at=datetime.fromisoformat(str(row["failed_at"])),
+                    status=cast(ReviewStatus, review_status),
+                    question_state=payload,
+                    failure_count=int(row["failure_count"]),
+                    resolved_at=(
+                        datetime.fromisoformat(str(row["resolved_at"]))
+                        if row["resolved_at"]
+                        else None
+                    ),
+                )
+            )
+        return result
+
+    def pending_review_count(self) -> int:
+        with closing(self._connect()) as db:
+            row = db.execute(
+                "SELECT COUNT(*) count FROM review_items WHERE status='pending'"
+            ).fetchone()
+        return int(row["count"])
 
     def lifetime_rounds(self) -> list[dict[str, object]]:
         """All rounds, including data hidden by a statistics reset."""
@@ -170,7 +285,7 @@ class GameRepository:
             rows = db.execute(
                 """
                 SELECT id, round_id, mode, country_iso, is_correct,
-                       seconds, points
+                       seconds, points, question_key
                 FROM answers
                 ORDER BY id
                 """

@@ -1,20 +1,62 @@
 {
+  "schema_version": 1,
   "app": {
     "name": "AYGeography",
     "version": "1.0.0"
   },
   "gameplay": {
     "question_time_seconds": 60,
-    "answer_feedback_seconds_by_mode": {
-      "flags": {"correct": 1.0, "incorrect": 1.5},
-      "capitals": {"correct": 1.0, "incorrect": 1.5},
-      "population": {"correct": 3.0, "incorrect": 4.0},
-      "countries": {"correct": 1.0, "incorrect": 1.5},
-      "waters": {"correct": 1.0, "incorrect": 1.5},
-      "wonders": {"correct": 6.0, "incorrect": 8.0}
-    },
     "answer_feedback_seconds_by_water_kind": {
       "river": {"correct": 5.0, "incorrect": 7.0}
+    }
+  },
+  "modes": {
+    "flags": {
+      "title": "Флаги",
+      "icon": "flags",
+      "feedback": {"correct": 1.0, "incorrect": 1.5},
+      "presenters": [],
+      "mastery_scope": "country"
+    },
+    "capitals": {
+      "title": "Столицы",
+      "icon": "capitals",
+      "feedback": {"correct": 1.0, "incorrect": 1.5},
+      "presenters": [],
+      "mastery_scope": "country"
+    },
+    "population": {
+      "title": "Население",
+      "icon": "population",
+      "feedback": {"correct": 3.0, "incorrect": 4.0},
+      "presenters": ["country_comparison"],
+      "mastery_scope": "country"
+    },
+    "countries": {
+      "title": "Страны",
+      "icon": "countries",
+      "feedback": {"correct": 1.0, "incorrect": 1.5},
+      "presenters": [],
+      "mastery_scope": "country"
+    },
+    "waters": {
+      "title": "Акватория",
+      "icon": "waters",
+      "feedback": {"correct": 1.0, "incorrect": 1.5},
+      "presenters": [],
+      "mastery_scope": "none"
+    },
+    "wonders": {
+      "title": "Чудеса света",
+      "icon": "wonders",
+      "feedback": {"correct": 6.0, "incorrect": 8.0},
+      "presenters": [
+        "wonder_landmark_name",
+        "wonder_landmark_country",
+        "wonder_map",
+        "wonder_fact"
+      ],
+      "mastery_scope": "country"
     }
   },
   "colors": {
@@ -43,14 +85,6 @@
       "South America": "Южная Америка",
       "Africa": "Африка",
       "Oceania": "Австралия и Океания"
-    },
-    "modes": {
-      "flags": "Флаги",
-      "capitals": "Столицы",
-      "population": "Население",
-      "countries": "Страны",
-      "waters": "Акватория",
-      "wonders": "Чудеса света"
     },
     "difficulty": {
       "easy": "Легкий",

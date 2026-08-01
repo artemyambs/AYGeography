@@ -18,6 +18,7 @@ from aygeography.config import (
     WONDER_CATEGORY_WEIGHTS,
 )
 from aygeography.difficulty import DIFFICULTY_KEYS, DifficultyCatalog
+from aygeography.domain.result_rating import ResultRatingPolicy
 from aygeography.domain.questions import (
     FlagContent,
     MapContent,
@@ -37,6 +38,7 @@ from aygeography.quiz import (
     WaterQuestionStrategy,
 )
 from aygeography.scoring import DEFAULT_SCORE_RULES, ScoreRules
+from aygeography.application import StartReviewRound
 from aygeography.storage import GameRepository
 from aygeography.waters import WaterCatalog
 from aygeography.wonders import (
@@ -853,6 +855,66 @@ class QuizTests(unittest.TestCase):
             stats = repository.statistics()
             self.assertEqual(1, stats["total"]["rounds"])
             self.assertEqual(1, stats["total"]["question_count"])
+
+    def test_review_queue_tracks_reopens_and_resolves_exact_question(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repository = GameRepository(Path(directory) / "review.db")
+            question = QuestionFactory().build(
+                GameConfig(["flags"], ["Europe"], 1),
+                self.catalog,
+                seed=31,
+            )[0]
+            failed = GameSession([question])
+            failed.answer("__wrong__", 5)
+            repository.save_round(failed.result())
+
+            pending = repository.review_items("pending")
+            self.assertEqual(1, repository.pending_review_count())
+            self.assertEqual(question.key, pending[0].question_key)
+            self.assertEqual(question.mode, pending[0].mode)
+            self.assertEqual("pending", pending[0].status)
+            self.assertEqual(1, pending[0].failure_count)
+
+            repeated = StartReviewRound(repository).execute()
+            self.assertEqual(question.key, repeated.current.key)
+            repeated.answer(repeated.current.correct_answer, 2)
+            repository.save_round(repeated.result())
+
+            self.assertEqual(0, repository.pending_review_count())
+            resolved = repository.review_items("resolved")
+            self.assertEqual(1, len(resolved))
+            self.assertIsNotNone(resolved[0].resolved_at)
+
+            failed_again = GameSession([question])
+            failed_again.answer("__wrong__", 4)
+            repository.save_round(failed_again.result())
+
+            reopened = repository.review_items("pending")
+            self.assertEqual(1, len(reopened))
+            self.assertEqual(2, reopened[0].failure_count)
+            self.assertIsNone(reopened[0].resolved_at)
+
+    def test_result_rating_configuration_covers_confirmed_boundaries(self):
+        config = json.loads(
+            (CONFIGS_DIR / "result_levels.json").read_text(encoding="utf-8")
+        )
+        policy = ResultRatingPolicy.from_config(config)
+
+        expected = {
+            100: "Превосходно!",
+            99: "Отлично!",
+            95: "Отлично!",
+            94: "Хорошо!",
+            80: "Хорошо!",
+            79: "Нужно больше практики!",
+            60: "Нужно больше практики!",
+            59: "Плохо!",
+            40: "Плохо!",
+            39: "Ужасно!",
+            0: "Ужасно!",
+        }
+        for accuracy, title in expected.items():
+            self.assertEqual(title, policy.title(accuracy))
 
     def test_population_answer_links_both_countries_once(self):
         with tempfile.TemporaryDirectory() as directory:

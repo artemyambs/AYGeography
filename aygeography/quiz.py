@@ -4,13 +4,12 @@ import random
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any, Generic, TypeVar
+from typing import Any, Generic, Mapping, TypeVar
 
 from .catalog import CountryCatalog
 from .config import (
     CONFIGS_DIR,
-    MODE_FEEDBACK_SETTINGS,
-    MODE_NAMES,
+    MODE_SETTINGS,
     WATER_KIND_FEEDBACK_SETTINGS,
     WONDER_CATEGORY_WEIGHTS,
 )
@@ -475,7 +474,7 @@ class WonderQuestionStrategy(QuestionStrategy):
             prompt = "Какая достопримечательность изображена?"
             presentation = "wonder_landmark_name"
         return Question(
-            key=f"wonders:{item.key}",
+            key=f"wonders:landmark:{item.key}:{'country' if ask_country else 'name'}",
             mode=self.mode,
             prompt=prompt,
             country_iso=item.country_iso,
@@ -501,7 +500,7 @@ class WonderQuestionStrategy(QuestionStrategy):
             point=item.point,
         )
         return Question(
-            key=f"wonders:{item.key}",
+            key=f"wonders:peak:{item.key}",
             mode=self.mode,
             prompt="Какая горная вершина отмечена на карте?",
             country_iso=item.country_iso,
@@ -525,7 +524,7 @@ class WonderQuestionStrategy(QuestionStrategy):
         del countries, rng
         correct = "Правда" if item.truth_value else "Ложь"
         return Question(
-            key=f"wonders:{item.key}",
+            key=f"wonders:fact:{item.key}",
             mode=self.mode,
             prompt=item.prompt,
             country_iso=item.country_iso,
@@ -878,6 +877,7 @@ class QuestionFactory:
         water_catalog: WaterCatalog | None = None,
         wonder_catalog: WonderCatalog | None = None,
         mode_registry: ModeRegistry | None = None,
+        mode_settings: Mapping[str, object] | None = None,
     ) -> None:
         self._difficulty = difficulty_catalog or DifficultyCatalog(
             CONFIGS_DIR / "difficulty_levels.json"
@@ -895,9 +895,8 @@ class QuestionFactory:
             ]
             if wonder_catalog is not None:
                 strategies.append(WonderQuestionStrategy(wonder_catalog))
-        self.registry = mode_registry or ModeRegistry.from_settings(
-            MODE_NAMES,
-            MODE_FEEDBACK_SETTINGS,
+        self.registry = mode_registry or ModeRegistry.from_mode_settings(
+            mode_settings or MODE_SETTINGS,
             strategies,
             WATER_KIND_FEEDBACK_SETTINGS,
         )

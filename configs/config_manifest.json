@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "documents": [
+    {"path": "app_settings.json", "schema_version": 1},
+    {"path": "result_levels.json", "schema_version": 1}
+  ]
+}

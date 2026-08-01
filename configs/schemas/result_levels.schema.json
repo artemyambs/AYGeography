@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aygeography.local/schemas/result-levels-v1.json",
+  "title": "AYGeography result levels v1",
+  "type": "object",
+  "required": ["schema_version", "levels"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "levels": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["min_accuracy", "max_accuracy", "title"],
+        "properties": {
+          "min_accuracy": {"type": "integer", "minimum": 0, "maximum": 100},
+          "max_accuracy": {"type": "integer", "minimum": 0, "maximum": 100},
+          "title": {"type": "string", "minLength": 1}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

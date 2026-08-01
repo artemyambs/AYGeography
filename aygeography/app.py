@@ -3,7 +3,6 @@ from __future__ import annotations
 import ctypes
 import json
 import os
-import time
 import zipfile
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -31,21 +30,24 @@ _enable_windows_dpi_awareness()
 import pygame
 import pygame_gui
 
-from .catalog import CountryCatalog
+from .application import AnswerQuestion, FinishRound, StartReviewRound, StartRound
+from .application.ports import Clock, RandomFactory
 from .config import (
-    APP_NAME,
-    APP_VERSION,
     ASSETS_DIR,
-    CONFIGS_DIR,
+    CONFIG_PROVIDER,
     CONTINENT_NAMES,
     SAVE_DIR,
 )
 from .models import GameConfig, RoundResult
+from .scoring import ScoreRules
+from .domain.result_rating import ResultRatingPolicy
+from .infrastructure.content import ConfigProvider, ContentCatalogLoader
+from .infrastructure.runtime import PythonRandomFactory, SystemClock
 from .profile_progress import ProfileProgression
 from .profiles import ProfileManager
 from .progression import ProgressionCatalog, ProgressionService
 from .quiz import GameSession, QuestionFactory
-from .storage import GameRepository
+from .infrastructure.sqlite import GameRepository
 from .ui.components import (
     BG,
     CYAN,
@@ -61,6 +63,8 @@ from .ui.components import (
 )
 from .ui.modals import ConfirmationModal
 from .ui.notifications import AchievementNotificationCenter
+from .ui.presenters import QuestionPresenterRegistry
+from .ui.screen_registry import ScreenRegistry
 from .ui.file_dialogs import WindowsProfileFileDialog
 from .ui.screens import (
     GameView,
@@ -69,8 +73,6 @@ from .ui.screens import (
     ResultView,
     VIEW_TYPES,
 )
-from .wonders import WonderCatalog
-from .waters import WaterCatalog
 
 
 class AssetStore:
@@ -145,7 +147,27 @@ class AYGeographyApp:
         *,
         headless: bool = False,
         repository: GameRepository | None = None,
+        clock_source: Clock | None = None,
+        random_factory: RandomFactory | None = None,
+        config_provider: ConfigProvider | None = None,
+        content_loader: ContentCatalogLoader | None = None,
     ) -> None:
+        self.config_provider = config_provider or CONFIG_PROVIDER
+        self.config_provider.validate_manifest()
+        runtime_settings = self.config_provider.object(
+            "app_settings.json",
+            schema_version=1,
+        )
+        self.runtime_settings = runtime_settings
+        self.app_name = str(runtime_settings["app"]["name"])
+        self.app_version = str(runtime_settings["app"]["version"])
+        self.question_time_seconds = int(
+            runtime_settings["gameplay"]["question_time_seconds"]
+        )
+        self.score_rules = ScoreRules(
+            self.config_provider.directory / "scoring.json",
+            self.question_time_seconds,
+        )
         if headless:
             os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
             os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
@@ -153,34 +175,29 @@ class AYGeographyApp:
         pygame.display.set_icon(
             pygame.image.load(ASSETS_DIR / "app_icon.png")
         )
-        pygame.display.set_caption(f"{APP_NAME} {APP_VERSION}")
+        pygame.display.set_caption(f"{self.app_name} {self.app_version}")
         self._headless = headless
         self._fullscreen = False
         self._windowed_size = self._safe_window_size()
         self.display = pygame.display.set_mode(self._windowed_size, pygame.RESIZABLE)
         self.logical = pygame.Surface(self._render_size()).convert()
-        self.clock_source = time.monotonic
+        self.clock_source = clock_source or SystemClock()
+        self.random_factory = random_factory or PythonRandomFactory()
         self.frame_clock = pygame.time.Clock()
         self.running = False
         self._present_loading(10, "Подготовка окна")
 
-        self.catalog = CountryCatalog(
-            CONFIGS_DIR / "countries_by_iso3.json",
-            CONFIGS_DIR / "continents.json",
-        )
-        self._present_loading(25, "Загрузка карты мира")
-        self.wonder_catalog = WonderCatalog(
-            CONFIGS_DIR / "wonders",
-            self.catalog.all(),
+        content_loader = content_loader or ContentCatalogLoader(
+            self.config_provider.directory,
             ASSETS_DIR,
         )
-        self.water_catalog = WaterCatalog(
-            CONFIGS_DIR / "water_area",
-            self.catalog.all(),
-        )
+        self.catalog = content_loader.load_countries()
+        self._present_loading(25, "Загрузка карты мира")
+        self.wonder_catalog = content_loader.load_wonders(self.catalog)
+        self.water_catalog = content_loader.load_waters(self.catalog)
         self._present_loading(42, "Загрузка игровых данных")
         self.profile_progression = ProfileProgression(
-            CONFIGS_DIR / "progression.json"
+            self.config_provider.directory / "progression.json"
         )
         self.profile_manager = (
             None
@@ -203,15 +220,23 @@ class AYGeographyApp:
         self.repository = repository
         self._present_loading(60, "Загрузка профиля")
         self.progression_catalog = ProgressionCatalog(
-            CONFIGS_DIR / "progression.json",
-            CONFIGS_DIR / "achievements.json",
+            self.config_provider.directory / "progression.json",
+            self.config_provider.directory / "achievements.json",
         )
         self.question_factory = QuestionFactory(
             water_catalog=self.water_catalog,
             wonder_catalog=self.wonder_catalog,
+            mode_settings=dict(self.runtime_settings["modes"]),
         )
         self.mode_registry = self.question_factory.registry
+        self.presenter_registry = QuestionPresenterRegistry.default()
+        self.presenter_registry.validate(self.mode_registry.descriptors)
+        self.screen_registry = ScreenRegistry(VIEW_TYPES)
         self.progression = self._create_progression_service()
+        self.result_ratings = ResultRatingPolicy.from_config(
+            self.config_provider.object("result_levels.json", schema_version=1)
+        )
+        self._create_use_cases()
         self._present_loading(75, "Подготовка режимов")
         self.map_renderer = MapRenderer(
             ASSETS_DIR / "maps/world_geometry.json",
@@ -277,7 +302,7 @@ class AYGeographyApp:
         draw_logo(self.logical, (800, 315), 88)
         draw_text(
             self.logical,
-            "AYGeography",
+            self.app_name,
             (800, 430),
             32,
             TEXT,
@@ -327,6 +352,26 @@ class AYGeographyApp:
         service.sync()
         return service
 
+    def _create_use_cases(self) -> None:
+        self._start_round = StartRound(
+            self.question_factory,
+            self.catalog,
+            self.repository,
+            self.score_rules,
+            self.question_time_seconds,
+        )
+        self._start_review_round = StartReviewRound(
+            self.repository,
+            self.random_factory,
+            self.score_rules,
+            self.question_time_seconds,
+        )
+        self._answer_question = AnswerQuestion()
+        self._finish_round = FinishRound(
+            self.repository,
+            self.progression,
+        )
+
     def select_profile(self, profile_id: str) -> None:
         if self.profile_manager is None:
             return
@@ -334,6 +379,7 @@ class AYGeographyApp:
         self._profile_selected = True
         self.repository = self.profile_manager.repository(profile_id)
         self.progression = self._create_progression_service()
+        self._create_use_cases()
         self._active_game_state = self.repository.load_active_game()
         if not self._headless:
             fullscreen = bool(self.repository.settings()["fullscreen"])
@@ -388,6 +434,7 @@ class AYGeographyApp:
         if active_id:
             self.repository = self.profile_manager.repository(active_id)
             self.progression = self._create_progression_service()
+            self._create_use_cases()
             self.show("profile")
         else:
             self._profile_selected = False
@@ -398,6 +445,7 @@ class AYGeographyApp:
                 self.profile_progression,
             )
             self.progression = self._create_progression_service()
+            self._create_use_cases()
             self.show("profile_select")
         self.toast("Профиль удалён", GREEN)
 
@@ -471,7 +519,7 @@ class AYGeographyApp:
         self.manager.clear_and_reset()
         self._confirmation = None
         self._confirmation_action = None
-        self.view = VIEW_TYPES[name](self)
+        self.view = self.screen_registry.create(name, self)
         self._transition_surface = previous_frame
         self._transition_started = self.clock()
 
@@ -509,11 +557,7 @@ class AYGeographyApp:
 
     def start_game(self, config: GameConfig) -> None:
         try:
-            questions = self.question_factory.build(
-                config,
-                self.catalog,
-                self.repository.wrong_country_isos(),
-            )
+            session = self._start_round.execute(config)
         except ValueError as error:
             self.toast(str(error), RED)
             return
@@ -524,19 +568,41 @@ class AYGeographyApp:
         self._confirmation_action = None
         self.view = GameView(
             self,
-            GameSession(
-                questions,
-                difficulty=config.difficulty or "medium",
-            ),
+            session,
         )
         self._transition_surface = previous_frame
         self._transition_started = self.clock()
 
+    def start_review_game(self) -> None:
+        try:
+            session = self._start_review_round.execute()
+        except ValueError as error:
+            self.toast(str(error), RED)
+            return
+        previous_frame = self._capture_transition_frame()
+        self._clear_active_game()
+        self.manager.clear_and_reset()
+        self._confirmation = None
+        self._confirmation_action = None
+        self.view = GameView(self, session)
+        self._transition_surface = previous_frame
+        self._transition_started = self.clock()
+
+    def pending_review_count(self) -> int:
+        return self._start_review_round.pending_count()
+
+    def answer_question(
+        self,
+        session: GameSession,
+        value: str,
+        elapsed_seconds: float,
+    ):
+        return self._answer_question.execute(session, value, elapsed_seconds)
+
     def finish_game(self, result: RoundResult) -> None:
         previous_frame = self._capture_transition_frame()
         self._clear_active_game()
-        self.repository.save_round(result)
-        unlocked = self.progression.sync()
+        unlocked = self._finish_round.execute(result)
         self.manager.clear_and_reset()
         self.view = ResultView(self, result)
         self._transition_surface = previous_frame
@@ -547,8 +613,7 @@ class AYGeographyApp:
         previous_frame = self._capture_transition_frame()
         self._clear_active_game()
         if result.answers:
-            self.repository.save_round(result)
-            unlocked = self.progression.sync()
+            unlocked = self._finish_round.execute(result)
         else:
             unlocked = []
         self.view = None
@@ -610,7 +675,7 @@ class AYGeographyApp:
             return
         self._open_confirmation(
             title="Выход",
-            description="Завершить игру AYGeography?",
+            description=f"Завершить игру {self.app_name}?",
             action_name="Выйти [Enter]",
             cancel_name="Отмена [Esc]",
             action=self._confirm_exit,

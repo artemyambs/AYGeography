@@ -4,7 +4,6 @@ from dataclasses import asdict
 from datetime import datetime
 from typing import Any
 
-from ..config import QUESTION_TIME_SECONDS
 from ..difficulty import DIFFICULTY_KEYS
 from ..models import AnswerRecord, RoundResult
 from ..scoring import DEFAULT_SCORE_RULES, ScoreRules
@@ -19,6 +18,7 @@ class GameSession:
         questions: list[Question],
         difficulty: str = "medium",
         score_rules: ScoreRules = DEFAULT_SCORE_RULES,
+        question_time_seconds: int = 60,
     ) -> None:
         if difficulty not in DIFFICULTY_KEYS:
             raise ValueError(f"Неизвестный уровень сложности: {difficulty}")
@@ -33,6 +33,9 @@ class GameSession:
             else difficulty
         )
         self._score_rules = score_rules
+        if question_time_seconds <= 0:
+            raise ValueError("Время вопроса должно быть положительным")
+        self.question_time_seconds = question_time_seconds
         self.index = 0
         self.score = 0
         self.streak = 0
@@ -50,7 +53,7 @@ class GameSession:
     def answer(self, value: str, elapsed_seconds: float) -> AnswerRecord:
         question = self.current
         correct = value == question.correct_answer
-        remaining = max(0, QUESTION_TIME_SECONDS - elapsed_seconds)
+        remaining = max(0, self.question_time_seconds - elapsed_seconds)
         points = (
             self._score_rules.points(
                 question.scoring_difficulty or self.difficulty,
@@ -71,6 +74,8 @@ class GameSession:
             seconds=elapsed_seconds,
             points=points,
             country_isos=question.subjects,
+            question_key=question.key,
+            question_state=question.to_state(),
         )
         self.answers.append(record)
         self.index += 1
@@ -95,10 +100,15 @@ class GameSession:
             "streak": self.streak,
             "answers": [asdict(answer) for answer in self.answers],
             "started_at": self.started_at.isoformat(),
+            "question_time_seconds": self.question_time_seconds,
         }
 
     @classmethod
-    def from_state(cls, state: dict[str, Any]) -> GameSession:
+    def from_state(
+        cls,
+        state: dict[str, Any],
+        score_rules: ScoreRules = DEFAULT_SCORE_RULES,
+    ) -> GameSession:
         questions = [
             Question.from_state(dict(raw_question))
             for raw_question in state["questions"]
@@ -106,6 +116,8 @@ class GameSession:
         session = cls(
             questions,
             difficulty=str(state.get("difficulty", "medium")),
+            score_rules=score_rules,
+            question_time_seconds=int(state.get("question_time_seconds", 60)),
         )
         session.index = int(state["index"])
         if not 0 <= session.index <= len(questions):

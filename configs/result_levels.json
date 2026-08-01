@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "levels": [
+    {"min_accuracy": 100, "max_accuracy": 100, "title": "Превосходно!"},
+    {"min_accuracy": 95, "max_accuracy": 99, "title": "Отлично!"},
+    {"min_accuracy": 80, "max_accuracy": 94, "title": "Хорошо!"},
+    {"min_accuracy": 60, "max_accuracy": 79, "title": "Нужно больше практики!"},
+    {"min_accuracy": 40, "max_accuracy": 59, "title": "Плохо!"},
+    {"min_accuracy": 0, "max_accuracy": 39, "title": "Ужасно!"}
+  ]
+}

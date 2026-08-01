@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Any
 
 from .domain.questions import Question
 
@@ -39,6 +40,8 @@ class AnswerRecord:
     seconds: float
     points: int
     country_isos: tuple[str, ...] = field(default_factory=tuple)
+    question_key: str = ""
+    question_state: dict[str, Any] = field(default_factory=dict)
 
     @property
     def subjects(self) -> tuple[str, ...]:

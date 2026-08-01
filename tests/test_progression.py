@@ -10,6 +10,7 @@ from pathlib import Path
 from aygeography.catalog import CountryCatalog
 from aygeography.config import CONFIGS_DIR
 from aygeography.models import AnswerRecord, RoundResult
+from aygeography.persistence import SQLiteDatabase
 from aygeography.progression import ProgressionCatalog, ProgressionService
 from aygeography.storage import GameRepository
 
@@ -50,10 +51,11 @@ class ProgressionTests(unittest.TestCase):
                 ).fetchall()
             }
 
-        self.assertEqual(3, version)
+        self.assertEqual(SQLiteDatabase.SCHEMA_VERSION, version)
         self.assertEqual(1, foreign_keys)
         self.assertIn("idx_rounds_started_at", indexes)
         self.assertIn("idx_answers_round_id", indexes)
+        self.assertIn("idx_review_items_status_failed_at", indexes)
         self.assertEqual(
             {"fullscreen", "confirm_exit"},
             set(self.repository.settings()),
@@ -365,6 +367,20 @@ class ProgressionTests(unittest.TestCase):
             "RUS",
             repository.lifetime_answer_countries()[0]["country_iso"],
         )
+        with closing(repository._connect()) as db:
+            answer_columns = {
+                row["name"]
+                for row in db.execute("PRAGMA table_info(answers)").fetchall()
+            }
+            review_table = db.execute(
+                """
+                SELECT name FROM sqlite_master
+                WHERE type='table' AND name='review_items'
+                """
+            ).fetchone()
+        self.assertIn("question_key", answer_columns)
+        self.assertIn("question_payload", answer_columns)
+        self.assertIsNotNone(review_table)
 
 
 if __name__ == "__main__":

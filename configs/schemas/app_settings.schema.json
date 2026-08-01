@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aygeography.local/schemas/app-settings-v1.json",
+  "title": "AYGeography application settings v1",
+  "type": "object",
+  "required": ["schema_version", "app", "gameplay", "modes", "colors", "labels"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "app": {"type": "object"},
+    "gameplay": {"type": "object"},
+    "modes": {"type": "object", "minProperties": 1},
+    "colors": {"type": "object"},
+    "labels": {"type": "object"}
+  },
+  "additionalProperties": false
+}

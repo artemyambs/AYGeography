@@ -8,9 +8,9 @@ from pathlib import Path
 from typing import Any, Callable
 
 from .catalog import CountryCatalog
-from .config import MODE_FEEDBACK_SETTINGS, MODE_NAMES
+from .config import MODE_SETTINGS
 from .modes import ModeRegistry
-from .storage import GameRepository
+from .domain.ports import ProgressionRepository
 
 
 @dataclass(frozen=True, slots=True)
@@ -174,7 +174,7 @@ class ProgressionService:
 
     def __init__(
         self,
-        repository: GameRepository,
+        repository: ProgressionRepository,
         countries: CountryCatalog,
         catalog: ProgressionCatalog,
         mode_registry: ModeRegistry | None = None,
@@ -182,10 +182,20 @@ class ProgressionService:
         self.repository = repository
         self.countries = countries
         self.catalog = catalog
-        self.mode_registry = mode_registry or ModeRegistry.from_settings(
-            MODE_NAMES,
-            MODE_FEEDBACK_SETTINGS,
+        self.mode_registry = mode_registry or ModeRegistry.from_mode_settings(
+            MODE_SETTINGS,
         )
+        invalid_mastery_modes = [
+            mode
+            for mode in self.catalog.mastery_modes
+            if mode in self.mode_registry.keys
+            and self.mode_registry.descriptor(mode).mastery_scope != "country"
+        ]
+        if invalid_mastery_modes:
+            raise ValueError(
+                "Мастерство страны недоступно для режимов: "
+                f"{invalid_mastery_modes}"
+            )
         self._evaluators: dict[
             str,
             Callable[[dict[str, Any], _LifetimeSnapshot, dict[str, CountryMastery]], tuple[int, int]],

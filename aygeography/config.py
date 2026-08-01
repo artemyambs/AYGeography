@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import json
 import os
 import sys
 from pathlib import Path
-from typing import Any
+
+from .infrastructure.content import ConfigProvider
 
 
 BASE_DIR = Path(
@@ -18,17 +18,12 @@ SAVE_DIR = (
     else BASE_DIR / "save"
 )
 DATABASE_PATH = SAVE_DIR / "aygeography.db"
+CONFIG_PROVIDER = ConfigProvider(CONFIGS_DIR)
+CONFIG_PROVIDER.validate_manifest()
 
 
-def _load_app_settings() -> dict[str, Any]:
-    path = CONFIGS_DIR / "app_settings.json"
-    try:
-        settings = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as error:
-        raise RuntimeError(f"Не удалось загрузить настройки: {path}") from error
-    if not isinstance(settings, dict):
-        raise ValueError("app_settings.json должен содержать JSON-объект")
-    return settings
+def _load_app_settings() -> dict[str, object]:
+    return CONFIG_PROVIDER.object("app_settings.json", schema_version=1)
 
 
 APP_SETTINGS = _load_app_settings()
@@ -42,11 +37,16 @@ QUESTION_TIME_SECONDS = int(
 
 COLORS = dict(APP_SETTINGS["colors"])
 CONTINENT_NAMES = dict(APP_SETTINGS["labels"]["continents"])
-MODE_NAMES = dict(APP_SETTINGS["labels"]["modes"])
+MODE_SETTINGS = dict(APP_SETTINGS["modes"])
+MODE_NAMES = {
+    str(key): str(value["title"])
+    for key, value in MODE_SETTINGS.items()
+}
 DIFFICULTY_NAMES = dict(APP_SETTINGS["labels"]["difficulty"])
-MODE_FEEDBACK_SETTINGS = dict(
-    APP_SETTINGS["gameplay"]["answer_feedback_seconds_by_mode"]
-)
+MODE_FEEDBACK_SETTINGS = {
+    str(key): dict(value["feedback"])
+    for key, value in MODE_SETTINGS.items()
+}
 WATER_KIND_FEEDBACK_SETTINGS = dict(
     APP_SETTINGS["gameplay"]["answer_feedback_seconds_by_water_kind"]
 )
@@ -55,13 +55,7 @@ ANSWER_FEEDBACK_SECONDS = MODE_FEEDBACK_SETTINGS
 
 
 def _load_wonder_category_weights() -> dict[str, int]:
-    path = CONFIGS_DIR / "wonders_settings.json"
-    try:
-        settings = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as error:
-        raise RuntimeError(
-            f"Не удалось загрузить настройки: {path}"
-        ) from error
+    settings = CONFIG_PROVIDER.object("wonders_settings.json")
     raw = settings.get("category_weights")
     expected = {"landmark", "peak", "fact"}
     if not isinstance(raw, dict) or set(raw) != expected:
