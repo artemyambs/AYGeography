@@ -44,6 +44,7 @@ from aygeography.ui.components import (
     font,
 )
 from aygeography.ui.notifications import AchievementNotificationCenter
+from aygeography.ui.presenters import WonderFactPresenter
 from aygeography.ui.screens import (
     CAPITAL_LABEL_FONT_SIZE,
     CONTENT,
@@ -589,6 +590,28 @@ class PygameAppTests(unittest.TestCase):
             self.app.view.feedback,
         )
         self.assertEqual(RED, self.app.view.feedback_colour)
+
+    def test_wonder_fact_layout_has_no_overlaps(self):
+        flag_rect = pygame.Rect((0, 0), QUESTION_FLAG_PANEL_SIZE)
+        flag_rect.center = (CONTENT.centerx, COUNTRY_FLAG_CENTER_Y)
+        fact_rect = WonderFactPresenter.fact_rect()
+        answer_rects = WonderFactPresenter.answer_rects()
+
+        self.assertEqual(
+            WonderFactPresenter.FLAG_FACT_GAP,
+            fact_rect.top - flag_rect.bottom,
+        )
+        self.assertEqual(answer_rects[0].left, fact_rect.left)
+        self.assertEqual(answer_rects[-1].right, fact_rect.right)
+        self.assertTrue(all(not flag_rect.colliderect(rect) for rect in answer_rects))
+        self.assertTrue(all(not fact_rect.colliderect(rect) for rect in answer_rects))
+        self.assertTrue(
+            all(
+                rect.top - fact_rect.bottom
+                == WonderFactPresenter.FACT_ANSWER_GAP
+                for rect in answer_rects
+            )
+        )
 
     def test_atlas_uses_new_fact_titles_and_distinctive_stat(self):
         self.app.show("atlas")

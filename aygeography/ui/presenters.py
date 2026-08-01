@@ -22,6 +22,7 @@ from .layout import (
     COUNTRY_FLAG_CENTER_Y,
     COUNTRY_FLAG_NAME_FONT_SIZE,
     COUNTRY_FLAG_NAME_TOP,
+    QUESTION_FLAG_PANEL_SIZE,
     blit_centered,
     draw_question_flag,
 )
@@ -136,15 +137,49 @@ class WonderMapPresenter(WonderPresenter):
 
 class WonderFactPresenter(WonderPresenter):
     owns_prompt = True
+    ANSWER_COUNT = 2
+    ANSWER_GAP = 24
+    ANSWER_HEIGHT = 52
+    FLAG_FACT_GAP = 20
+    FACT_ANSWER_GAP = 30
+    FACT_HEIGHT = 160
+    TEXT_WRAP_WIDTH = 60
+
+    @classmethod
+    def answer_row_width(cls) -> int:
+        return (
+            cls.ANSWER_COUNT * cls.ANSWER_WIDTH
+            + (cls.ANSWER_COUNT - 1) * cls.ANSWER_GAP
+        )
+
+    @classmethod
+    def answer_start_x(cls) -> int:
+        return CONTENT.centerx - cls.answer_row_width() // 2
+
+    @classmethod
+    def fact_rect(cls) -> pygame.Rect:
+        flag_bottom = (
+            COUNTRY_FLAG_CENTER_Y + QUESTION_FLAG_PANEL_SIZE[1] // 2
+        )
+        return pygame.Rect(
+            cls.answer_start_x(),
+            flag_bottom + cls.FLAG_FACT_GAP,
+            cls.answer_row_width(),
+            cls.FACT_HEIGHT,
+        )
 
     @classmethod
     def answer_rects(cls) -> list[pygame.Rect]:
-        width = 390
-        gap = 24
-        start_x = CONTENT.centerx - (2 * width + gap) // 2
+        answer_top = cls.fact_rect().bottom + cls.FACT_ANSWER_GAP
         return [
-            pygame.Rect(start_x + index * (width + gap), 590, width, 52)
-            for index in range(2)
+            pygame.Rect(
+                cls.answer_start_x()
+                + index * (cls.ANSWER_WIDTH + cls.ANSWER_GAP),
+                answer_top,
+                cls.ANSWER_WIDTH,
+                cls.ANSWER_HEIGHT,
+            )
+            for index in range(cls.ANSWER_COUNT)
         ]
 
     @classmethod
@@ -165,9 +200,11 @@ class WonderFactPresenter(WonderPresenter):
             question.country_iso,
             (CONTENT.centerx, COUNTRY_FLAG_CENTER_Y),
         )
-        fact_rect = pygame.Rect(450, 365, 940, 160)
+        fact_rect = cls.fact_rect()
         panel(surface, fact_rect, fill=PANEL_ALT, border=CYAN_DARK)
-        wrapped = "\n".join(textwrap.wrap(question.prompt, width=72))
+        wrapped = "\n".join(
+            textwrap.wrap(question.prompt, width=cls.TEXT_WRAP_WIDTH)
+        )
         draw_multiline(
             surface,
             wrapped,
