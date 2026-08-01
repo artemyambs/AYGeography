@@ -47,6 +47,9 @@ from aygeography.ui.notifications import AchievementNotificationCenter
 from aygeography.ui.screens import (
     CAPITAL_LABEL_FONT_SIZE,
     CONTENT,
+    COUNTRY_FLAG_CENTER_Y,
+    COUNTRY_FLAG_NAME_FONT_SIZE,
+    COUNTRY_FLAG_NAME_TOP,
     GAMEPLAY_AREA,
     PRIMARY_ACTION_SIZE,
     QUESTION_FLAG_IMAGE_SIZE,
@@ -452,15 +455,30 @@ class PygameAppTests(unittest.TestCase):
         self.app.start_game(GameConfig(["flags"], ["Europe"], 10))
         view = self.app.view
         view.pause()
-        view.handle_event(
-            pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_RETURN})
-        )
-        self.assertFalse(view.paused)
-        view.pause()
         self.app.process_event(
             pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_ESCAPE})
         )
+        self.assertFalse(view.paused)
+        view.pause()
+        view.handle_event(
+            pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_RETURN})
+        )
         self.assertNotIsInstance(self.app.view, GameView)
+
+    def test_pause_exposes_only_two_interactive_buttons(self):
+        self.app.start_game(GameConfig(["flags"], ["Europe"], 10))
+        view = self.app.view
+        answer_button = next(iter(view.answer_buttons))
+        view.pause()
+
+        self.assertEqual(
+            {view.continue_button, view.end_round_button},
+            set(view.interaction_actions()),
+        )
+        self.assertFalse(view.interactive_at(answer_button.relative_rect.center))
+        self.assertTrue(view.interactive_at(view.continue_rect.center))
+        view.handle_button(answer_button)
+        self.assertEqual(0, view.session.index)
 
     def test_every_game_mode_renders(self):
         for mode in (
@@ -504,7 +522,7 @@ class PygameAppTests(unittest.TestCase):
                 category,
             )
 
-    def test_wonder_fact_uses_flag_true_false_and_explicit_feedback(self):
+    def test_wonder_fact_uses_country_flag_true_false_and_standard_feedback(self):
         questions = self.app.question_factory.build(
             GameConfig(
                 ["wonders"],
@@ -524,16 +542,39 @@ class PygameAppTests(unittest.TestCase):
         self.assertEqual(["Правда", "Ложь"], question.options)
         self.app.manager.clear_and_reset()
         self.app.view = GameView(self.app, GameSession([question], "hard"))
-        with patch(
-            "aygeography.ui.presenters.draw_question_flag"
-        ) as flag_mock:
+        with (
+            patch(
+                "aygeography.ui.presenters.draw_question_flag"
+            ) as flag_mock,
+            patch("aygeography.ui.presenters.draw_text") as text_mock,
+        ):
             self.app.render()
         flag_mock.assert_called_once()
         self.assertEqual(question.country_iso, flag_mock.call_args.args[2])
+        self.assertIn(
+            self.app.catalog.get(question.country_iso).name,
+            [call.args[1] for call in text_mock.call_args_list],
+        )
+        country_call = next(
+            call
+            for call in text_mock.call_args_list
+            if call.args[1] == self.app.catalog.get(question.country_iso).name
+        )
+        self.assertEqual(
+            (CONTENT.centerx, COUNTRY_FLAG_NAME_TOP),
+            country_call.args[2],
+        )
+        self.assertEqual(COUNTRY_FLAG_NAME_FONT_SIZE, country_call.args[3])
+        self.assertTrue(country_call.kwargs["bold"])
+        self.assertEqual("midtop", country_call.kwargs["anchor"])
+        self.assertEqual(
+            (CONTENT.centerx, COUNTRY_FLAG_CENTER_Y),
+            flag_mock.call_args.args[3],
+        )
 
         view = self.app.view
         view._answer(question.correct_answer)
-        self.assertEqual("Ответ правильный", view.feedback)
+        self.assertEqual("Верно! +10 очков", view.feedback)
         self.assertEqual(GREEN, view.feedback_colour)
         self.assertEqual((question.country_iso,), view.session.answers[0].subjects)
 
@@ -543,7 +584,10 @@ class PygameAppTests(unittest.TestCase):
         self.app.manager.clear_and_reset()
         self.app.view = GameView(self.app, GameSession([question], "easy"))
         self.app.view._answer(incorrect)
-        self.assertEqual("Ответ неверный", self.app.view.feedback)
+        self.assertEqual(
+            f"Неверно. Правильный ответ: {question.correct_answer}",
+            self.app.view.feedback,
+        )
         self.assertEqual(RED, self.app.view.feedback_colour)
 
     def test_atlas_uses_new_fact_titles_and_distinctive_stat(self):

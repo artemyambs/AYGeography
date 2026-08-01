@@ -17,7 +17,14 @@ from .components import (
     draw_text,
     panel,
 )
-from .layout import CONTENT, blit_centered, draw_question_flag
+from .layout import (
+    CONTENT,
+    COUNTRY_FLAG_CENTER_Y,
+    COUNTRY_FLAG_NAME_FONT_SIZE,
+    COUNTRY_FLAG_NAME_TOP,
+    blit_centered,
+    draw_question_flag,
+)
 
 
 class PopulationComparisonPresenter:
@@ -142,7 +149,22 @@ class WonderFactPresenter(WonderPresenter):
 
     @classmethod
     def draw(cls, surface: pygame.Surface, app, question) -> None:
-        draw_question_flag(surface, app, question.country_iso, (CONTENT.centerx, 240))
+        country = app.catalog.get(question.country_iso)
+        draw_text(
+            surface,
+            country.name,
+            (CONTENT.centerx, COUNTRY_FLAG_NAME_TOP),
+            COUNTRY_FLAG_NAME_FONT_SIZE,
+            TEXT,
+            bold=True,
+            anchor="midtop",
+        )
+        draw_question_flag(
+            surface,
+            app,
+            question.country_iso,
+            (CONTENT.centerx, COUNTRY_FLAG_CENTER_Y),
+        )
         fact_rect = pygame.Rect(450, 365, 940, 160)
         panel(surface, fact_rect, fill=PANEL_ALT, border=CYAN_DARK)
         wrapped = "\n".join(textwrap.wrap(question.prompt, width=72))

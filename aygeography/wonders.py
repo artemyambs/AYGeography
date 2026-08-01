@@ -24,6 +24,8 @@ EXPECTED_COUNTS = {
     WonderCategory.FACT: 585,
 }
 
+LANDMARK_IMAGE_SIZE = (960, 540)
+
 CONTENT_FILES = {
     WonderCategory.FACT: "fact.json",
     WonderCategory.LANDMARK: "landmark.json",
@@ -295,20 +297,21 @@ class WonderCatalog:
         country_isos: tuple[str, ...],
     ) -> str:
         country_names = [self.country_name(iso3) for iso3 in country_isos]
-        missing = [name for name in country_names if name not in explanation]
-        if not missing:
-            return explanation
-        label = "Страна" if len(country_names) == 1 else "Страны"
-        return f"{label}: {', '.join(country_names)}. {explanation}"
+        return f"{', '.join(country_names)}. {explanation}"
 
     def _validate_image(self, item: WonderItem) -> None:
         path = self.assets_dir / item.image
         if not item.image or not path.is_file():
             raise ValueError(f"Не найдено изображение: {item.key}")
         try:
-            pygame.image.load(path)
+            image = pygame.image.load(path)
         except pygame.error as error:
             raise ValueError(f"Не читается изображение: {item.key}") from error
+        if image.get_size() != LANDMARK_IMAGE_SIZE:
+            raise ValueError(
+                f"Неверный размер изображения: {item.key}; "
+                f"ожидается {LANDMARK_IMAGE_SIZE}"
+            )
 
     @staticmethod
     def _validate_coordinate(point: tuple[float, float]) -> None:

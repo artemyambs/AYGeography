@@ -66,6 +66,9 @@ from .components import (
 from .layout import (
     CAPITAL_LABEL_FONT_SIZE,
     CONTENT,
+    COUNTRY_FLAG_CENTER_Y,
+    COUNTRY_FLAG_NAME_FONT_SIZE,
+    COUNTRY_FLAG_NAME_TOP,
     GAMEPLAY_AREA,
     PAGE_TITLE_FONT_SIZE,
     PRIMARY_ACTION_FONT_SIZE,
@@ -158,8 +161,11 @@ class BaseView:
     def interactive_at(self, position: tuple[int, int]) -> bool:
         return any(
             button.relative_rect.collidepoint(position)
-            for button in self._actions
+            for button in self.interaction_actions()
         )
+
+    def interaction_actions(self) -> tuple[UIButton, ...]:
+        return tuple(self._actions)
 
     def set_pointer_position(self, position: tuple[int, int]) -> None:
         self._pointer_position = position
@@ -168,7 +174,7 @@ class BaseView:
         hovered_button = next(
             (
                 button
-                for button in self._actions
+                for button in self.interaction_actions()
                 if self._pointer_position is not None
                 and button.relative_rect.collidepoint(
                     self._pointer_position
@@ -1054,18 +1060,8 @@ class GameView(BaseView):
             prefix = "Верно!" if record.is_correct else "Неверно."
             self.feedback = f"{prefix} {' • '.join(values)} человек"
             self.feedback_colour = GREEN if record.is_correct else RED
-        elif (
-            isinstance(question.content, WonderContent)
-            and question.content.style == "wonder_fact"
-        ):
-            self.feedback = (
-                "Ответ правильный"
-                if record.is_correct
-                else "Ответ неверный"
-            )
-            self.feedback_colour = GREEN if record.is_correct else RED
         elif record.is_correct:
-            self.feedback = f"Верно!  +{record.points} очков"
+            self.feedback = f"Верно! +{record.points} очков"
             self.feedback_colour = GREEN
         else:
             self.feedback = (
@@ -1098,7 +1094,7 @@ class GameView(BaseView):
 
     def _toggle_pause(self) -> None:
         if self.paused:
-            self._resume()
+            self.resume()
         else:
             self.pause()
 
@@ -1109,7 +1105,7 @@ class GameView(BaseView):
         self.pause_started = self.app.clock()
         self._create_pause_actions()
 
-    def _resume(self) -> None:
+    def resume(self) -> None:
         if not self.paused:
             return
         paused_seconds = self.app.clock() - self.pause_started
@@ -1130,6 +1126,20 @@ class GameView(BaseView):
                 self.end_round_rect,
                 self.end_round,
             )
+
+    def interaction_actions(self) -> tuple[UIButton, ...]:
+        if not self.paused:
+            return super().interaction_actions()
+        return tuple(
+            button
+            for button in (self.continue_button, self.end_round_button)
+            if button is not None
+        )
+
+    def handle_button(self, element) -> None:
+        if self.paused and element not in self.interaction_actions():
+            return
+        super().handle_button(element)
 
     def _remove_pause_actions(self) -> None:
         for attribute in ("continue_button", "end_round_button"):
@@ -1155,9 +1165,9 @@ class GameView(BaseView):
         if self.paused:
             if event.type == pygame.KEYDOWN:
                 if event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
-                    self._resume()
-                elif event.key == pygame.K_ESCAPE:
                     self.end_round()
+                elif event.key == pygame.K_ESCAPE:
+                    self.resume()
             return
         if self.advance_at is not None:
             if self._is_feedback_advance_event(event):
@@ -1291,8 +1301,8 @@ class GameView(BaseView):
         draw_text(
             surface,
             question.prompt,
-            (CONTENT.centerx, 142),
-            28,
+            (CONTENT.centerx, COUNTRY_FLAG_NAME_TOP),
+            COUNTRY_FLAG_NAME_FONT_SIZE,
             TEXT,
             bold=True,
             anchor="midtop",
@@ -1301,7 +1311,7 @@ class GameView(BaseView):
             surface,
             self.app,
             question.visual,
-            (CONTENT.centerx, 300),
+            (CONTENT.centerx, COUNTRY_FLAG_CENTER_Y),
         )
         draw_text(
             surface,
@@ -1421,14 +1431,14 @@ class GameView(BaseView):
             draw_button(
                 surface,
                 self.continue_rect,
-                "Продолжить [Enter]",
+                "Продолжить [Esc]",
                 primary=True,
                 size=17,
             )
             panel(surface, self.end_round_rect, fill=PANEL, border=RED, radius=7)
             draw_text(
                 surface,
-                "Закончить раунд [Esc]",
+                "Закончить раунд [Enter]",
                 self.end_round_rect.center,
                 17,
                 RED,

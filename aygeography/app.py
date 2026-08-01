@@ -700,7 +700,7 @@ class AYGeographyApp:
                 self._confirmation_action = None
             elif isinstance(self.view, GameView):
                 if self.view.paused:
-                    self.view.end_round()
+                    self.view.resume()
                 else:
                     self.view.pause()
             elif isinstance(self.view, (HomeView, ProfileSelectionView)):

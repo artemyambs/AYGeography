@@ -41,6 +41,7 @@ from aygeography.storage import GameRepository
 from aygeography.waters import WaterCatalog
 from aygeography.wonders import (
     EXPECTED_COUNTS,
+    LANDMARK_IMAGE_SIZE,
     WonderCatalog,
     WonderCategory,
 )
@@ -148,16 +149,18 @@ class QuizTests(unittest.TestCase):
                     item.explanation,
                     item.key,
                 )
+            self.assertNotIn("Страна: ", item.explanation, item.key)
+            self.assertNotIn("Страны: ", item.explanation, item.key)
 
     def test_wonders_extension_has_requested_content_and_image_sizes(self):
         facts = self.wonders.by_category(WonderCategory.FACT)
-        landmarks = self.wonders.by_category(WonderCategory.LANDMARK)[-30:]
+        landmarks = self.wonders.by_category(WonderCategory.LANDMARK)
 
         self.assertEqual(585, len({item.prompt for item in facts}))
         self.assertEqual(390, sum(item.truth_value is True for item in facts))
         self.assertEqual(195, sum(item.truth_value is False for item in facts))
         self.assertEqual(
-            {(960, 540)},
+            {LANDMARK_IMAGE_SIZE},
             {
                 pygame.image.load(BASE_DIR / "assets" / item.image).get_size()
                 for item in landmarks
