@@ -9,7 +9,7 @@ from .models import Country
 class CountryCatalog:
     """Единая точка доступа к неизменяемым справочным данным."""
 
-    def __init__(self, countries_path: Path, continents_path: Path) -> None:
+    def __init__(self, countries_path: Path) -> None:
         raw_countries = json.loads(countries_path.read_text(encoding="utf-8"))
         invalid_population = [
             iso3
@@ -58,9 +58,9 @@ class CountryCatalog:
             )
             for iso3, data in raw_countries.items()
         }
-        self._continents: dict[str, list[str]] = json.loads(
-            continents_path.read_text(encoding="utf-8")
-        )
+        self._continents: dict[str, list[str]] = {}
+        for iso3, country in self._countries.items():
+            self._continents.setdefault(country.continent, []).append(iso3)
 
     def get(self, iso3: str) -> Country:
         return self._countries[iso3]
@@ -78,4 +78,7 @@ class CountryCatalog:
 
     @property
     def continents(self) -> dict[str, list[str]]:
-        return self._continents.copy()
+        return {
+            continent: list(iso3_codes)
+            for continent, iso3_codes in self._continents.items()
+        }

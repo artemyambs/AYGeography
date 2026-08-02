@@ -15,12 +15,20 @@ class StartReviewRound:
     random_factory: RandomFactory = random.Random
     score_rules: ScoreRules = DEFAULT_SCORE_RULES
     question_time_seconds: int = 60
+    max_questions: int = 25
+
+    def __post_init__(self) -> None:
+        if self.max_questions <= 0:
+            raise ValueError("Лимит review-раунда должен быть положительным")
 
     def pending_count(self) -> int:
         return self.repository.pending_review_count()
 
     def execute(self) -> GameSession:
-        items = self.repository.review_items("pending")
+        items = self.repository.review_items(
+            "pending",
+            limit=self.max_questions,
+        )
         if not items:
             raise ValueError("Очередь повторения пуста")
         rng = self.random_factory()

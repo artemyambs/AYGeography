@@ -13,8 +13,8 @@ import pygame
 
 from aygeography.app import AYGeographyApp
 from aygeography.config import (
-    ANSWER_FEEDBACK_SECONDS,
     ASSETS_DIR,
+    MODE_FEEDBACK_SETTINGS,
     WATER_KIND_FEEDBACK_SETTINGS,
 )
 from aygeography.domain.questions import (
@@ -43,6 +43,7 @@ from aygeography.ui.components import (
     draw_native_rect,
     font,
 )
+from aygeography.ui.result_trophy import draw_result_trophy
 from aygeography.ui.notifications import AchievementNotificationCenter
 from aygeography.ui.presenters import WonderFactPresenter
 from aygeography.ui.screens import (
@@ -56,6 +57,7 @@ from aygeography.ui.screens import (
     QUESTION_FLAG_IMAGE_SIZE,
     QUESTION_FLAG_PANEL_SIZE,
     GameView,
+    ResultView,
     StatisticsView,
     draw_question_flag,
 )
@@ -104,6 +106,41 @@ class PygameAppTests(unittest.TestCase):
             self.app.show(name)
             self.app.update(0.016)
             self.assertEqual(LOGICAL_SIZE, self.app.render().get_size(), name)
+
+    def test_result_view_selects_configured_trophy_style(self):
+        question = self.app.question_factory.build(
+            GameConfig(["flags"], ["Europe"], 1),
+            self.app.catalog,
+            seed=73,
+        )[0]
+        session = GameSession([question])
+        session.answer(question.correct_answer, 1)
+
+        self.app.manager.clear_and_reset()
+        view = ResultView(self.app, session.result())
+        self.app.view = view
+        try:
+            self.assertEqual("superior", view.summary.trophy_key)
+            self.assertEqual("#367e13", view.summary.title_color)
+            self.assertEqual("radiant", view.summary.trophy_effect)
+            self.assertEqual(LOGICAL_SIZE, self.app.render().get_size())
+        finally:
+            self.app.show("home")
+
+    def test_superior_trophy_radiance_is_animated(self):
+        trophy = pygame.Surface((64, 64), pygame.SRCALPHA)
+        trophy.fill("gold")
+        first = pygame.Surface(LOGICAL_SIZE, pygame.SRCALPHA)
+        second = pygame.Surface(LOGICAL_SIZE, pygame.SRCALPHA)
+        rect = pygame.Rect(395, 105, 340, 340)
+
+        draw_result_trophy(first, trophy, rect, "radiant", 0.0)
+        draw_result_trophy(second, trophy, rect, "radiant", 0.25)
+
+        self.assertNotEqual(
+            pygame.image.tobytes(first, "RGBA"),
+            pygame.image.tobytes(second, "RGBA"),
+        )
 
     def test_all_static_views_render_natively_at_full_hd(self):
         previous_display = self.app.display
@@ -1099,7 +1136,7 @@ class PygameAppTests(unittest.TestCase):
             view = self.app.view
             view._answer(view.active_question.correct_answer)
             self.assertEqual(
-                100.0 + ANSWER_FEEDBACK_SECONDS["population"]["correct"],
+                100.0 + MODE_FEEDBACK_SETTINGS["population"]["correct"],
                 view.advance_at,
             )
 
@@ -1112,7 +1149,7 @@ class PygameAppTests(unittest.TestCase):
             )
             view._answer(wrong_answer)
             self.assertEqual(
-                100.0 + ANSWER_FEEDBACK_SECONDS["population"]["incorrect"],
+                100.0 + MODE_FEEDBACK_SETTINGS["population"]["incorrect"],
                 view.advance_at,
             )
         finally:

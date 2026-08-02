@@ -1,21 +1,24 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://aygeography.local/schemas/result-levels-v1.json",
-  "title": "AYGeography result levels v1",
+  "$id": "https://aygeography.local/schemas/result-levels-v3.json",
+  "title": "AYGeography result levels v3",
   "type": "object",
   "required": ["schema_version", "levels"],
   "properties": {
-    "schema_version": {"const": 1},
+    "schema_version": {"const": 3},
     "levels": {
       "type": "array",
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["min_accuracy", "max_accuracy", "title"],
+        "required": ["min_accuracy", "max_accuracy", "title", "trophy_key", "title_color", "trophy_effect"],
         "properties": {
           "min_accuracy": {"type": "integer", "minimum": 0, "maximum": 100},
           "max_accuracy": {"type": "integer", "minimum": 0, "maximum": 100},
-          "title": {"type": "string", "minLength": 1}
+          "title": {"type": "string", "minLength": 1},
+          "trophy_key": {"type": "string", "pattern": "^[a-z0-9_]+$"},
+          "title_color": {"type": "string", "pattern": "^#[0-9a-fA-F]{6}$"},
+          "trophy_effect": {"type": "string", "enum": ["none", "radiant"]}
         },
         "additionalProperties": false
       }

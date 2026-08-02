@@ -20,10 +20,7 @@ class ProgressionTests(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.database_path = Path(self.temporary.name) / "progress.db"
         self.repository = GameRepository(self.database_path)
-        self.countries = CountryCatalog(
-            CONFIGS_DIR / "countries_by_iso3.json",
-            CONFIGS_DIR / "continents.json",
-        )
+        self.countries = CountryCatalog(CONFIGS_DIR / "countries_by_iso3.json")
         self.catalog = ProgressionCatalog(
             CONFIGS_DIR / "progression.json",
             CONFIGS_DIR / "achievements.json",

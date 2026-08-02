@@ -6,8 +6,17 @@
   },
   "gameplay": {
     "question_time_seconds": 60,
+    "review_round_max_questions": 25,
     "answer_feedback_seconds_by_water_kind": {
       "river": {"correct": 5.0, "incorrect": 7.0}
+    }
+  },
+  "diagnostics": {
+    "error_log": {
+      "enabled": true,
+      "file_name": "errors.log",
+      "max_bytes": 1048576,
+      "backup_count": 5
     }
   },
   "modes": {
@@ -50,6 +59,7 @@
       "title": "Чудеса света",
       "icon": "wonders",
       "feedback": {"correct": 6.0, "incorrect": 8.0},
+      "category_weights": {"landmark": 3, "fact": 2, "peak": 1},
       "presenters": [
         "wonder_landmark_name",
         "wonder_landmark_country",

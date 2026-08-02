@@ -3,14 +3,39 @@
   "$id": "https://aygeography.local/schemas/app-settings-v1.json",
   "title": "AYGeography application settings v1",
   "type": "object",
-  "required": ["schema_version", "app", "gameplay", "modes", "colors", "labels"],
+  "required": ["schema_version", "app", "gameplay", "modes", "colors", "labels", "diagnostics"],
   "properties": {
     "schema_version": {"const": 1},
     "app": {"type": "object"},
-    "gameplay": {"type": "object"},
+    "gameplay": {
+      "type": "object",
+      "required": ["question_time_seconds", "review_round_max_questions"],
+      "properties": {
+        "question_time_seconds": {"type": "integer", "minimum": 1},
+        "review_round_max_questions": {"type": "integer", "minimum": 1}
+      }
+    },
     "modes": {"type": "object", "minProperties": 1},
     "colors": {"type": "object"},
-    "labels": {"type": "object"}
+    "labels": {"type": "object"},
+    "diagnostics": {
+      "type": "object",
+      "required": ["error_log"],
+      "properties": {
+        "error_log": {
+          "type": "object",
+          "required": ["enabled", "file_name", "max_bytes", "backup_count"],
+          "properties": {
+            "enabled": {"type": "boolean"},
+            "file_name": {"type": "string", "minLength": 1},
+            "max_bytes": {"type": "integer", "minimum": 1024},
+            "backup_count": {"type": "integer", "minimum": 1}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
   },
   "additionalProperties": false
 }

@@ -9,6 +9,9 @@ from ...models import RoundResult
 @dataclass(frozen=True, slots=True)
 class ResultSummary:
     title: str
+    trophy_key: str
+    title_color: str
+    trophy_effect: str
     accuracy_percent: int
     correct_count: int
     question_count: int
@@ -28,8 +31,12 @@ class ResultSummary:
         for answer in result.answers:
             current = current + 1 if answer.is_correct else 0
             best = max(best, current)
+        level = ratings.level(accuracy)
         return cls(
-            title=ratings.title(accuracy),
+            title=level.title,
+            trophy_key=level.trophy_key,
+            title_color=level.title_color,
+            trophy_effect=level.trophy_effect,
             accuracy_percent=accuracy,
             correct_count=result.correct_count,
             question_count=len(result.answers),

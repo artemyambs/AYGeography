@@ -26,6 +26,7 @@ class ReviewRepository(Protocol):
     def review_items(
         self,
         status: ReviewStatus | None = None,
+        limit: int | None = None,
     ) -> list[ReviewItem]: ...
 
     def pending_review_count(self) -> int: ...

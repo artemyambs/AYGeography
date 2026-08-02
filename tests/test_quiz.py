@@ -10,9 +10,9 @@ import pygame
 
 from aygeography.catalog import CountryCatalog
 from aygeography.config import (
-    ANSWER_FEEDBACK_SECONDS,
     BASE_DIR,
     CONFIGS_DIR,
+    MODE_FEEDBACK_SETTINGS,
     MODE_NAMES,
     QUESTION_TIME_SECONDS,
     WONDER_CATEGORY_WEIGHTS,
@@ -52,10 +52,7 @@ from aygeography.wonders import (
 class QuizTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.catalog = CountryCatalog(
-            CONFIGS_DIR / "countries_by_iso3.json",
-            CONFIGS_DIR / "continents.json",
-        )
+        cls.catalog = CountryCatalog(CONFIGS_DIR / "countries_by_iso3.json")
         cls.wonders = WonderCatalog(
             CONFIGS_DIR / "wonders",
             cls.catalog.all(),
@@ -78,7 +75,7 @@ class QuizTests(unittest.TestCase):
             dict(factory.registry.names),
         )
         self.assertEqual(
-            ANSWER_FEEDBACK_SECONDS["flags"]["correct"],
+            MODE_FEEDBACK_SETTINGS["flags"]["correct"],
             factory.registry.feedback_seconds("flags", True),
         )
 
@@ -279,7 +276,6 @@ class QuizTests(unittest.TestCase):
     def test_configs_directory_replaces_data_directory(self):
         self.assertTrue((CONFIGS_DIR / "app_settings.json").is_file())
         self.assertTrue((CONFIGS_DIR / "scoring.json").is_file())
-        self.assertTrue((CONFIGS_DIR / "wonders_settings.json").is_file())
         self.assertEqual(
             {"fact.json", "landmark.json", "peak.json"},
             {
@@ -297,16 +293,16 @@ class QuizTests(unittest.TestCase):
         self.assertFalse((BASE_DIR / "data").exists())
 
     def test_feedback_delays_are_configured_for_every_mode(self):
-        self.assertEqual(set(MODE_NAMES), set(ANSWER_FEEDBACK_SECONDS))
+        self.assertEqual(set(MODE_NAMES), set(MODE_FEEDBACK_SETTINGS))
         for mode in MODE_NAMES:
             self.assertEqual(
                 {"correct", "incorrect"},
-                set(ANSWER_FEEDBACK_SECONDS[mode]),
+                set(MODE_FEEDBACK_SETTINGS[mode]),
             )
             self.assertTrue(
                 all(
                     seconds > 0
-                    for seconds in ANSWER_FEEDBACK_SECONDS[mode].values()
+                    for seconds in MODE_FEEDBACK_SETTINGS[mode].values()
                 )
             )
 
@@ -894,6 +890,34 @@ class QuizTests(unittest.TestCase):
             self.assertEqual(2, reopened[0].failure_count)
             self.assertIsNone(reopened[0].resolved_at)
 
+    def test_review_round_is_limited_without_removing_queue_tail(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repository = GameRepository(Path(directory) / "review_limit.db")
+            questions = QuestionFactory().build(
+                GameConfig(["flags"], ["Europe"], 30),
+                self.catalog,
+                seed=41,
+            )
+            failed = GameSession(questions)
+            while not failed.finished:
+                failed.answer("__wrong__", 5)
+            repository.save_round(failed.result())
+
+            repeated = StartReviewRound(
+                repository,
+                max_questions=25,
+            ).execute()
+
+            self.assertEqual(25, len(repeated.questions))
+            self.assertEqual(30, repository.pending_review_count())
+
+    def test_review_round_rejects_non_positive_limit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repository = GameRepository(Path(directory) / "review_limit.db")
+
+            with self.assertRaises(ValueError):
+                StartReviewRound(repository, max_questions=0)
+
     def test_result_rating_configuration_covers_confirmed_boundaries(self):
         config = json.loads(
             (CONFIGS_DIR / "result_levels.json").read_text(encoding="utf-8")
@@ -915,6 +939,25 @@ class QuizTests(unittest.TestCase):
         }
         for accuracy, title in expected.items():
             self.assertEqual(title, policy.title(accuracy))
+
+        expected_styles = {
+            100: ("superior", "#367e13", "radiant"),
+            99: ("gold", "#76c52b", "none"),
+            80: ("silver", "#f6b817", "none"),
+            60: ("silver", "#f6b817", "none"),
+            40: ("bronze", "#e85b5b", "none"),
+            0: ("bronze", "#e85b5b", "none"),
+        }
+        for accuracy, style in expected_styles.items():
+            level = policy.level(accuracy)
+            self.assertEqual(
+                style,
+                (level.trophy_key, level.title_color, level.trophy_effect),
+            )
+        self.assertEqual(
+            frozenset({"superior", "gold", "silver", "bronze"}),
+            policy.trophy_keys,
+        )
 
     def test_population_answer_links_both_countries_once(self):
         with tempfile.TemporaryDirectory() as directory:

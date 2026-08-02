@@ -1,11 +1,11 @@
 {
-  "schema_version": 1,
+  "schema_version": 3,
   "levels": [
-    {"min_accuracy": 100, "max_accuracy": 100, "title": "Превосходно!"},
-    {"min_accuracy": 95, "max_accuracy": 99, "title": "Отлично!"},
-    {"min_accuracy": 80, "max_accuracy": 94, "title": "Хорошо!"},
-    {"min_accuracy": 60, "max_accuracy": 79, "title": "Нужно больше практики!"},
-    {"min_accuracy": 40, "max_accuracy": 59, "title": "Плохо!"},
-    {"min_accuracy": 0, "max_accuracy": 39, "title": "Ужасно!"}
+    {"min_accuracy": 100, "max_accuracy": 100, "title": "Превосходно!", "trophy_key": "superior", "title_color": "#367e13", "trophy_effect": "radiant"},
+    {"min_accuracy": 95, "max_accuracy": 99, "title": "Отлично!", "trophy_key": "gold", "title_color": "#76c52b", "trophy_effect": "none"},
+    {"min_accuracy": 80, "max_accuracy": 94, "title": "Хорошо!", "trophy_key": "silver", "title_color": "#f6b817", "trophy_effect": "none"},
+    {"min_accuracy": 60, "max_accuracy": 79, "title": "Нужно больше практики!", "trophy_key": "silver", "title_color": "#f6b817", "trophy_effect": "none"},
+    {"min_accuracy": 40, "max_accuracy": 59, "title": "Плохо!", "trophy_key": "bronze", "title_color": "#e85b5b", "trophy_effect": "none"},
+    {"min_accuracy": 0, "max_accuracy": 39, "title": "Ужасно!", "trophy_key": "bronze", "title_color": "#e85b5b", "trophy_effect": "none"}
   ]
 }

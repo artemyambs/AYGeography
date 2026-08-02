@@ -67,10 +67,7 @@ def _rebuild_achievements(repository: GameRepository) -> None:
     with closing(sqlite3.connect(DATABASE_PATH)) as db:
         db.execute("DELETE FROM achievements")
         db.commit()
-    countries = CountryCatalog(
-        CONFIGS_DIR / "countries_by_iso3.json",
-        CONFIGS_DIR / "continents.json",
-    )
+    countries = CountryCatalog(CONFIGS_DIR / "countries_by_iso3.json")
     catalog = ProgressionCatalog(
         CONFIGS_DIR / "progression.json",
         CONFIGS_DIR / "achievements.json",

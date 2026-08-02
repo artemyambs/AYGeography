@@ -25,7 +25,6 @@ class ContentCatalogLoader:
     def load_countries(self) -> CountryCatalog:
         return CountryCatalog(
             self._configs_dir / "countries_by_iso3.json",
-            self._configs_dir / "continents.json",
         )
 
     def load_waters(self, countries: CountryCatalog) -> WaterCatalog:

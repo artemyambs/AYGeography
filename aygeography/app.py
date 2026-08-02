@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ctypes
 import json
+import logging
 import os
 import zipfile
 from pathlib import Path
@@ -26,6 +27,8 @@ def _enable_windows_dpi_awareness() -> None:
 
 
 _enable_windows_dpi_awareness()
+
+LOGGER = logging.getLogger(__name__)
 
 import pygame
 import pygame_gui
@@ -64,6 +67,7 @@ from .ui.components import (
 from .ui.modals import ConfirmationModal
 from .ui.notifications import AchievementNotificationCenter
 from .ui.presenters import QuestionPresenterRegistry
+from .ui.result_trophy import TROPHY_EFFECT_KEYS
 from .ui.screen_registry import ScreenRegistry
 from .ui.file_dialogs import WindowsProfileFileDialog
 from .ui.screens import (
@@ -164,6 +168,9 @@ class AYGeographyApp:
         self.question_time_seconds = int(
             runtime_settings["gameplay"]["question_time_seconds"]
         )
+        self.review_round_max_questions = int(
+            runtime_settings["gameplay"]["review_round_max_questions"]
+        )
         self.score_rules = ScoreRules(
             self.config_provider.directory / "scoring.json",
             self.question_time_seconds,
@@ -234,8 +241,25 @@ class AYGeographyApp:
         self.screen_registry = ScreenRegistry(VIEW_TYPES)
         self.progression = self._create_progression_service()
         self.result_ratings = ResultRatingPolicy.from_config(
-            self.config_provider.object("result_levels.json", schema_version=1)
+            self.config_provider.object("result_levels.json", schema_version=3)
         )
+        missing_trophies = [
+            key
+            for key in self.result_ratings.trophy_keys
+            if not (ASSETS_DIR / "results" / f"trophy_{key}.png").is_file()
+        ]
+        if missing_trophies:
+            raise FileNotFoundError(
+                "Не найдены кубки результата: " + ", ".join(sorted(missing_trophies))
+            )
+        unknown_trophy_effects = (
+            self.result_ratings.trophy_effects - TROPHY_EFFECT_KEYS
+        )
+        if unknown_trophy_effects:
+            raise ValueError(
+                "Неизвестные эффекты кубков: "
+                + ", ".join(sorted(unknown_trophy_effects))
+            )
         self._create_use_cases()
         self._present_loading(75, "Подготовка режимов")
         self.map_renderer = MapRenderer(
@@ -365,6 +389,7 @@ class AYGeographyApp:
             self.random_factory,
             self.score_rules,
             self.question_time_seconds,
+            self.review_round_max_questions,
         )
         self._answer_question = AnswerQuestion()
         self._finish_round = FinishRound(
@@ -461,6 +486,7 @@ class AYGeographyApp:
             try:
                 destination = self._save_profile_dialog()
             except OSError as error:
+                LOGGER.exception("Ошибка диалога экспорта профиля")
                 self.toast(f"Ошибка системного диалога: {error}", RED)
                 return
         if destination is None:
@@ -471,6 +497,7 @@ class AYGeographyApp:
                 destination,
             )
         except (OSError, ValueError) as error:
+            LOGGER.exception("Ошибка экспорта профиля")
             self.toast(f"Ошибка экспорта: {error}", RED)
             return
         self.toast(f"Профиль сохранён: {path.name}", GREEN)
@@ -483,6 +510,7 @@ class AYGeographyApp:
             try:
                 source = self._open_profile_dialog()
             except OSError as error:
+                LOGGER.exception("Ошибка диалога импорта профиля")
                 self.toast(f"Ошибка системного диалога: {error}", RED)
                 return
         if source is None:
@@ -490,6 +518,7 @@ class AYGeographyApp:
         try:
             profile = self.profile_manager.import_profile(source)
         except (OSError, ValueError, zipfile.BadZipFile, json.JSONDecodeError) as error:
+            LOGGER.exception("Ошибка импорта профиля")
             self.toast(f"Ошибка импорта: {error}", RED)
             return
         self.select_profile(profile.id)
@@ -544,6 +573,7 @@ class AYGeographyApp:
         try:
             restored_view = GameView.from_state(self, self._active_game_state)
         except (KeyError, TypeError, ValueError):
+            LOGGER.exception("Ошибка восстановления сохранённого раунда")
             self._clear_active_game()
             self.view = None
             self.show("home")
@@ -577,6 +607,7 @@ class AYGeographyApp:
         try:
             session = self._start_review_round.execute()
         except ValueError as error:
+            LOGGER.exception("Ошибка запуска review-раунда")
             self.toast(str(error), RED)
             return
         previous_frame = self._capture_transition_frame()

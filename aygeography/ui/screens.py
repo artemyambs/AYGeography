@@ -79,6 +79,7 @@ from .layout import (
     draw_question_flag,
     primary_action_rect,
 )
+from .result_trophy import draw_result_trophy
 from .view_models import ResultSummary
 
 
@@ -762,7 +763,6 @@ class QuestionCountView(SelectionView):
 class GameView(BaseView):
     STATE_CODEC = GameStateCodec()
     STATE_VERSION = STATE_CODEC.VERSION
-    LEGACY_STATE_VERSIONS = STATE_CODEC.LEGACY_VERSIONS
     ANSWER_KEY_INDEX = {
         pygame.K_1: 0,
         pygame.K_2: 1,
@@ -1485,6 +1485,10 @@ class ResultView(BaseView):
         super().__init__(app)
         self.result = result
         self.summary = ResultSummary.create(result, app.result_ratings)
+        self.trophy = app.assets.image(
+            ASSETS_DIR / "results" / f"trophy_{self.summary.trophy_key}.png"
+        )
+        self.title_colour = pygame.Color(self.summary.title_color)
         self.wrong_rect = pygame.Rect(390, 750, 300, 58)
         self.home_rect = pygame.Rect(720, 750, 300, 58)
         self.review_count = app.pending_review_count()
@@ -1499,17 +1503,24 @@ class ResultView(BaseView):
         super().draw(surface)
         result = self.result
         summary = self.summary
-        trophy_center = (565, 255)
-        draw_native_ellipse(surface, (79, 50, 2), (450, 365, 230, 26))
-        draw_native_rect(surface, YELLOW, (535, 340, 60, 65), border_radius=8)
-        draw_native_rect(surface, YELLOW, (490, 400, 150, 20), border_radius=6)
-        draw_native_arc(surface, YELLOW, (450, 190, 80, 120), math.pi / 2, math.pi * 1.5, 12)
-        draw_native_arc(surface, YELLOW, (600, 190, 80, 120), -math.pi / 2, math.pi / 2, 12)
-        draw_native_polygon(surface, YELLOW, [(490, 175), (640, 175), (610, 340), (520, 340)])
-        draw_native_circle(surface, pygame.Color("#ffda42"), trophy_center, 48)
-        draw_text(surface, "★", trophy_center, 48, pygame.Color("#9a6700"), bold=True, anchor="center")
+        draw_native_ellipse(surface, (25, 20, 8), (450, 398, 230, 24))
+        draw_result_trophy(
+            surface,
+            self.trophy,
+            pygame.Rect(395, 105, 340, 340),
+            summary.trophy_effect,
+            self.app.clock(),
+        )
         accuracy = summary.accuracy_percent
-        draw_text(surface, summary.title, (565, 470), PAGE_TITLE_FONT_SIZE, TEXT, bold=True, anchor="center")
+        draw_text(
+            surface,
+            summary.title,
+            (565, 470),
+            PAGE_TITLE_FONT_SIZE,
+            self.title_colour,
+            bold=True,
+            anchor="center",
+        )
         draw_text(surface, f"{result.score} XP", (565, 520), 35, GREEN, bold=True, anchor="center")
         draw_native_circle(surface, PANEL_ALT, (565, 630), 55)
         draw_native_circle(surface, GREEN, (565, 630), 55, 5)

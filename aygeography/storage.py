@@ -206,14 +206,21 @@ class GameRepository:
     def review_items(
         self,
         status: ReviewStatus | None = None,
+        limit: int | None = None,
     ) -> list[ReviewItem]:
-        parameters: tuple[str, ...] = ()
+        if limit is not None and limit <= 0:
+            raise ValueError("Лимит элементов повторения должен быть положительным")
+        parameters: tuple[object, ...] = ()
         where = ""
         if status is not None:
             if status not in ("pending", "resolved"):
                 raise ValueError(f"Неизвестный статус повторения: {status}")
             where = "WHERE status=?"
             parameters = (status,)
+        limit_clause = ""
+        if limit is not None:
+            limit_clause = "LIMIT ?"
+            parameters += (limit,)
         with closing(self._connect()) as db:
             rows = db.execute(
                 f"""
@@ -222,6 +229,7 @@ class GameRepository:
                 FROM review_items
                 {where}
                 ORDER BY failed_at, question_key
+                {limit_clause}
                 """,
                 parameters,
             ).fetchall()

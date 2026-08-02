@@ -265,8 +265,3 @@ class QuestionPresenterRegistry:
     @property
     def presenters(self) -> Mapping[str, QuestionPresenter]:
         return MappingProxyType(self._presenters)
-
-
-DEFAULT_QUESTION_PRESENTERS = QuestionPresenterRegistry.default()
-# Compatibility alias for extensions using the old mapping.
-QUESTION_PRESENTERS = DEFAULT_QUESTION_PRESENTERS.presenters

@@ -50,13 +50,11 @@ MODE_FEEDBACK_SETTINGS = {
 WATER_KIND_FEEDBACK_SETTINGS = dict(
     APP_SETTINGS["gameplay"]["answer_feedback_seconds_by_water_kind"]
 )
-# Deprecated compatibility alias; runtime behavior is owned by ModeRegistry.
-ANSWER_FEEDBACK_SECONDS = MODE_FEEDBACK_SETTINGS
 
 
 def _load_wonder_category_weights() -> dict[str, int]:
-    settings = CONFIG_PROVIDER.object("wonders_settings.json")
-    raw = settings.get("category_weights")
+    wonders = MODE_SETTINGS.get("wonders", {})
+    raw = wonders.get("category_weights") if isinstance(wonders, dict) else None
     expected = {"landmark", "peak", "fact"}
     if not isinstance(raw, dict) or set(raw) != expected:
         raise ValueError(
