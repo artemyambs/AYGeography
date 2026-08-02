@@ -10,6 +10,7 @@ from ..config import ASSETS_DIR
 from ..domain.questions import PopulationContent
 from .components import (
     CYAN_DARK,
+    FONT_SIZES,
     PANEL,
     PANEL_ALT,
     SIDEBAR_WIDTH,
@@ -80,7 +81,7 @@ class PopulationComparisonPresenter:
                 surface,
                 country.name,
                 (card.centerx, card.top + 35),
-                24,
+                FONT_SIZES["country_card_title"],
                 TEXT,
                 bold=True,
                 anchor="center",
@@ -217,7 +218,7 @@ class WonderFactPresenter(WonderPresenter):
             surface,
             wrapped,
             fact_rect.inflate(-60, -32),
-            22,
+            FONT_SIZES["result_percent"],
             TEXT,
             bold=True,
             line_gap=7,

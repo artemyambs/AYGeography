@@ -71,6 +71,8 @@
   },
   "colors": {
     "background": "#020d14",
+    "black": "#000000",
+    "transparent": "#00000000",
     "sidebar": "#051722",
     "panel": "#071c28",
     "panel_alt": "#092633",
@@ -85,7 +87,171 @@
     "red": "#e85b5b",
     "map": "#0a5572",
     "map_border": "#1683a4",
-    "water": "#031b29"
+    "water": "#031b29",
+    "selected_panel": "#0b2828",
+    "selected_button": "#123927",
+    "disabled_border": "#18313a",
+    "progress_track": "#103544",
+    "checkbox_background": "#04131c",
+    "checkbox_border": "#7f9aa5",
+    "navigation_text": "#d4dfe4",
+    "profile_panel": "#061c28",
+    "profile_border": "#103747",
+    "card_background": "#06202d",
+    "card_border": "#164457",
+    "question_panel": "#07171f",
+    "map_control": "#061a25",
+    "tooltip": "#0d2b38",
+    "achievement_complete": "#0b2b2b",
+    "chart_grid": "#0e3747",
+    "button_hover": "#0b3141",
+    "primary_hover": "#438f19",
+    "danger_hover": "#3a1820",
+    "interaction_hover_fill": "#39d7ee1a",
+    "interaction_hover_border": "#39d7ee82",
+    "map_selection_fill": "#abd32a96",
+    "map_selection_border": "#efff68ff",
+    "map_glow": "#67e8f9",
+    "map_glow_bright": "#d7ff72",
+    "atlas_default_country": "#b7c5c8",
+    "modal_overlay": "#00070bdc",
+    "pause_overlay": "#00070bd2",
+    "toast_background": "#061922",
+    "trophy_glow": "#ffbe2d",
+    "trophy_ray": "#ffd35b"
+  },
+  "ui": {
+    "layout": {
+      "logical_size": [1600, 900],
+      "sidebar_width": 205,
+      "footer_height": 34
+    },
+    "typography": {
+      "family": "Segoe UI",
+      "scale": 1.08,
+      "minimum_fitted_size": 13,
+      "legacy_size_roles": {
+        "9": "micro",
+        "10": "small",
+        "11": "tooltip",
+        "12": "caption",
+        "13": "secondary",
+        "14": "footer",
+        "15": "compact_button",
+        "16": "body",
+        "17": "button",
+        "18": "button_default",
+        "19": "primary_action",
+        "22": "result_percent",
+        "23": "metric_value",
+        "24": "country_card_title",
+        "26": "capital_label",
+        "27": "page_title",
+        "28": "country_name",
+        "31": "question_count",
+        "32": "loading_title",
+        "35": "result_xp",
+        "48": "home_brand"
+      },
+      "sizes": {
+        "micro": 9,
+        "small": 10,
+        "tooltip": 11,
+        "caption": 12,
+        "secondary": 13,
+        "footer": 14,
+        "compact_button": 15,
+        "body": 16,
+        "button": 17,
+        "button_default": 18,
+        "primary_action": 19,
+        "result_percent": 22,
+        "metric_value": 23,
+        "country_card_title": 24,
+        "capital_label": 26,
+        "page_title": 27,
+        "country_name": 28,
+        "question_count": 31,
+        "loading_title": 32,
+        "result_xp": 35,
+        "home_brand": 48
+      }
+    },
+    "components": {
+      "panel": {
+        "corner_radius": 8,
+        "border_width": 1
+      },
+      "button": {
+        "size": [270, 52],
+        "font_size": "primary_action",
+        "corner_radius": 7,
+        "border_width": 1,
+        "normal": {"fill": "panel", "border": "border", "text": "text"},
+        "hover": {"fill": "button_hover", "border": "cyan", "text": "text"},
+        "primary": {"fill": "green_dark", "border": "green", "text": "text"},
+        "primary_hover": {"fill": "primary_hover", "border": "cyan", "text": "text"},
+        "danger": {"fill": "panel", "border": "red", "text": "red"},
+        "danger_hover": {"fill": "danger_hover", "border": "red", "text": "red"},
+        "selected": {"fill": "selected_button", "border": "green", "text": "text"},
+        "disabled": {"fill": "panel", "border": "disabled_border", "text": "muted"}
+      },
+      "checkbox": {
+        "size": [20, 20],
+        "corner_radius": 5,
+        "border_width": 2,
+        "check_width": 3
+      },
+      "question_flag": {
+        "image_size": [280, 180],
+        "panel_size": [300, 200]
+      },
+      "navigation": {
+        "item_top": 156,
+        "item_height": 44,
+        "item_gap": 10,
+        "horizontal_margin": 12,
+        "corner_radius": 6,
+        "profile_top": 746,
+        "profile_height": 96
+      },
+      "modal": {
+        "panel_size": [690, 330],
+        "button_size": [270, 52],
+        "corner_radius": 10
+      }
+    },
+    "visualizations": {
+      "river": {
+        "border_width": 12,
+        "fill_width": 10,
+        "curve_samples": 8,
+        "render_scale": 2
+      },
+      "continent_colors": {
+        "Africa": "#ff9f43",
+        "Asia": "#f05d8b",
+        "Europe": "#9b7bff",
+        "North America": "#2ec4b6",
+        "South America": "#7ac943",
+        "Oceania": "#36a9e1"
+      },
+      "atlas_continent_colors": {
+        "Europe": "#176a83",
+        "Asia": "#82701d",
+        "Africa": "#8b4e2e",
+        "North America": "#34774d",
+        "South America": "#5f812d",
+        "Oceania": "#695087"
+      },
+      "activity_colors": [
+        "#2c7bb6",
+        "#00a6ca",
+        "#00ccbc",
+        "#90eb9d",
+        "#f9d057"
+      ]
+    }
   },
   "labels": {
     "continents": {

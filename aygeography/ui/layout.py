@@ -5,10 +5,12 @@ import pygame
 from ..config import ASSETS_DIR
 from .components import (
     CYAN_DARK,
+    FONT_SIZES,
     FOOTER_HEIGHT,
     LOGICAL_SIZE,
     PANEL,
     SIDEBAR_WIDTH,
+    UI_THEME,
     blit_image,
     panel,
     render_scale,
@@ -26,15 +28,18 @@ GAMEPLAY_AREA = pygame.Rect(
     CONTENT.width,
     CONTENT.height - 70,
 )
-PAGE_TITLE_FONT_SIZE = 27
-PRIMARY_ACTION_SIZE = (270, 52)
-PRIMARY_ACTION_FONT_SIZE = 19
-QUESTION_FLAG_IMAGE_SIZE = (280, 180)
-QUESTION_FLAG_PANEL_SIZE = (300, 200)
+PAGE_TITLE_FONT_SIZE = FONT_SIZES["page_title"]
+PRIMARY_ACTION_SIZE = UI_THEME.component_size("button")
+PRIMARY_ACTION_FONT_SIZE = FONT_SIZES[
+    str(UI_THEME.component("button")["font_size"])
+]
+QUESTION_FLAG_STYLE = UI_THEME.component("question_flag")
+QUESTION_FLAG_IMAGE_SIZE = tuple(QUESTION_FLAG_STYLE["image_size"])
+QUESTION_FLAG_PANEL_SIZE = tuple(QUESTION_FLAG_STYLE["panel_size"])
 COUNTRY_FLAG_NAME_TOP = 142
-COUNTRY_FLAG_NAME_FONT_SIZE = 28
+COUNTRY_FLAG_NAME_FONT_SIZE = FONT_SIZES["country_name"]
 COUNTRY_FLAG_CENTER_Y = 300
-CAPITAL_LABEL_FONT_SIZE = 26
+CAPITAL_LABEL_FONT_SIZE = FONT_SIZES["capital_label"]
 
 
 def primary_action_rect(center_x: int, top: int) -> pygame.Rect:

@@ -8,6 +8,7 @@ import pygame
 from ..progression import AchievementDefinition
 from .components import (
     GREEN,
+    FONT_SIZES,
     MUTED,
     PANEL_ALT,
     TEXT,
@@ -153,7 +154,7 @@ class AchievementNotificationCenter:
             surface,
             "НОВОЕ ДОСТИЖЕНИЕ",
             (rect.left + 98, rect.top + 14),
-            10,
+            FONT_SIZES["small"],
             GREEN,
             bold=True,
         )
@@ -161,7 +162,7 @@ class AchievementNotificationCenter:
             surface,
             definition.title,
             (rect.left + 98, rect.top + 37),
-            16,
+            FONT_SIZES["body"],
             TEXT,
             bold=True,
         )
@@ -169,7 +170,7 @@ class AchievementNotificationCenter:
             surface,
             definition.description,
             pygame.Rect(rect.left + 98, rect.top + 64, rect.width - 146, 30),
-            10,
+            FONT_SIZES["small"],
             MUTED,
             align="left",
             line_gap=1,

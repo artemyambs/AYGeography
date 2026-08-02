@@ -24,21 +24,30 @@ from ..formatting import format_population
 from ..models import GameConfig, RoundResult
 from ..quiz import GameSession
 from .components import (
+    ACHIEVEMENT_COMPLETE,
     BG,
     BORDER,
+    CARD_BACKGROUND,
+    CARD_BORDER,
     CYAN,
     CYAN_DARK,
+    FONT_SIZES,
     FOOTER_HEIGHT,
     GREEN,
     GREEN_DARK,
     LOGICAL_SIZE,
+    MAP_CONTROL,
     MUTED,
     PANEL,
     PANEL_ALT,
+    QUESTION_PANEL,
     RED,
     SIDEBAR,
     SIDEBAR_WIDTH,
+    SELECTED_PANEL,
     TEXT,
+    TOOLTIP,
+    UI_THEME,
     YELLOW,
     MapCamera,
     blit_image,
@@ -55,9 +64,12 @@ from .components import (
     draw_native_line,
     draw_native_polygon,
     draw_native_rect,
+    draw_progress_ring,
     draw_sidebar,
     draw_text,
     font,
+    navigation_item_rect,
+    navigation_profile_rect,
     panel,
     physical_rect,
     render_scale,
@@ -134,12 +146,12 @@ class BaseView:
             if key == self.active:
                 continue
             self.add_action(
-                pygame.Rect(12, 156 + index * 54, SIDEBAR_WIDTH - 24, 44),
+                navigation_item_rect(index),
                 routes[key],
             )
         if self.active != "profile":
             self.add_action(
-                pygame.Rect(12, 746, SIDEBAR_WIDTH - 24, 96),
+                navigation_profile_rect(),
                 lambda: self.app.show("profile"),
             )
 
@@ -189,18 +201,18 @@ class BaseView:
                 surface.get_size(),
                 pygame.SRCALPHA,
             )
-            hover_layer.fill((0, 0, 0, 0))
+            hover_layer.fill(UI_THEME.colour("transparent"))
             radius = self._circular_actions.get(hovered_button)
             if radius is None:
                 draw_native_rect(
                     hover_layer,
-                    (57, 215, 238, 26),
+                    UI_THEME.colour("interaction_hover_fill"),
                     hovered_rect,
                     border_radius=8,
                 )
                 draw_native_rect(
                     hover_layer,
-                    (57, 215, 238, 130),
+                    UI_THEME.colour("interaction_hover_border"),
                     hovered_rect,
                     1,
                     border_radius=8,
@@ -208,7 +220,7 @@ class BaseView:
             else:
                 draw_native_circle(
                     hover_layer,
-                    (57, 215, 238, 26),
+                    UI_THEME.colour("interaction_hover_fill"),
                     hovered_rect.center,
                     radius,
                 )
@@ -235,7 +247,7 @@ class BaseView:
     def draw_page_title(self, surface: pygame.Surface, title: str, subtitle: str = "") -> None:
         draw_text(surface, title, (CONTENT.centerx, 70), PAGE_TITLE_FONT_SIZE, TEXT, bold=True, anchor="midtop")
         if subtitle:
-            draw_text(surface, subtitle, (CONTENT.centerx, 110), 13, MUTED, anchor="midtop")
+            draw_text(surface, subtitle, (CONTENT.centerx, 110), FONT_SIZES["secondary"], MUTED, anchor="midtop")
 
 
 class HomeView(BaseView):
@@ -255,9 +267,9 @@ class HomeView(BaseView):
             ASSETS_DIR / "home" / "earth_hero_v2.png"
         )
         draw_earth_hero(surface, hero, earth)
-        draw_text(surface, "AY", (320, 270), 48, CYAN, bold=True)
-        draw_text(surface, "Geography", (391, 270), 48, TEXT, bold=True)
-        draw_text(surface, "Изучай мир. Прокачивай эрудицию.", (322, 340), 19, MUTED)
+        draw_text(surface, "AY", (320, 270), FONT_SIZES["home_brand"], CYAN, bold=True)
+        draw_text(surface, "Geography", (391, 270), FONT_SIZES["home_brand"], TEXT, bold=True)
+        draw_text(surface, "Изучай мир. Прокачивай эрудицию.", (322, 340), FONT_SIZES["primary_action"], MUTED)
         draw_button(
             surface,
             self.play_rect,
@@ -276,7 +288,7 @@ class HomeView(BaseView):
                 surface,
                 self.review_rect,
                 f"ПОВТОРИТЬ ОШИБКИ · {self.review_count}",
-                size=15,
+                size=FONT_SIZES["compact_button"],
             )
 
 
@@ -334,7 +346,7 @@ class ModeSelectionView(SelectionView):
 
     def draw(self, surface: pygame.Surface) -> None:
         super().draw(surface)
-        draw_button(surface, self.back_rect, "", size=28)
+        draw_button(surface, self.back_rect, "", size=FONT_SIZES["country_name"])
         icon = self.app.assets.icon("back", (27, 27))
         blit_centered(surface, icon, self.back_rect.center)
         for key, label in self.items:
@@ -343,7 +355,7 @@ class ModeSelectionView(SelectionView):
             panel(
                 surface,
                 rect,
-                fill=pygame.Color("#0b2828") if selected else PANEL,
+                fill=SELECTED_PANEL if selected else PANEL,
                 border=GREEN if selected else BORDER,
                 radius=8,
             )
@@ -351,7 +363,7 @@ class ModeSelectionView(SelectionView):
             draw_checkbox(surface, box, selected)
             icon = self.app.assets.icon(key, (72, 72))
             blit_centered(surface, icon, (rect.centerx, rect.top + 80))
-            draw_text(surface, label, (rect.centerx, rect.bottom - 34), 17, TEXT, bold=True, anchor="center")
+            draw_text(surface, label, (rect.centerx, rect.bottom - 34), FONT_SIZES["button"], TEXT, bold=True, anchor="center")
         draw_button(
             surface,
             self.next_rect,
@@ -370,14 +382,7 @@ class ModeSelectionView(SelectionView):
 class ContinentSelectionView(SelectionView):
     title = "Выберите континенты"
     subtitle = "Можно выбрать один, несколько или все континенты"
-    STYLES = {
-        "Africa": "#ff9f43",
-        "Asia": "#f05d8b",
-        "Europe": "#9b7bff",
-        "North America": "#2ec4b6",
-        "South America": "#7ac943",
-        "Oceania": "#36a9e1",
-    }
+    STYLES = dict(UI_THEME.visualizations["continent_colors"])
     BOUNDS = {
         "Africa": (-20.0, 55.0, -38.0, 38.0),
         "Asia": (25.0, 180.0, -12.0, 82.0),
@@ -429,7 +434,7 @@ class ContinentSelectionView(SelectionView):
         rect: pygame.Rect,
         accent: pygame.Color,
     ) -> None:
-        base = pygame.Color("#06202d")
+        base = CARD_BACKGROUND
         bands = 7
         for index in range(bands):
             band = pygame.Rect(
@@ -446,14 +451,14 @@ class ContinentSelectionView(SelectionView):
         for fraction in (0.25, 0.5, 0.75):
             draw_native_line(
                 surface,
-                pygame.Color("#164457"),
+                CARD_BORDER,
                 (rect.left + rect.width * fraction, rect.top),
                 (rect.left + rect.width * fraction, rect.bottom),
             )
         for fraction in (1 / 3, 2 / 3):
             draw_native_line(
                 surface,
-                pygame.Color("#164457"),
+                CARD_BORDER,
                 (rect.left, rect.top + rect.height * fraction),
                 (rect.right, rect.top + rect.height * fraction),
             )
@@ -552,21 +557,21 @@ class ContinentSelectionView(SelectionView):
 
     def draw(self, surface: pygame.Surface) -> None:
         super().draw(surface)
-        draw_button(surface, self.back_rect, "", size=28)
+        draw_button(surface, self.back_rect, "", size=FONT_SIZES["country_name"])
         icon = self.app.assets.icon("back", (27, 27))
         blit_centered(surface, icon, self.back_rect.center)
         for key, rect in self.cards.items():
             selected = key in self.selected
-            panel(surface, rect, fill=pygame.Color("#0b2828") if selected else PANEL, border=GREEN if selected else BORDER)
+            panel(surface, rect, fill=SELECTED_PANEL if selected else PANEL, border=GREEN if selected else BORDER)
             self._draw_continent(surface, key, pygame.Rect(rect.left + 20, rect.top + 20, rect.width - 40, 105))
             box = pygame.Rect(rect.left + 12, rect.top + 12, 18, 18)
             draw_checkbox(surface, box, selected)
-            draw_text(surface, CONTINENT_NAMES[key], (rect.centerx, rect.bottom - 27), 14, TEXT, bold=True, anchor="center")
+            draw_text(surface, CONTINENT_NAMES[key], (rect.centerx, rect.bottom - 27), FONT_SIZES["footer"], TEXT, bold=True, anchor="center")
         all_selected = len(self.selected) == len(CONTINENT_NAMES)
-        panel(surface, self.all_rect, fill=pygame.Color("#0b2828") if all_selected else PANEL, border=GREEN if all_selected else CYAN_DARK)
+        panel(surface, self.all_rect, fill=SELECTED_PANEL if all_selected else PANEL, border=GREEN if all_selected else CYAN_DARK)
         mini_map = pygame.Rect(self.all_rect.left + 28, self.all_rect.top + 22, self.all_rect.width - 56, 100)
         self._draw_world_preview(surface, mini_map)
-        draw_text(surface, "Все континенты", (self.all_rect.centerx, self.all_rect.bottom - 24), 15, TEXT, bold=True, anchor="center")
+        draw_text(surface, "Все континенты", (self.all_rect.centerx, self.all_rect.bottom - 24), FONT_SIZES["compact_button"], TEXT, bold=True, anchor="center")
         draw_button(
             surface,
             self.next_rect,
@@ -660,7 +665,7 @@ class QuestionCountView(SelectionView):
 
     def draw(self, surface: pygame.Surface) -> None:
         super().draw(surface)
-        draw_button(surface, self.back_rect, "", size=28)
+        draw_button(surface, self.back_rect, "", size=FONT_SIZES["country_name"])
         icon = self.app.assets.icon("back", (27, 27))
         blit_centered(surface, icon, self.back_rect.center)
         draw_text(
@@ -678,7 +683,7 @@ class QuestionCountView(SelectionView):
             panel(
                 surface,
                 rect,
-                fill=pygame.Color("#0b2828") if selected else PANEL,
+                fill=SELECTED_PANEL if selected else PANEL,
                 border=GREEN if selected else BORDER,
             )
             box = pygame.Rect(rect.left + 13, rect.top + 13, 19, 19)
@@ -721,7 +726,7 @@ class QuestionCountView(SelectionView):
             panel(
                 surface,
                 rect,
-                fill=pygame.Color("#0b2828") if selected else PANEL,
+                fill=SELECTED_PANEL if selected else PANEL,
                 border=GREEN if selected else BORDER,
                 radius=8,
             )
@@ -1268,16 +1273,16 @@ class GameView(BaseView):
         )
         trophy = self.app.assets.icon("trophy", (38, 38))
         blit_centered(surface, trophy, (260, 35))
-        draw_text(surface, "Очки", (288, 18), 12, MUTED)
-        draw_text(surface, str(self.session.score), (288, 37), 17, TEXT, bold=True)
+        draw_text(surface, "Очки", (288, 18), FONT_SIZES["caption"], MUTED)
+        draw_text(surface, str(self.session.score), (288, 37), FONT_SIZES["button"], TEXT, bold=True)
         elapsed = self.app.clock() - self.question_started if not self.paused else self.pause_started - self.question_started
         remaining = max(
             0,
             math.ceil(self.app.question_time_seconds - elapsed),
         )
         draw_native_circle(surface, CYAN_DARK, (462, 35), 29, 3)
-        draw_text(surface, str(remaining), (462, 29), 18, TEXT, bold=True, anchor="center")
-        draw_text(surface, "сек", (462, 48), 9, MUTED, anchor="center")
+        draw_text(surface, str(remaining), (462, 29), FONT_SIZES["button_default"], TEXT, bold=True, anchor="center")
+        draw_text(surface, "сек", (462, 48), FONT_SIZES["micro"], MUTED, anchor="center")
         segment_width = 38
         segment_gap = 8
         segment_count = 10
@@ -1302,9 +1307,9 @@ class GameView(BaseView):
             )
         streak = self.app.assets.icon("streak", (31, 31))
         blit_centered(surface, streak, (1410, 35))
-        draw_text(surface, "Серия", (1435, 18), 12, MUTED)
-        draw_text(surface, str(self.session.streak), (1435, 38), 16, TEXT, bold=True)
-        draw_button(surface, self.pause_rect, "", size=18)
+        draw_text(surface, "Серия", (1435, 18), FONT_SIZES["caption"], MUTED)
+        draw_text(surface, str(self.session.streak), (1435, 38), FONT_SIZES["body"], TEXT, bold=True)
+        draw_button(surface, self.pause_rect, "", size=FONT_SIZES["button_default"])
         pause_icon = self.app.assets.icon("play" if self.paused else "pause", (24, 24))
         blit_centered(surface, pause_icon, self.pause_rect.center)
 
@@ -1408,13 +1413,13 @@ class GameView(BaseView):
         if question.options:
             for button, value in self.answer_buttons.items():
                 index = question.options.index(value) + 1
-                draw_button(surface, button.rect, f"{index}.  {value}", selected=False, size=17)
+                draw_button(surface, button.rect, f"{index}.  {value}", selected=False, size=FONT_SIZES["button"])
         if self.feedback and question.explanation:
             feedback_rect = pygame.Rect(365, 738, 1100, 105)
             panel(
                 surface,
                 feedback_rect,
-                fill=pygame.Color("#07171f"),
+                fill=QUESTION_PANEL,
                 border=self.feedback_colour,
             )
             draw_text(
@@ -1442,10 +1447,10 @@ class GameView(BaseView):
                 align="left",
             )
         elif self.feedback:
-            draw_text(surface, self.feedback, (CONTENT.centerx, 846), 16, self.feedback_colour, bold=True, anchor="midbottom")
+            draw_text(surface, self.feedback, (CONTENT.centerx, 846), FONT_SIZES["body"], self.feedback_colour, bold=True, anchor="midbottom")
         if self.paused:
             overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
-            overlay.fill((0, 7, 11, 210))
+            overlay.fill(UI_THEME.colour("pause_overlay"))
             surface.blit(overlay, (0, 0))
             panel(surface, pygame.Rect(620, 285, 360, 280), fill=PANEL_ALT, border=CYAN)
             draw_text(surface, "ПАУЗА", (800, 345), PAGE_TITLE_FONT_SIZE, TEXT, bold=True, anchor="center")
@@ -1454,22 +1459,19 @@ class GameView(BaseView):
                 self.continue_rect,
                 "Продолжить [Esc]",
                 primary=True,
-                size=17,
+                size=FONT_SIZES["button"],
             )
-            panel(surface, self.end_round_rect, fill=PANEL, border=RED, radius=7)
-            draw_text(
+            draw_button(
                 surface,
+                self.end_round_rect,
                 "Закончить раунд [Enter]",
-                self.end_round_rect.center,
-                17,
-                RED,
-                bold=True,
-                anchor="center",
+                danger=True,
+                size=FONT_SIZES["button"],
             )
 
     def _draw_map_controls(self, surface: pygame.Surface) -> None:
         for _, (key, rect) in self.map_buttons.items():
-            panel(surface, rect, fill=pygame.Color("#061a25"), border=CYAN_DARK, radius=6)
+            panel(surface, rect, fill=MAP_CONTROL, border=CYAN_DARK, radius=6)
             icon_name = {
                 "left": "arrow_left",
                 "right": "arrow_right",
@@ -1489,8 +1491,8 @@ class ResultView(BaseView):
             ASSETS_DIR / "results" / f"trophy_{self.summary.trophy_key}.png"
         )
         self.title_colour = pygame.Color(self.summary.title_color)
-        self.wrong_rect = pygame.Rect(390, 750, 300, 58)
-        self.home_rect = pygame.Rect(720, 750, 300, 58)
+        self.wrong_rect = primary_action_rect(540, 750)
+        self.home_rect = primary_action_rect(870, 750)
         self.review_count = app.pending_review_count()
         if self.review_count:
             self.add_action(self.wrong_rect, self._wrong)
@@ -1520,11 +1522,19 @@ class ResultView(BaseView):
             bold=True,
             anchor="center",
         )
-        draw_text(surface, f"{result.score} XP", (565, 520), 35, YELLOW, bold=True, anchor="center")
+        draw_text(surface, f"{result.score} XP", (565, 520), FONT_SIZES["result_xp"], YELLOW, bold=True, anchor="center")
         draw_native_circle(surface, PANEL_ALT, (565, 630), 55)
-        draw_native_circle(surface, self.title_colour, (565, 630), 55, 5)
-        draw_text(surface, f"{accuracy}%", (565, 630), 22, TEXT, bold=True, anchor="center")
-        draw_text(surface, f"Правильных ответов  {result.correct_count} / {len(result.answers)}", (565, 704), 16, TEXT, anchor="center")
+        draw_progress_ring(
+            surface,
+            (565, 630),
+            55,
+            accuracy,
+            self.title_colour,
+            BORDER,
+            5,
+        )
+        draw_text(surface, f"{accuracy}%", (565, 630), FONT_SIZES["result_percent"], TEXT, bold=True, anchor="center")
+        draw_text(surface, f"Правильных ответов  {result.correct_count} / {len(result.answers)}", (565, 704), FONT_SIZES["body"], TEXT, anchor="center")
         metrics = [
             ("timer", "Среднее время ответа", f"{result.average_seconds:05.2f}"),
             ("timer", "Всего времени", f"{int(result.duration_seconds) // 60:02d}:{int(result.duration_seconds) % 60:02d}"),
@@ -1536,24 +1546,22 @@ class ResultView(BaseView):
             panel(surface, rect)
             icon = self.app.assets.icon(icon_name, (38, 38))
             blit_centered(surface, icon, (rect.left + 35, rect.centery))
-            draw_text(surface, title, (rect.left + 65, rect.top + 18), 13, MUTED)
-            draw_text(surface, value, (rect.left + 65, rect.top + 43), 23, TEXT, bold=True)
+            draw_text(surface, title, (rect.left + 65, rect.top + 18), FONT_SIZES["secondary"], MUTED)
+            draw_text(surface, value, (rect.left + 65, rect.top + 43), FONT_SIZES["metric_value"], TEXT, bold=True)
         if self.review_count:
             draw_button(
                 surface,
                 self.wrong_rect,
                 f"Повторить ошибки · {self.review_count}",
-                primary=True,
-                size=16,
-                fill_colour=CYAN_DARK,
-                border_colour=CYAN,
+                primary=False,
+                size=PRIMARY_ACTION_FONT_SIZE,
             )
         draw_button(
             surface,
             self.home_rect,
-            "В главное меню",
-            primary=not self.review_count,
-            size=16,
+            "Главное меню",
+            primary=True,
+            size=PRIMARY_ACTION_FONT_SIZE,
         )
 
 
@@ -1606,11 +1614,11 @@ class StatisticsView(BaseView):
     @staticmethod
     def _activity_colour(seconds: float) -> pygame.Color:
         bands = (
-            (15 * 60, pygame.Color("#2c7bb6")),
-            (30 * 60, pygame.Color("#00a6ca")),
-            (60 * 60, pygame.Color("#00ccbc")),
-            (2 * 60 * 60, pygame.Color("#90eb9d")),
-            (float("inf"), pygame.Color("#f9d057")),
+            (threshold, pygame.Color(colour))
+            for threshold, colour in zip(
+                (15 * 60, 30 * 60, 60 * 60, 2 * 60 * 60, float("inf")),
+                UI_THEME.visualizations["activity_colors"],
+            )
         )
         return next(colour for limit, colour in bands if seconds <= limit)
 
@@ -1701,7 +1709,7 @@ class StatisticsView(BaseView):
                 self.period_rects[key],
                 label,
                 selected=key == self.period,
-                size=12,
+                size=FONT_SIZES["caption"],
                 bold=True,
             )
         metrics = [
@@ -1827,7 +1835,7 @@ class StatisticsView(BaseView):
                 rect, day, duration = hovered
                 tooltip = pygame.Rect(rect.centerx - 100, rect.top - 62, 200, 50)
                 tooltip.clamp_ip(pygame.Rect(bottom.left + 8, bottom.top + 8, bottom.width - 16, bottom.height - 16))
-                panel(surface, tooltip, fill=pygame.Color("#0d2b38"), border=CYAN_DARK, radius=7)
+                panel(surface, tooltip, fill=TOOLTIP, border=CYAN_DARK, radius=7)
                 day_label = ".".join(reversed(day.split("-")))
                 draw_text(surface, day_label, (tooltip.centerx, tooltip.top + 10), 11, MUTED, anchor="midtop")
                 draw_text(
@@ -1888,7 +1896,7 @@ class AchievementsView(BaseView):
             panel(
                 surface,
                 rect,
-                fill=pygame.Color("#0b2b2b") if complete else PANEL,
+                fill=ACHIEVEMENT_COMPLETE if complete else PANEL,
                 border=GREEN if complete else BORDER,
             )
             icon = self.app.assets.icon(
@@ -1948,7 +1956,7 @@ class AchievementsView(BaseView):
             self.previous_rect,
             "‹",
             disabled=self.page == 0,
-            size=22,
+            size=FONT_SIZES["result_percent"],
         )
         draw_text(
             surface,
@@ -1963,7 +1971,7 @@ class AchievementsView(BaseView):
             self.next_rect,
             "›",
             disabled=self.page >= self.page_count - 1,
-            size=22,
+            size=FONT_SIZES["result_percent"],
         )
 
 
@@ -2080,7 +2088,7 @@ class InteractiveMapView(BaseView):
             panel(
                 surface,
                 rect,
-                fill=pygame.Color("#061a25"),
+                fill=MAP_CONTROL,
                 border=CYAN_DARK,
                 radius=6,
             )
@@ -2453,7 +2461,7 @@ class MasteryView(InteractiveMapView):
             panel(
                 surface,
                 tooltip,
-                fill=pygame.Color("#0d2b38"),
+                fill=TOOLTIP,
                 border=CYAN,
                 radius=9,
             )
@@ -2493,7 +2501,7 @@ class MasteryView(InteractiveMapView):
         panel(
             surface,
             tooltip,
-            fill=pygame.Color("#0d2b38"),
+            fill=TOOLTIP,
             border=CYAN_DARK,
         )
         draw_text(
@@ -2694,16 +2702,16 @@ class ProfileView(BaseView):
             size=PRIMARY_ACTION_FONT_SIZE,
         )
         if self.app.profile_manager is not None:
-            draw_button(surface, self.create_rect, "Создать профиль", size=15)
+            draw_button(surface, self.create_rect, "Создать профиль", size=FONT_SIZES["compact_button"])
             draw_button(
                 surface,
                 self.delete_rect,
                 "Удалить профиль",
-                size=15,
+                size=FONT_SIZES["compact_button"],
             )
-            draw_button(surface, self.export_rect, "Экспорт профиля", size=15)
-            draw_button(surface, self.import_rect, "Импорт профиля", size=15)
-            draw_button(surface, self.switch_rect, "Сменить профиль", size=15)
+            draw_button(surface, self.export_rect, "Экспорт профиля", size=FONT_SIZES["compact_button"])
+            draw_button(surface, self.import_rect, "Импорт профиля", size=FONT_SIZES["compact_button"])
+            draw_button(surface, self.switch_rect, "Сменить профиль", size=FONT_SIZES["compact_button"])
 
 
 class ProfileCreateView(BaseView):
@@ -2782,7 +2790,7 @@ class ProfileCreateView(BaseView):
             primary=True,
             size=PRIMARY_ACTION_FONT_SIZE,
         )
-        draw_button(surface, self.cancel_rect, "Отмена", size=16)
+        draw_button(surface, self.cancel_rect, "Отмена", size=FONT_SIZES["body"])
 
 
 class ProfileDeleteView(BaseView):
@@ -2883,7 +2891,7 @@ class ProfileDeleteView(BaseView):
                 self.previous_rect,
                 "‹",
                 disabled=self.page == 0,
-                size=22,
+                size=FONT_SIZES["result_percent"],
             )
             draw_text(
                 surface,
@@ -2898,7 +2906,7 @@ class ProfileDeleteView(BaseView):
                 self.next_rect,
                 "›",
                 disabled=self.page >= self.page_count - 1,
-                size=22,
+                size=FONT_SIZES["result_percent"],
             )
 
 
@@ -3047,8 +3055,8 @@ class ProfileSelectionView(BaseView):
                 anchor="center",
             )
         if self.page_count > 1:
-            draw_button(surface, self.previous_rect, "‹", size=22)
-            draw_button(surface, self.next_rect, "›", size=22)
+            draw_button(surface, self.previous_rect, "‹", size=FONT_SIZES["result_percent"])
+            draw_button(surface, self.next_rect, "›", size=FONT_SIZES["result_percent"])
         draw_footer(surface, self.app.assets.icon)
 
 

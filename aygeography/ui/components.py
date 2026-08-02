@@ -9,14 +9,39 @@ from typing import Iterable
 
 import pygame
 
-from ..config import ASSETS_DIR, COLORS
+from ..config import ASSETS_DIR, COLORS, UI_SETTINGS
 from ..domain.questions import MapOverlay
 from ..waters import WaterCatalog
+from .theme import UITheme
 
-LOGICAL_SIZE = (1600, 900)
-SIDEBAR_WIDTH = 205
-FOOTER_HEIGHT = 34
-FONT_SCALE = 1.08
+class FontToken(int):
+    """Integer-compatible semantic reference to a configured font size."""
+
+    role: str
+
+    def __new__(cls, value: int, role: str) -> FontToken:
+        instance = int.__new__(cls, value)
+        instance.role = role
+        return instance
+
+
+UI_THEME = UITheme.from_settings({**UI_SETTINGS, "colours": COLORS})
+LAYOUT_STYLE = UI_THEME.layout
+TYPOGRAPHY_STYLE = UI_THEME.typography
+FONT_SIZES: dict[str, FontToken] = {
+    str(name): FontToken(int(value), str(name))
+    for name, value in TYPOGRAPHY_STYLE["sizes"].items()
+}
+PANEL_STYLE = UI_THEME.component("panel")
+BUTTON_STYLE = UI_THEME.component("button")
+CHECKBOX_STYLE = UI_THEME.component("checkbox")
+NAVIGATION_STYLE = UI_THEME.component("navigation")
+
+LOGICAL_SIZE = tuple(int(value) for value in LAYOUT_STYLE["logical_size"])
+SIDEBAR_WIDTH = int(LAYOUT_STYLE["sidebar_width"])
+FOOTER_HEIGHT = int(LAYOUT_STYLE["footer_height"])
+FONT_SCALE = float(TYPOGRAPHY_STYLE["scale"])
+FONT_FAMILY = str(TYPOGRAPHY_STYLE["family"])
 
 BG = pygame.Color(COLORS["background"])
 SIDEBAR = pygame.Color(COLORS["sidebar"])
@@ -34,12 +59,20 @@ RED = pygame.Color(COLORS["red"])
 WATER = pygame.Color(COLORS["water"])
 MAP_FILL = pygame.Color(COLORS["map"])
 MAP_BORDER = pygame.Color(COLORS["map_border"])
-MAP_SELECTION_FILL = (171, 211, 42, 150)
-MAP_SELECTION_BORDER = (239, 255, 104, 255)
-RIVER_BORDER_WIDTH = 12
-RIVER_FILL_WIDTH = 10
-RIVER_CURVE_SAMPLES = 8
-RIVER_RENDER_SCALE = 2
+SELECTED_PANEL = UI_THEME.colour("selected_panel")
+CARD_BACKGROUND = UI_THEME.colour("card_background")
+CARD_BORDER = UI_THEME.colour("card_border")
+QUESTION_PANEL = UI_THEME.colour("question_panel")
+MAP_CONTROL = UI_THEME.colour("map_control")
+TOOLTIP = UI_THEME.colour("tooltip")
+ACHIEVEMENT_COMPLETE = UI_THEME.colour("achievement_complete")
+MAP_SELECTION_FILL = tuple(UI_THEME.colour("map_selection_fill"))
+MAP_SELECTION_BORDER = tuple(UI_THEME.colour("map_selection_border"))
+RIVER_STYLE = UI_THEME.visualizations["river"]
+RIVER_BORDER_WIDTH = int(RIVER_STYLE["border_width"])
+RIVER_FILL_WIDTH = int(RIVER_STYLE["fill_width"])
+RIVER_CURVE_SAMPLES = int(RIVER_STYLE["curve_samples"])
+RIVER_RENDER_SCALE = int(RIVER_STYLE["render_scale"])
 
 _SCALED_IMAGE_CACHE: dict[
     tuple[int, tuple[int, int]],
@@ -227,22 +260,62 @@ def draw_native_arc(
     )
 
 
+def draw_progress_ring(
+    surface: pygame.Surface,
+    center: tuple[int, int],
+    radius: int,
+    progress_percent: float,
+    colour: pygame.Color,
+    track_colour: pygame.Color,
+    width: int = 5,
+) -> None:
+    progress = max(0.0, min(100.0, progress_percent))
+    draw_native_circle(surface, track_colour, center, radius, width)
+    if progress == 0:
+        return
+    if progress == 100:
+        draw_native_circle(surface, colour, center, radius, width)
+        return
+
+    sweep = math.tau * progress / 100
+    diameter = radius * 2
+    draw_native_arc(
+        surface,
+        colour,
+        (center[0] - radius, center[1] - radius, diameter, diameter),
+        math.pi / 2 - sweep,
+        math.pi / 2,
+        width,
+    )
+
+
 @lru_cache(maxsize=128)
 def font(size: int, bold: bool = False) -> pygame.font.Font:
     scaled_size = max(size + 1, round(size * FONT_SCALE))
-    return pygame.font.SysFont("Segoe UI", scaled_size, bold=bold)
+    return pygame.font.SysFont(FONT_FAMILY, scaled_size, bold=bold)
+
+
+def configured_font_size(size: int | FontToken) -> int:
+    if isinstance(size, FontToken):
+        return int(size)
+    legacy_roles = TYPOGRAPHY_STYLE["legacy_size_roles"]
+    try:
+        return UI_THEME.font_size(str(legacy_roles[str(size)]))
+    except KeyError as error:
+        raise ValueError(f"Размер текста {size} не зарегистрирован в UI-конфиге") from error
 
 
 def draw_text(
     surface: pygame.Surface,
     value: str,
     position: tuple[int, int],
-    size: int = 20,
+    size: int = FONT_SIZES["primary_action"],
     colour: pygame.Color = TEXT,
     *,
     bold: bool = False,
     anchor: str = "topleft",
 ) -> pygame.Rect:
+    size = configured_font_size(size)
     scale = render_scale(surface)
     image = font(max(1, round(size * scale)), bold).render(value, True, colour)
     rect = image.get_rect()
@@ -262,12 +335,14 @@ def draw_multiline(
     align: str = "center",
     line_gap: int = 4,
 ) -> None:
+    size = configured_font_size(size)
     scale = render_scale(surface)
     target_rect = physical_rect(surface, rect)
     lines = value.splitlines()
     fitted_size = size
     available_width = max(1, target_rect.width - physical_length(surface, 24))
-    while fitted_size > 13:
+    minimum_size = int(TYPOGRAPHY_STYLE["minimum_fitted_size"])
+    while fitted_size > minimum_size:
         images = [
             font(max(1, round(fitted_size * scale)), bold).render(
                 line,
@@ -310,8 +385,8 @@ def panel(
     *,
     fill: pygame.Color = PANEL,
     border: pygame.Color = BORDER,
-    radius: int = 8,
-    width: int = 1,
+    radius: int = int(PANEL_STYLE["corner_radius"]),
+    width: int = int(PANEL_STYLE["border_width"]),
 ) -> None:
     draw_native_rect(surface, fill, rect, border_radius=radius)
     draw_native_rect(
@@ -329,33 +404,107 @@ def draw_button(
     label: str,
     *,
     primary: bool = False,
+    danger: bool = False,
     selected: bool = False,
     disabled: bool = False,
-    size: int = 18,
+    hovered: bool = False,
+    size: int = FONT_SIZES["button_default"],
     bold: bool = False,
     fill_colour: pygame.Color | None = None,
     border_colour: pygame.Color | None = None,
 ) -> None:
     if primary:
-        fill, border = GREEN_DARK, GREEN
+        variant_name = "primary_hover" if hovered else "primary"
+    elif danger:
+        variant_name = "danger_hover" if hovered else "danger"
     elif selected:
-        fill, border = pygame.Color("#123927"), GREEN
+        variant_name = "selected"
     else:
-        fill, border = PANEL, BORDER
+        variant_name = "hover" if hovered else "normal"
+    variant = BUTTON_STYLE[variant_name]
+    fill = UI_THEME.colour(str(variant["fill"]))
+    border = UI_THEME.colour(str(variant["border"]))
     if disabled:
-        fill, border = PANEL, pygame.Color("#18313a")
+        variant = BUTTON_STYLE["disabled"]
+        fill = UI_THEME.colour(str(variant["fill"]))
+        border = UI_THEME.colour(str(variant["border"]))
     else:
         fill = fill if fill_colour is None else fill_colour
         border = border if border_colour is None else border_colour
-    panel(surface, rect, fill=fill, border=border, radius=7)
+    panel(
+        surface,
+        rect,
+        fill=fill,
+        border=border,
+        radius=int(BUTTON_STYLE["corner_radius"]),
+        width=int(BUTTON_STYLE["border_width"]),
+    )
     draw_multiline(
         surface,
         label,
         rect,
         size,
-        MUTED if disabled else TEXT,
-        bold=bold or primary or selected,
+        UI_THEME.colour(str(variant["text"])),
+        bold=bold or primary or danger or selected,
     )
+
+
+def pygame_gui_theme() -> dict[str, object]:
+    """Transparent interaction widgets styled from the shared UI config."""
+    transparent = str(UI_THEME.colours["transparent"])
+    hidden_colours = {
+        key: transparent
+        for key in (
+            "normal_bg",
+            "hovered_bg",
+            "disabled_bg",
+            "selected_bg",
+            "active_bg",
+            "normal_text",
+            "hovered_text",
+            "selected_text",
+            "disabled_text",
+            "normal_border",
+            "hovered_border",
+            "active_border",
+        )
+    }
+    hidden_entry_colours = {
+        key: transparent
+        for key in (
+            "dark_bg",
+            "normal_text",
+            "selected_text",
+            "selected_bg",
+            "normal_border",
+            "text_cursor",
+        )
+    }
+    radius = str(BUTTON_STYLE["corner_radius"])
+    return {
+        "#hitbox": {
+            "colours": hidden_colours,
+            "misc": {
+                "shape": "rounded_rectangle",
+                "shape_corner_radius": radius,
+                "border_width": "0",
+                "shadow_width": "0",
+            },
+        },
+        "#profile_entry": {
+            "colours": hidden_entry_colours,
+            "font": {
+                "name": FONT_FAMILY,
+                "size": str(FONT_SIZES["country_card_title"]),
+            },
+            "misc": {
+                "shape": "rounded_rectangle",
+                "shape_corner_radius": radius,
+                "border_width": "0",
+                "shadow_width": "0",
+            },
+        },
+    }
 
 
 def draw_document_icon(
@@ -423,7 +572,7 @@ def draw_question_count_icon(
         )
     draw_native_rect(
         surface,
-        pygame.Color("#103544"),
+        UI_THEME.colour("progress_track"),
         (front.left + 9, front.bottom - 11, 36, 4),
         border_radius=2,
     )
@@ -448,14 +597,14 @@ def draw_checkbox(
             surface,
             GREEN_DARK,
             rect,
-            border_radius=max(1, round(5 * scale)),
+            border_radius=max(1, round(int(CHECKBOX_STYLE["corner_radius"]) * scale)),
         )
         pygame.draw.rect(
             surface,
             GREEN,
             rect,
-            max(1, round(2 * scale)),
-            border_radius=max(1, round(5 * scale)),
+            max(1, round(int(CHECKBOX_STYLE["border_width"]) * scale)),
+            border_radius=max(1, round(int(CHECKBOX_STYLE["corner_radius"]) * scale)),
         )
         points = [
             (rect.left + rect.width * 0.23, rect.top + rect.height * 0.53),
@@ -468,21 +617,21 @@ def draw_checkbox(
             TEXT,
             False,
             points,
-            max(1, round(3 * scale)),
+            max(1, round(int(CHECKBOX_STYLE["check_width"]) * scale)),
         )
     else:
         pygame.draw.rect(
             surface,
-            pygame.Color("#04131c"),
+            UI_THEME.colour("checkbox_background"),
             rect,
-            border_radius=max(1, round(5 * scale)),
+            border_radius=max(1, round(int(CHECKBOX_STYLE["corner_radius"]) * scale)),
         )
         pygame.draw.rect(
             surface,
-            pygame.Color("#7f9aa5"),
+            UI_THEME.colour("checkbox_border"),
             rect,
-            max(1, round(2 * scale)),
-            border_radius=max(1, round(5 * scale)),
+            max(1, round(int(CHECKBOX_STYLE["border_width"]) * scale)),
+            border_radius=max(1, round(int(CHECKBOX_STYLE["corner_radius"]) * scale)),
         )
 
 
@@ -584,6 +733,28 @@ NAV_ITEMS = [
 ]
 
 
+def navigation_item_rect(index: int) -> pygame.Rect:
+    margin = int(NAVIGATION_STYLE["horizontal_margin"])
+    height = int(NAVIGATION_STYLE["item_height"])
+    pitch = height + int(NAVIGATION_STYLE["item_gap"])
+    return pygame.Rect(
+        margin,
+        int(NAVIGATION_STYLE["item_top"]) + index * pitch,
+        SIDEBAR_WIDTH - margin * 2,
+        height,
+    )
+
+
+def navigation_profile_rect() -> pygame.Rect:
+    margin = int(NAVIGATION_STYLE["horizontal_margin"])
+    return pygame.Rect(
+        margin,
+        int(NAVIGATION_STYLE["profile_top"]),
+        SIDEBAR_WIDTH - margin * 2,
+        int(NAVIGATION_STYLE["profile_height"]),
+    )
+
+
 def draw_sidebar(
     surface: pygame.Surface,
     active: str,
@@ -603,14 +774,14 @@ def draw_sidebar(
         (SIDEBAR_WIDTH, LOGICAL_SIZE[1] - FOOTER_HEIGHT),
     )
     draw_logo(surface, (SIDEBAR_WIDTH // 2, 74), 47)
-    top = 156
     for index, (key, label) in enumerate(NAV_ITEMS):
-        rect = pygame.Rect(12, top + index * 54, SIDEBAR_WIDTH - 24, 44)
+        rect = navigation_item_rect(index)
         selected = key == active
         if selected:
-            draw_native_rect(surface, GREEN_DARK, rect, border_radius=6)
-            draw_native_rect(surface, GREEN, rect, 1, border_radius=6)
-        colour = TEXT if selected else pygame.Color("#d4dfe4")
+            corner_radius = int(NAVIGATION_STYLE["corner_radius"])
+            draw_native_rect(surface, GREEN_DARK, rect, border_radius=corner_radius)
+            draw_native_rect(surface, GREEN, rect, 1, border_radius=corner_radius)
+        colour = TEXT if selected else UI_THEME.colour("navigation_text")
         if icon_provider:
             icon = icon_provider(key, (27, 27))
             icon_rect = pygame.Rect(0, 0, 27, 27)
@@ -622,17 +793,17 @@ def draw_sidebar(
             surface,
             label,
             (58, rect.centery),
-            16,
+            FONT_SIZES["body"],
             colour,
             bold=True,
             anchor="midleft",
         )
-    profile_card = pygame.Rect(12, 746, SIDEBAR_WIDTH - 24, 96)
+    profile_card = navigation_profile_rect()
     panel(
         surface,
         profile_card,
-        fill=pygame.Color("#061c28"),
-        border=pygame.Color("#103747"),
+        fill=UI_THEME.colour("profile_panel"),
+        border=UI_THEME.colour("profile_border"),
         radius=8,
     )
     if avatar:
@@ -644,14 +815,14 @@ def draw_sidebar(
     level = int(profile.get("level", 1))
     required_xp = max(1, int(profile.get("required_xp", 1000)))
     title = str(profile.get("title", "Новичок"))
-    draw_text(surface, nickname, (79, 754), 13, TEXT, bold=True)
-    draw_text(surface, title, (79, 778), 9, GREEN, bold=True)
-    draw_text(surface, f"Уровень {level}", (20, 811), 10, MUTED)
+    draw_text(surface, nickname, (79, 754), FONT_SIZES["secondary"], TEXT, bold=True)
+    draw_text(surface, title, (79, 778), FONT_SIZES["micro"], GREEN, bold=True)
+    draw_text(surface, f"Уровень {level}", (20, 811), FONT_SIZES["small"], MUTED)
     draw_text(
         surface,
         f"{xp:,} / {required_xp:,} XP".replace(",", " "),
         (profile_card.right - 9, 811),
-        9,
+        FONT_SIZES["micro"],
         MUTED,
         anchor="topright",
     )
@@ -678,9 +849,9 @@ def draw_footer(surface: pygame.Surface, icon_provider=None) -> None:
     rect = pygame.Rect(0, LOGICAL_SIZE[1] - FOOTER_HEIGHT, LOGICAL_SIZE[0], FOOTER_HEIGHT)
     draw_native_rect(surface, SIDEBAR, rect)
     draw_native_line(surface, BORDER, rect.topleft, rect.topright)
-    draw_text(surface, "AY", (18, rect.centery), 14, CYAN, bold=True, anchor="midleft")
-    draw_text(surface, "Geography", (40, rect.centery), 14, TEXT, anchor="midleft")
-    draw_text(surface, "v1.0.0", (128, rect.centery), 12, MUTED, anchor="midleft")
+    draw_text(surface, "AY", (18, rect.centery), FONT_SIZES["footer"], CYAN, bold=True, anchor="midleft")
+    draw_text(surface, "Geography", (40, rect.centery), FONT_SIZES["footer"], TEXT, anchor="midleft")
+    draw_text(surface, "v1.0.0", (128, rect.centery), FONT_SIZES["caption"], MUTED, anchor="midleft")
     draw_text(
         surface,
         "Developed by Artem Yambs.",
@@ -1012,9 +1183,9 @@ class MapRenderer:
         local_rect = canvas.get_rect()
         grid_step = max(1, round(50 * scale))
         for x in range(0, local_rect.width, grid_step):
-            pygame.draw.line(canvas, pygame.Color("#0e3747"), (x, 0), (x, local_rect.height))
+            pygame.draw.line(canvas, UI_THEME.colour("chart_grid"), (x, 0), (x, local_rect.height))
         for y in range(0, local_rect.height, grid_step):
-            pygame.draw.line(canvas, pygame.Color("#0e3747"), (0, y), (local_rect.width, y))
+            pygame.draw.line(canvas, UI_THEME.colour("chart_grid"), (0, y), (local_rect.width, y))
         self._draw_vector_countries(
             canvas,
             local_rect,
@@ -1173,12 +1344,12 @@ class MapRenderer:
             canvas.fill(WATER)
             local = canvas.get_rect()
             for x in range(0, local.width, max(1, local.width // 12)):
-                pygame.draw.line(canvas, pygame.Color("#0e3747"), (x, 0), (x, local.height))
+                pygame.draw.line(canvas, UI_THEME.colour("chart_grid"), (x, 0), (x, local.height))
             for y in range(0, local.height, max(1, local.height // 6)):
-                pygame.draw.line(canvas, pygame.Color("#0e3747"), (0, y), (local.width, y))
+                pygame.draw.line(canvas, UI_THEME.colour("chart_grid"), (0, y), (local.width, y))
             for iso3, rings in self.geometry.items():
                 colour = pygame.Color(
-                    rating_colors.get(ratings.get(iso3, 0), "#0a5572")
+                    rating_colors.get(ratings.get(iso3, 0), COLORS["map"])
                 )
                 for ring in rings:
                     points = [
@@ -1207,14 +1378,7 @@ class MapRenderer:
         camera: MapCamera,
         hovered_country: str | None = None,
     ) -> None:
-        palette = {
-            "Europe": "#176a83",
-            "Asia": "#82701d",
-            "Africa": "#8b4e2e",
-            "North America": "#34774d",
-            "South America": "#5f812d",
-            "Oceania": "#695087",
-        }
+        palette = dict(UI_THEME.visualizations["atlas_continent_colors"])
         target = physical_rect(surface, rect)
         physical_camera = scaled_camera(camera, render_scale(surface))
         continent_key = tuple(sorted(continents.items()))
@@ -1315,19 +1479,19 @@ class MapRenderer:
                 ]
                 pygame.draw.polygon(
                     layer,
-                    pygame.Color("#76c52bcc"),
+                    UI_THEME.colour("map_selection_fill"),
                     local_points,
                 )
                 pygame.draw.lines(
                     layer,
-                    pygame.Color("#67e8f9"),
+                    UI_THEME.colour("map_glow"),
                     True,
                     local_points,
                     2,
                 )
                 pygame.draw.aalines(
                     layer,
-                    pygame.Color("#d7ff72"),
+                    UI_THEME.colour("map_glow_bright"),
                     True,
                     local_points,
                 )
@@ -1368,7 +1532,10 @@ class MapRenderer:
         detailed_rect = detailed.get_rect()
         for iso3, rings in self.geometry.items():
             colour = pygame.Color(
-                palette.get(continents.get(iso3, ""), "#b7c5c8")
+                palette.get(
+                    continents.get(iso3, ""),
+                    COLORS["atlas_default_country"],
+                )
             )
             for ring in rings:
                 points = [self.project(point, detailed_rect) for point in ring]
@@ -1383,7 +1550,7 @@ class MapRenderer:
     ) -> None:
         """Draw crisp one-pixel borders over the cached, scaled country fills."""
         map_rect = canvas.get_rect()
-        border_colour = pygame.Color("#1683a4")
+        border_colour = MAP_BORDER
         for iso3, rings in self.geometry.items():
             min_lon, min_lat, max_lon, max_lat = self._country_bounds[iso3]
             top_left = self.project((min_lon, max_lat), map_rect, camera)

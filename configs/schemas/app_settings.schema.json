@@ -3,7 +3,7 @@
   "$id": "https://aygeography.local/schemas/app-settings-v1.json",
   "title": "AYGeography application settings v1",
   "type": "object",
-  "required": ["schema_version", "app", "gameplay", "modes", "colors", "labels", "diagnostics"],
+  "required": ["schema_version", "app", "gameplay", "modes", "colors", "ui", "labels", "diagnostics"],
   "properties": {
     "schema_version": {"const": 1},
     "app": {"type": "object"},
@@ -17,6 +17,26 @@
     },
     "modes": {"type": "object", "minProperties": 1},
     "colors": {"type": "object"},
+    "ui": {
+      "type": "object",
+      "required": ["layout", "typography", "components", "visualizations"],
+      "properties": {
+        "layout": {
+          "type": "object",
+          "required": ["logical_size", "sidebar_width", "footer_height"]
+        },
+        "typography": {
+          "type": "object",
+          "required": ["family", "scale", "minimum_fitted_size", "legacy_size_roles", "sizes"]
+        },
+        "components": {
+          "type": "object",
+          "required": ["panel", "button", "checkbox", "question_flag", "navigation", "modal"]
+        },
+        "visualizations": {"type": "object"}
+      },
+      "additionalProperties": false
+    },
     "labels": {"type": "object"},
     "diagnostics": {
       "type": "object",

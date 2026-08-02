@@ -5,7 +5,7 @@ from functools import lru_cache
 
 import pygame
 
-from .components import blit_image, physical_rect
+from .components import UI_THEME, blit_image, physical_rect
 
 
 TROPHY_EFFECT_KEYS = frozenset({"none", "radiant"})
@@ -42,12 +42,19 @@ def _radiant_frame(size: tuple[int, int], frame: int) -> pygame.Surface:
     progress = frame / _RADIANT_FRAME_COUNT
     pulse = (math.sin(progress * math.tau) + 1) / 2
     maximum_radius = min(size) * 0.46
+    glow = UI_THEME.colour("trophy_glow")
+    ray = UI_THEME.colour("trophy_ray")
 
     for step in range(18, 0, -1):
         ratio = step / 18
         radius = round(maximum_radius * ratio)
         alpha = round((5 + 17 * pulse) * (1 - ratio * 0.72))
-        pygame.draw.circle(layer, (255, 190, 45, alpha), center, radius)
+        pygame.draw.circle(
+            layer,
+            (glow.r, glow.g, glow.b, alpha),
+            center,
+            radius,
+        )
 
     ray_offset = progress * math.tau / 12
     for index in range(12):
@@ -64,7 +71,7 @@ def _radiant_frame(size: tuple[int, int], frame: int) -> pygame.Surface:
         )
         pygame.draw.line(
             layer,
-            (255, 211, 91, round(35 + 45 * pulse)),
+            (ray.r, ray.g, ray.b, round(35 + 45 * pulse)),
             start,
             end,
             max(1, round(min(size) / 220)),

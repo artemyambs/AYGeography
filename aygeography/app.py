@@ -54,15 +54,18 @@ from .infrastructure.sqlite import GameRepository
 from .ui.components import (
     BG,
     CYAN,
+    FONT_SIZES,
     GREEN,
     LOGICAL_SIZE,
     PANEL_ALT,
     RED,
     TEXT,
+    UI_THEME,
     MapRenderer,
     draw_logo,
     draw_native_rect,
     draw_text,
+    pygame_gui_theme,
 )
 from .ui.modals import ConfirmationModal
 from .ui.notifications import AchievementNotificationCenter
@@ -271,7 +274,7 @@ class AYGeographyApp:
         self.manager = LogicalUIManager(
             LOGICAL_SIZE,
             mouse_position_mapper=self._logical_position,
-            theme_path=ASSETS_DIR / "theme.json",
+            theme_path=pygame_gui_theme(),
             enable_live_theme_updates=False,
             starting_language="ru",
         )
@@ -328,7 +331,7 @@ class AYGeographyApp:
             self.logical,
             self.app_name,
             (800, 430),
-            32,
+            FONT_SIZES["loading_title"],
             TEXT,
             bold=True,
             anchor="center",
@@ -353,7 +356,7 @@ class AYGeographyApp:
         if self._headless:
             return
         width, height = self.display.get_size()
-        self.display.fill((0, 0, 0))
+        self.display.fill(UI_THEME.colour("black"))
         self.display.blit(
             self.logical,
             (
@@ -886,7 +889,7 @@ class AYGeographyApp:
             rect = pygame.Rect(550, 800, 500, 46)
             draw_native_rect(
                 self.logical,
-                (6, 25, 34),
+                UI_THEME.colour("toast_background"),
                 rect,
                 border_radius=8,
             )
@@ -897,7 +900,15 @@ class AYGeographyApp:
                 1,
                 border_radius=8,
             )
-            draw_text(self.logical, self._toast, rect.center, 15, self._toast_colour, bold=True, anchor="center")
+            draw_text(
+                self.logical,
+                self._toast,
+                rect.center,
+                FONT_SIZES["compact_button"],
+                self._toast_colour,
+                bold=True,
+                anchor="center",
+            )
         self._draw_achievement_cards()
         if self._confirmation is not None:
             self._confirmation.draw(
@@ -933,7 +944,7 @@ class AYGeographyApp:
     def present(self) -> None:
         frame = self.render()
         width, height = self.display.get_size()
-        self.display.fill((0, 0, 0))
+        self.display.fill(UI_THEME.colour("black"))
         self.display.blit(
             frame,
             (

@@ -36,6 +36,7 @@ QUESTION_TIME_SECONDS = int(
 )
 
 COLORS = dict(APP_SETTINGS["colors"])
+UI_SETTINGS = dict(APP_SETTINGS["ui"])
 CONTINENT_NAMES = dict(APP_SETTINGS["labels"]["continents"])
 MODE_SETTINGS = dict(APP_SETTINGS["modes"])
 MODE_NAMES = {

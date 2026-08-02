@@ -1,4 +1,5 @@
 import json
+import math
 import os
 import random
 import tempfile
@@ -30,6 +31,7 @@ from aygeography.profiles import ProfileManager
 from aygeography.quiz import GameSession, WaterQuestionStrategy
 from aygeography.storage import GameRepository
 from aygeography.ui.components import (
+    BORDER,
     CYAN,
     CYAN_DARK,
     GREEN,
@@ -43,8 +45,10 @@ from aygeography.ui.components import (
     YELLOW,
     MapCamera,
     MapRenderer,
+    draw_progress_ring,
     draw_native_rect,
     font,
+    pygame_gui_theme,
 )
 from aygeography.ui.result_trophy import draw_result_trophy
 from aygeography.ui.notifications import AchievementNotificationCenter
@@ -56,6 +60,7 @@ from aygeography.ui.screens import (
     COUNTRY_FLAG_NAME_FONT_SIZE,
     COUNTRY_FLAG_NAME_TOP,
     GAMEPLAY_AREA,
+    PRIMARY_ACTION_FONT_SIZE,
     PRIMARY_ACTION_SIZE,
     QUESTION_FLAG_IMAGE_SIZE,
     QUESTION_FLAG_PANEL_SIZE,
@@ -146,7 +151,7 @@ class PygameAppTests(unittest.TestCase):
 
         with (
             patch("aygeography.ui.screens.draw_text") as draw_text,
-            patch("aygeography.ui.screens.draw_native_circle") as draw_circle,
+            patch("aygeography.ui.screens.draw_progress_ring") as draw_ring,
             patch("aygeography.ui.screens.draw_button") as draw_button,
         ):
             view.draw(surface)
@@ -160,31 +165,52 @@ class PygameAppTests(unittest.TestCase):
             bold=True,
             anchor="center",
         )
-        draw_circle.assert_any_call(
+        draw_ring.assert_called_once_with(
             surface,
-            view.title_colour,
             (565, 630),
             55,
+            0,
+            view.title_colour,
+            BORDER,
             5,
         )
         draw_button.assert_any_call(
             surface,
             view.wrong_rect,
             "Повторить ошибки · 1",
-            primary=True,
-            size=16,
-            fill_colour=CYAN_DARK,
-            border_colour=CYAN,
+            primary=False,
+            size=PRIMARY_ACTION_FONT_SIZE,
         )
         draw_button.assert_any_call(
             surface,
             view.home_rect,
-            "В главное меню",
-            primary=False,
-            size=16,
+            "Главное меню",
+            primary=True,
+            size=PRIMARY_ACTION_FONT_SIZE,
         )
+        self.assertEqual(PRIMARY_ACTION_SIZE, view.wrong_rect.size)
+        self.assertEqual(PRIMARY_ACTION_SIZE, view.home_rect.size)
 
         self.app.show("home")
+
+    def test_progress_ring_draws_half_of_its_circumference(self):
+        surface = pygame.Surface(LOGICAL_SIZE)
+
+        with (
+            patch("aygeography.ui.components.draw_native_circle") as draw_circle,
+            patch("aygeography.ui.components.draw_native_arc") as draw_arc,
+        ):
+            draw_progress_ring(surface, (100, 100), 50, 50, RED, BORDER, 5)
+
+        draw_circle.assert_called_once_with(surface, BORDER, (100, 100), 50, 5)
+        draw_arc.assert_called_once_with(
+            surface,
+            RED,
+            (50, 50, 100, 100),
+            -math.pi / 2,
+            math.pi / 2,
+            5,
+        )
 
     def test_superior_trophy_is_static(self):
         trophy = pygame.Surface((64, 64), pygame.SRCALPHA)
@@ -1601,9 +1627,7 @@ class PygameAppTests(unittest.TestCase):
         self.assertNotEqual(before, after)
 
     def test_hitbox_press_state_is_fully_transparent(self):
-        theme = json.loads(
-            (ASSETS_DIR / "theme.json").read_text(encoding="utf-8")
-        )
+        theme = pygame_gui_theme()
         colours = theme["#hitbox"]["colours"]
 
         self.assertEqual("#00000000", colours["active_bg"])
