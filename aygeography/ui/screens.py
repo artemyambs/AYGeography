@@ -1503,7 +1503,6 @@ class ResultView(BaseView):
         super().draw(surface)
         result = self.result
         summary = self.summary
-        draw_native_ellipse(surface, (25, 20, 8), (450, 398, 230, 24))
         draw_result_trophy(
             surface,
             self.trophy,
@@ -1521,9 +1520,9 @@ class ResultView(BaseView):
             bold=True,
             anchor="center",
         )
-        draw_text(surface, f"{result.score} XP", (565, 520), 35, GREEN, bold=True, anchor="center")
+        draw_text(surface, f"{result.score} XP", (565, 520), 35, YELLOW, bold=True, anchor="center")
         draw_native_circle(surface, PANEL_ALT, (565, 630), 55)
-        draw_native_circle(surface, GREEN, (565, 630), 55, 5)
+        draw_native_circle(surface, self.title_colour, (565, 630), 55, 5)
         draw_text(surface, f"{accuracy}%", (565, 630), 22, TEXT, bold=True, anchor="center")
         draw_text(surface, f"Правильных ответов  {result.correct_count} / {len(result.answers)}", (565, 704), 16, TEXT, anchor="center")
         metrics = [
@@ -1544,9 +1543,18 @@ class ResultView(BaseView):
                 surface,
                 self.wrong_rect,
                 f"Повторить ошибки · {self.review_count}",
+                primary=True,
                 size=16,
+                fill_colour=CYAN_DARK,
+                border_colour=CYAN,
             )
-        draw_button(surface, self.home_rect, "В главное меню", primary=True, size=16)
+        draw_button(
+            surface,
+            self.home_rect,
+            "В главное меню",
+            primary=not self.review_count,
+            size=16,
+        )
 
 
 class StatisticsView(BaseView):

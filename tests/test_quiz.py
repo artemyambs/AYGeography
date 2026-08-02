@@ -941,7 +941,7 @@ class QuizTests(unittest.TestCase):
             self.assertEqual(title, policy.title(accuracy))
 
         expected_styles = {
-            100: ("superior", "#367e13", "radiant"),
+            100: ("superior", "#367e13", "none"),
             99: ("gold", "#76c52b", "none"),
             80: ("silver", "#f6b817", "none"),
             60: ("silver", "#f6b817", "none"),

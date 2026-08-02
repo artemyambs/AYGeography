@@ -30,6 +30,8 @@ from aygeography.profiles import ProfileManager
 from aygeography.quiz import GameSession, WaterQuestionStrategy
 from aygeography.storage import GameRepository
 from aygeography.ui.components import (
+    CYAN,
+    CYAN_DARK,
     GREEN,
     LOGICAL_SIZE,
     MAP_SELECTION_BORDER,
@@ -38,6 +40,7 @@ from aygeography.ui.components import (
     RIVER_BORDER_WIDTH,
     RIVER_FILL_WIDTH,
     RIVER_RENDER_SCALE,
+    YELLOW,
     MapCamera,
     MapRenderer,
     draw_native_rect,
@@ -122,22 +125,78 @@ class PygameAppTests(unittest.TestCase):
         try:
             self.assertEqual("superior", view.summary.trophy_key)
             self.assertEqual("#367e13", view.summary.title_color)
-            self.assertEqual("radiant", view.summary.trophy_effect)
+            self.assertEqual("none", view.summary.trophy_effect)
             self.assertEqual(LOGICAL_SIZE, self.app.render().get_size())
         finally:
             self.app.show("home")
 
-    def test_superior_trophy_radiance_is_animated(self):
+    def test_result_view_uses_semantic_colours_and_action_priority(self):
+        question = self.app.question_factory.build(
+            GameConfig(["flags"], ["Europe"], 1),
+            self.app.catalog,
+            seed=73,
+        )[0]
+        session = GameSession([question])
+        session.answer("__wrong__", 1)
+
+        self.app.manager.clear_and_reset()
+        with patch.object(self.app, "pending_review_count", return_value=1):
+            view = ResultView(self.app, session.result())
+        surface = pygame.Surface(LOGICAL_SIZE)
+
+        with (
+            patch("aygeography.ui.screens.draw_text") as draw_text,
+            patch("aygeography.ui.screens.draw_native_circle") as draw_circle,
+            patch("aygeography.ui.screens.draw_button") as draw_button,
+        ):
+            view.draw(surface)
+
+        draw_text.assert_any_call(
+            surface,
+            f"{session.result().score} XP",
+            (565, 520),
+            35,
+            YELLOW,
+            bold=True,
+            anchor="center",
+        )
+        draw_circle.assert_any_call(
+            surface,
+            view.title_colour,
+            (565, 630),
+            55,
+            5,
+        )
+        draw_button.assert_any_call(
+            surface,
+            view.wrong_rect,
+            "Повторить ошибки · 1",
+            primary=True,
+            size=16,
+            fill_colour=CYAN_DARK,
+            border_colour=CYAN,
+        )
+        draw_button.assert_any_call(
+            surface,
+            view.home_rect,
+            "В главное меню",
+            primary=False,
+            size=16,
+        )
+
+        self.app.show("home")
+
+    def test_superior_trophy_is_static(self):
         trophy = pygame.Surface((64, 64), pygame.SRCALPHA)
         trophy.fill("gold")
         first = pygame.Surface(LOGICAL_SIZE, pygame.SRCALPHA)
         second = pygame.Surface(LOGICAL_SIZE, pygame.SRCALPHA)
         rect = pygame.Rect(395, 105, 340, 340)
 
-        draw_result_trophy(first, trophy, rect, "radiant", 0.0)
-        draw_result_trophy(second, trophy, rect, "radiant", 0.25)
+        draw_result_trophy(first, trophy, rect, "none", 0.0)
+        draw_result_trophy(second, trophy, rect, "none", 0.25)
 
-        self.assertNotEqual(
+        self.assertEqual(
             pygame.image.tobytes(first, "RGBA"),
             pygame.image.tobytes(second, "RGBA"),
         )

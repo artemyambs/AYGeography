@@ -333,6 +333,8 @@ def draw_button(
     disabled: bool = False,
     size: int = 18,
     bold: bool = False,
+    fill_colour: pygame.Color | None = None,
+    border_colour: pygame.Color | None = None,
 ) -> None:
     if primary:
         fill, border = GREEN_DARK, GREEN
@@ -342,6 +344,9 @@ def draw_button(
         fill, border = PANEL, BORDER
     if disabled:
         fill, border = PANEL, pygame.Color("#18313a")
+    else:
+        fill = fill if fill_colour is None else fill_colour
+        border = border if border_colour is None else border_colour
     panel(surface, rect, fill=fill, border=border, radius=7)
     draw_multiline(
         surface,
