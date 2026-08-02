@@ -375,7 +375,7 @@ class GameRepository:
             db.commit()
 
     def reset_answer_statistics(self) -> None:
-        """Start round and answer statistics again without losing time or XP."""
+        """Reset answer statistics and the review queue without losing time or XP."""
         with closing(self._connect()) as db:
             latest_round = db.execute(
                 "SELECT COALESCE(MAX(id), 0) id FROM rounds"
@@ -391,6 +391,7 @@ class GameRepository:
                     datetime.now().isoformat(),
                 ),
             )
+            db.execute("DELETE FROM review_items")
             db.commit()
 
     @staticmethod

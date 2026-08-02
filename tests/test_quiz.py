@@ -1055,6 +1055,11 @@ class QuizTests(unittest.TestCase):
     def test_answer_statistics_reset_preserves_time_activity_and_xp(self):
         with tempfile.TemporaryDirectory() as directory:
             repository = GameRepository(Path(directory) / "reset_stats.db")
+            question = QuestionFactory().build(
+                GameConfig(["countries"], ["Europe"], 1),
+                self.catalog,
+                seed=53,
+            )[0]
             old_answer = AnswerRecord(
                 mode="countries",
                 country_iso="RUS",
@@ -1064,6 +1069,8 @@ class QuizTests(unittest.TestCase):
                 is_correct=False,
                 seconds=5,
                 points=0,
+                question_key=question.key,
+                question_state=question.to_state(),
             )
             repository.save_round(
                 RoundResult(
@@ -1075,6 +1082,7 @@ class QuizTests(unittest.TestCase):
             )
             before = repository.statistics()
             xp_before = repository.profile()["xp"]
+            self.assertEqual(1, repository.pending_review_count())
 
             repository.reset_answer_statistics()
             reset = repository.statistics()
@@ -1087,6 +1095,7 @@ class QuizTests(unittest.TestCase):
             self.assertEqual([], reset["modes"])
             self.assertEqual([], reset["countries"])
             self.assertEqual([], repository.wrong_country_isos())
+            self.assertEqual([], repository.review_items())
             self.assertEqual(xp_before, repository.profile()["xp"])
 
             new_answer = AnswerRecord(
