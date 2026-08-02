@@ -185,6 +185,7 @@
       "button": {
         "size": [270, 52],
         "font_size": "primary_action",
+        "review_font_size": "compact_button",
         "corner_radius": 7,
         "border_width": 1,
         "normal": {"fill": "panel", "border": "border", "text": "text"},

@@ -87,6 +87,7 @@ from .layout import (
     PRIMARY_ACTION_SIZE,
     QUESTION_FLAG_IMAGE_SIZE,
     QUESTION_FLAG_PANEL_SIZE,
+    REVIEW_ACTION_FONT_SIZE,
     blit_centered,
     draw_question_flag,
     primary_action_rect,
@@ -288,7 +289,7 @@ class HomeView(BaseView):
                 surface,
                 self.review_rect,
                 f"ПОВТОРИТЬ ОШИБКИ · {self.review_count}",
-                size=FONT_SIZES["compact_button"],
+                size=REVIEW_ACTION_FONT_SIZE,
             )
 
 
@@ -1554,7 +1555,7 @@ class ResultView(BaseView):
                 self.wrong_rect,
                 f"Повторить ошибки · {self.review_count}",
                 primary=False,
-                size=PRIMARY_ACTION_FONT_SIZE,
+                size=REVIEW_ACTION_FONT_SIZE,
             )
         draw_button(
             surface,

@@ -33,6 +33,9 @@ PRIMARY_ACTION_SIZE = UI_THEME.component_size("button")
 PRIMARY_ACTION_FONT_SIZE = FONT_SIZES[
     str(UI_THEME.component("button")["font_size"])
 ]
+REVIEW_ACTION_FONT_SIZE = FONT_SIZES[
+    str(UI_THEME.component("button")["review_font_size"])
+]
 QUESTION_FLAG_STYLE = UI_THEME.component("question_flag")
 QUESTION_FLAG_IMAGE_SIZE = tuple(QUESTION_FLAG_STYLE["image_size"])
 QUESTION_FLAG_PANEL_SIZE = tuple(QUESTION_FLAG_STYLE["panel_size"])

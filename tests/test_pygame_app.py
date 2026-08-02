@@ -64,6 +64,7 @@ from aygeography.ui.screens import (
     PRIMARY_ACTION_SIZE,
     QUESTION_FLAG_IMAGE_SIZE,
     QUESTION_FLAG_PANEL_SIZE,
+    REVIEW_ACTION_FONT_SIZE,
     GameView,
     ResultView,
     StatisticsView,
@@ -179,7 +180,7 @@ class PygameAppTests(unittest.TestCase):
             view.wrong_rect,
             "Повторить ошибки · 1",
             primary=False,
-            size=PRIMARY_ACTION_FONT_SIZE,
+            size=REVIEW_ACTION_FONT_SIZE,
         )
         draw_button.assert_any_call(
             surface,
