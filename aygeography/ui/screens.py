@@ -21,7 +21,7 @@ from ..domain.questions import (
     WonderContent,
 )
 from ..formatting import format_population
-from ..models import GameConfig, RoundResult
+from ..models import Country, GameConfig, RoundResult
 from ..quiz import GameSession
 from .components import (
     ACHIEVEMENT_COMPLETE,
@@ -94,6 +94,34 @@ from .layout import (
 )
 from .result_trophy import draw_result_trophy
 from .view_models import ResultSummary
+
+
+def draw_text_entry(
+    surface: pygame.Surface,
+    entry: UITextEntryLine,
+    rect: pygame.Rect,
+    placeholder: str,
+    size: int = 17,
+) -> None:
+    value = entry.get_text()
+    panel(surface, rect, fill=PANEL_ALT, border=CYAN_DARK)
+    draw_text(
+        surface,
+        value or placeholder,
+        (rect.left + 15, rect.centery),
+        size,
+        TEXT if value else MUTED,
+        anchor="midleft",
+    )
+    if entry.is_focused and entry.cursor_on:
+        edit_position = max(0, min(len(value), entry.edit_position))
+        prefix_width = font(size).size(value[:edit_position])[0]
+        cursor_x = min(rect.right - 10, rect.left + 15 + prefix_width)
+        draw_native_rect(
+            surface,
+            TEXT,
+            (cursor_x, rect.centery - 12, 1, 24),
+        )
 
 
 class BaseView:
@@ -2113,6 +2141,7 @@ class InteractiveMapView(BaseView):
 
 class AtlasView(InteractiveMapView):
     active = "atlas"
+    SEARCH_RESULT_LIMIT = 5
 
     def __init__(self, app) -> None:
         super().__init__(app)
@@ -2125,6 +2154,17 @@ class AtlasView(InteractiveMapView):
         self._area_ranks = self._rank_countries("area")
         self._population_ranks = self._rank_countries("population")
         self._gdp_ranks = self._rank_countries("gdp_per_capita")
+        self.search_rect = pygame.Rect(0, 72, 350, 42)
+        self.search_rect.right = self.map_rect.right
+        self.search_entry = UITextEntryLine(
+            self.search_rect,
+            manager=self.manager,
+            object_id="#profile_entry",
+        )
+        self.search_entry.set_text_length_limit(80)
+        self.search_result_rects: list[tuple[pygame.Rect, str]] = []
+        self._search_selection_committed = False
+        self._search_hotkey_text = ""
 
     def _map_area(self) -> pygame.Rect:
         return pygame.Rect(275, 138, 1210, 462)
@@ -2148,6 +2188,132 @@ class AtlasView(InteractiveMapView):
         )
         if selected in self._continents:
             self.selected_country = selected
+
+    @staticmethod
+    def _searchable_values(country: Country) -> tuple[str, ...]:
+        return (
+            country.name.casefold(),
+            country.name_en.casefold(),
+            country.official_name.casefold(),
+            country.capital.casefold(),
+            country.iso3.casefold(),
+        )
+
+    def _matching_countries(self) -> list[Country]:
+        query = self.search_entry.get_text().strip().casefold()
+        if not query:
+            return []
+
+        matches = [
+            country
+            for country in self.app.catalog.all()
+            if any(
+                query in value
+                for value in self._searchable_values(country)
+            )
+        ]
+        return sorted(
+            matches,
+            key=lambda country: (
+                not any(
+                    value.startswith(query)
+                    for value in self._searchable_values(country)
+                ),
+                country.name,
+            ),
+        )[: self.SEARCH_RESULT_LIMIT]
+
+    def _select_search_result(self, iso3: str) -> None:
+        country = self.app.catalog.get(iso3)
+        self.selected_country = iso3
+        self.search_entry.set_text(country.name)
+        self.search_entry.unfocus()
+        self.search_result_rects.clear()
+        self._search_selection_committed = True
+        self.app.map_renderer.focus_country(
+            self.map_camera,
+            iso3,
+            self.map_rect,
+            zoom=6.0,
+        )
+
+    def _activate_search(self, clear: bool = False) -> None:
+        if clear:
+            self.search_entry.set_text("")
+        self.search_entry.focus()
+        self.search_entry.edit_position = len(self.search_entry.get_text())
+        self.search_entry.cursor_on = True
+        self.search_result_rects.clear()
+        self._search_selection_committed = False
+
+    def handle_event(self, event: pygame.event.Event) -> None:
+        if (
+            event.type == pygame.KEYDOWN
+            and event.key == pygame.K_f
+            and not self.search_entry.is_focused
+        ):
+            self._activate_search(clear=True)
+            self._search_hotkey_text = str(getattr(event, "unicode", ""))
+            return
+        if event.type == pygame.KEYDOWN and self.search_entry.is_focused:
+            if event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+                matches = self._matching_countries()
+                if matches:
+                    self._select_search_result(matches[0].iso3)
+            return
+        if event.type == pygame.TEXTINPUT and self._search_hotkey_text:
+            hotkey_text = self._search_hotkey_text
+            self._search_hotkey_text = ""
+            if event.text == hotkey_text:
+                value = self.search_entry.get_text()
+                self.search_entry.set_text(value[: -len(event.text)])
+                self.search_entry.edit_position = len(
+                    self.search_entry.get_text()
+                )
+            return
+        if event.type in {pygame.TEXTINPUT, pygame.TEXTEDITING} and (
+            self.search_entry.is_focused
+        ):
+            return
+        if event.type in {
+            pygame.MOUSEMOTION,
+            pygame.MOUSEBUTTONDOWN,
+            pygame.MOUSEBUTTONUP,
+        }:
+            position = event.pos
+            if (
+                event.type == pygame.MOUSEBUTTONDOWN
+                and event.button == 1
+                and self.search_rect.collidepoint(position)
+            ):
+                self._activate_search(
+                    clear=self._search_selection_committed,
+                )
+                return
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                selected = next(
+                    (
+                        iso3
+                        for rect, iso3 in self.search_result_rects
+                        if rect.collidepoint(position)
+                    ),
+                    None,
+                )
+                if selected is not None:
+                    self._select_search_result(selected)
+                    return
+            if self.search_rect.collidepoint(position) or any(
+                rect.collidepoint(position)
+                for rect, _ in self.search_result_rects
+            ):
+                return
+        super().handle_event(event)
+
+    def interactive_at(self, position: tuple[int, int]) -> bool:
+        return super().interactive_at(position) or any(
+            rect.collidepoint(position)
+            for rect, _ in self.search_result_rects
+        )
 
     def draw(self, surface: pygame.Surface) -> None:
         super().draw(surface)
@@ -2176,6 +2342,63 @@ class AtlasView(InteractiveMapView):
         if hovered and hovered in self._continents:
             self._draw_country_card(surface, hovered)
         self._draw_country_facts(surface)
+        self._draw_search(surface)
+
+    def _draw_search(self, surface: pygame.Surface) -> None:
+        draw_text_entry(
+            surface,
+            self.search_entry,
+            self.search_rect,
+            "Найти страну или столицу · F",
+            size=14,
+        )
+        self.search_result_rects.clear()
+        if not self.search_entry.is_focused or not self.search_entry.get_text().strip():
+            return
+        matches = self._matching_countries()
+        if not matches:
+            rect = pygame.Rect(
+                self.search_rect.left,
+                self.search_rect.bottom + 4,
+                self.search_rect.width,
+                42,
+            )
+            panel(surface, rect, fill=PANEL, border=CYAN_DARK, radius=6)
+            draw_text(
+                surface,
+                "Страна не найдена",
+                (rect.left + 14, rect.centery),
+                13,
+                MUTED,
+                anchor="midleft",
+            )
+            return
+        for index, country in enumerate(matches):
+            rect = pygame.Rect(
+                self.search_rect.left,
+                self.search_rect.bottom + 4 + index * 43,
+                self.search_rect.width,
+                42,
+            )
+            self.search_result_rects.append((rect, country.iso3))
+            panel(surface, rect, fill=PANEL, border=CYAN_DARK, radius=6)
+            draw_text(
+                surface,
+                country.name,
+                (rect.left + 14, rect.centery - 7),
+                13,
+                TEXT,
+                bold=True,
+                anchor="midleft",
+            )
+            draw_text(
+                surface,
+                f"{country.capital} · {country.iso3}",
+                (rect.left + 14, rect.centery + 10),
+                10,
+                MUTED,
+                anchor="midleft",
+            )
 
     def _draw_country_facts(self, surface: pygame.Surface) -> None:
         rect = pygame.Rect(275, 620, 1210, 190)
@@ -2614,25 +2837,7 @@ class ProfileView(BaseView):
         entry: UITextEntryLine,
         rect: pygame.Rect,
     ) -> None:
-        value = entry.get_text()
-        panel(surface, rect, fill=PANEL_ALT, border=CYAN_DARK)
-        draw_text(
-            surface,
-            value or "Введите имя",
-            (rect.left + 15, rect.centery),
-            17,
-            TEXT if value else MUTED,
-            anchor="midleft",
-        )
-        if entry.is_focused and entry.cursor_on:
-            edit_position = max(0, min(len(value), entry.edit_position))
-            prefix_width = font(17).size(value[:edit_position])[0]
-            cursor_x = min(rect.right - 10, rect.left + 15 + prefix_width)
-            draw_native_rect(
-                surface,
-                TEXT,
-                (cursor_x, rect.centery - 12, 1, 24),
-            )
+        draw_text_entry(surface, entry, rect, "Введите имя")
 
     def draw(self, surface: pygame.Surface) -> None:
         super().draw(surface)

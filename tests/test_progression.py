@@ -92,13 +92,20 @@ class ProgressionTests(unittest.TestCase):
             )
         )
 
-    def test_mastery_requires_every_configured_mode(self):
-        self.assertIn("wonders", self.catalog.mastery_modes)
-        self._save_mastery_round(
-            3,
-            self.catalog.mastery_modes[:-1],
+    def test_mastery_does_not_include_wonders(self):
+        self.assertNotIn("wonders", self.catalog.mastery_modes)
+        self._save_mastery_round(1)
+        self.repository.save_round(
+            RoundResult(
+                "2026-07-26T12:10:00",
+                3,
+                0,
+                [self._answer("wonders", is_correct=False)],
+            )
         )
-        self.assertEqual(self.service.country_mastery()["RUS"].rating, 0)
+        mastery = self.service.country_mastery()["RUS"]
+        self.assertEqual(1, mastery.rating)
+        self.assertNotIn("wonders", mastery.rating_by_mode)
 
     def test_mastery_awards_poor_good_and_excellent_ratings(self):
         for expected, correct_count in ((1, 1), (2, 3), (3, 8)):

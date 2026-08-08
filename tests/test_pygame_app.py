@@ -774,6 +774,78 @@ class PygameAppTests(unittest.TestCase):
         self.assertIn(country.official_name, blocks)
         self.assertIn(f"{country.capital} (столица)", blocks)
 
+    def test_atlas_search_selects_country_with_mouse(self):
+        self.app.show("atlas")
+        view = self.app.view
+        self.app.render()
+        self.app.process_event(
+            pygame.event.Event(
+                pygame.MOUSEBUTTONDOWN,
+                {"pos": view.search_rect.center, "button": 1},
+            )
+        )
+        self.app.process_event(
+            pygame.event.Event(
+                pygame.MOUSEBUTTONUP,
+                {"pos": view.search_rect.center, "button": 1},
+            )
+        )
+        self.app.process_event(
+            pygame.event.Event(pygame.TEXTINPUT, {"text": "Москва"})
+        )
+        self.app.update(0.016)
+        self.app.render()
+
+        matches = view._matching_countries()
+        self.assertEqual("RUS", matches[0].iso3)
+        result_position = view.search_result_rects[0][0].center
+
+        self.app.process_event(
+            pygame.event.Event(
+                pygame.MOUSEBUTTONDOWN,
+                {"pos": result_position, "button": 1},
+            )
+        )
+
+        self.assertEqual("RUS", view.selected_country)
+        self.assertEqual(6.0, view.map_camera.zoom)
+        self.assertEqual("Россия", view.search_entry.get_text())
+
+        self.app.process_event(
+            pygame.event.Event(
+                pygame.MOUSEBUTTONDOWN,
+                {"pos": view.search_rect.center, "button": 1},
+            )
+        )
+        self.assertTrue(view.search_entry.is_focused)
+        self.assertTrue(view.search_entry.cursor_on)
+        self.assertEqual("", view.search_entry.get_text())
+
+    def test_atlas_search_is_activated_by_f(self):
+        self.app.show("atlas")
+        view = self.app.view
+        view.search_entry.set_text("Россия")
+        view.search_entry.unfocus()
+
+        self.app.process_event(
+            pygame.event.Event(
+                pygame.KEYDOWN,
+                {"key": pygame.K_f, "unicode": "f"},
+            )
+        )
+
+        self.assertTrue(view.search_entry.is_focused)
+        self.assertTrue(view.search_entry.cursor_on)
+        self.assertEqual("", view.search_entry.get_text())
+        self.app.process_event(
+            pygame.event.Event(pygame.TEXTINPUT, {"text": "f"})
+        )
+        self.assertEqual("", view.search_entry.get_text())
+        self.app.process_event(
+            pygame.event.Event(pygame.TEXTINPUT, {"text": "DEU"})
+        )
+        self.assertEqual("DEU", view.search_entry.get_text())
+
     def test_wonder_feedback_text_has_one_left_edge(self):
         self.app.start_game(
             GameConfig(

@@ -28,7 +28,7 @@
     ]
   },
   "country_mastery": {
-    "modes": ["flags", "capitals", "population", "countries", "wonders"],
+    "modes": ["flags", "capitals", "population", "countries"],
     "ratings": [
       {
         "rating": 1,
