@@ -25,10 +25,10 @@ class ProfileProgressionTests(unittest.TestCase):
         self.assertEqual(40000, self.progression.required_xp(16))
         self.assertEqual(40000, self.progression.required_xp(100))
         self.assertEqual("Новичок", self.progression.title(3))
-        self.assertEqual("Троечник по географии", self.progression.title(4))
+        self.assertEqual("Троечник", self.progression.title(4))
         self.assertEqual("Ударник", self.progression.title(11))
         self.assertEqual("Профессионал", self.progression.title(12))
-        self.assertEqual("Эксперт в географии", self.progression.title(16))
+        self.assertEqual("Эксперт", self.progression.title(16))
 
     def test_xp_resets_when_level_is_received(self):
         progress = self.progression.add_score(1, 990, 20)
