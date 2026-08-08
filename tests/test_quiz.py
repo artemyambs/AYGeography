@@ -984,7 +984,7 @@ class QuizTests(unittest.TestCase):
                 set(repository.wrong_country_isos()),
             )
 
-    def test_repository_returns_exact_30_day_play_time_calendar(self):
+    def test_repository_returns_exact_year_play_time_calendar(self):
         with tempfile.TemporaryDirectory() as directory:
             repository = GameRepository(Path(directory) / "activity.db")
             active_day = date.today() - timedelta(days=2)
@@ -1002,9 +1002,9 @@ class QuizTests(unittest.TestCase):
 
             recent = repository.statistics()["recent"]
 
-            self.assertEqual(30, len(recent))
+            self.assertEqual(365, len(recent))
             self.assertEqual(
-                (date.today() - timedelta(days=29)).isoformat(),
+                (date.today() - timedelta(days=364)).isoformat(),
                 recent[0]["day"],
             )
             self.assertEqual(date.today().isoformat(), recent[-1]["day"])
@@ -1029,6 +1029,7 @@ class QuizTests(unittest.TestCase):
                 (date.today(), 10, 999),
                 (date.today(), 25, 250),
                 (date.today(), 50, 888),
+                (date.today(), 100, 1200),
                 (date.today() - timedelta(days=6), 25, 300),
                 (date.today() - timedelta(days=7), 25, 777),
             )
@@ -1044,12 +1045,26 @@ class QuizTests(unittest.TestCase):
                         answers=[answer] * question_count,
                     )
                 )
+            repository.save_round(
+                RoundResult(
+                    started_at=datetime.now().isoformat(),
+                    duration_seconds=1,
+                    score=9999,
+                    answers=[answer] * 10,
+                    completed=False,
+                )
+            )
 
-            total = repository.statistics()["total"]
+            stats = repository.statistics()
+            total = stats["total"]
 
             self.assertEqual(
                 300,
                 total["best_score_last_7_days_25_questions"],
+            )
+            self.assertEqual(
+                {10: 999, 25: 777, 50: 888, 100: 1200},
+                stats["best_scores"],
             )
 
     def test_answer_statistics_reset_preserves_time_activity_and_xp(self):

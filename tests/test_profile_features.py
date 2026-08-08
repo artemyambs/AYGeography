@@ -109,6 +109,58 @@ class LocalProfileTests(unittest.TestCase):
         self.assertEqual(3, repository.statistics("week")["total"]["rounds"])
         self.assertEqual(3, repository.statistics("all")["total"]["rounds"])
 
+    def test_statistics_filters_by_date_range_and_difficulty(self):
+        profile = self.manager.create("Фильтры", 0)
+        repository = self.manager.repository(profile.id)
+        today = date.today()
+        for offset, difficulty in ((0, "easy"), (1, "hard"), (2, "easy")):
+            result = self._round(
+                datetime.combine(
+                    today - timedelta(days=offset),
+                    datetime.min.time(),
+                )
+                .replace(hour=12)
+                .isoformat()
+            )
+            result.difficulty = difficulty
+            repository.save_round(result)
+
+        stats = repository.statistics(
+            start_date=today - timedelta(days=1),
+            end_date=today,
+            difficulty="easy",
+        )
+
+        self.assertEqual(1, stats["total"]["rounds"])
+        self.assertEqual(1, stats["total"]["question_count"])
+        self.assertEqual(
+            3,
+            repository.statistics(
+                difficulties={"easy", "hard"}
+            )["total"]["rounds"],
+        )
+
+    def test_statistics_counts_active_round_in_total(self):
+        profile = self.manager.create("Активный раунд", 0)
+        repository = self.manager.repository(profile.id)
+        repository.save_active_game(
+            {
+                "session": {
+                    "started_at": datetime.now().isoformat(),
+                    "difficulty": "hard",
+                }
+            }
+        )
+
+        total = repository.statistics(difficulty="hard")["total"]
+
+        self.assertEqual(0, total["rounds_completed"])
+        self.assertEqual(1, total["rounds_total"])
+        self.assertEqual(
+            0,
+            repository.statistics(difficulty="easy")["total"]["rounds_total"],
+        )
+
     def test_empty_manager_does_not_create_a_profile(self):
         self.assertEqual([], self.manager.profiles())
 

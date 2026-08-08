@@ -439,11 +439,11 @@ class PygameAppTests(unittest.TestCase):
         self.app.show("modes")
         self.assertEqual({"countries", "waters"}, self.app.view.selected)
 
-    def test_activity_calendar_has_30_hoverable_cells(self):
+    def test_activity_calendar_has_year_of_hoverable_cells(self):
         self.app.show("statistics")
         view = self.app.view
         self.app.render()
-        self.assertEqual(30, len(view.activity_cells))
+        self.assertEqual(365, len(view.activity_cells))
         view.handle_event(
             pygame.event.Event(
                 pygame.MOUSEMOTION,
@@ -453,14 +453,49 @@ class PygameAppTests(unittest.TestCase):
         self.assertEqual("1 ч 1 мин", StatisticsView._format_play_time(3660))
         colours = {
             tuple(StatisticsView._activity_colour(seconds))
-            for seconds in (60, 20 * 60, 45 * 60, 90 * 60, 3 * 60 * 60)
+            for seconds in (60, 7 * 60, 15 * 60, 25 * 60, 31 * 60)
         }
         self.assertEqual(5, len(colours))
+        view.handle_event(
+            pygame.event.Event(pygame.MOUSEWHEEL, {"y": -1})
+        )
+        self.assertGreater(view.scroll_offset, 0)
+        view.handle_event(
+            pygame.event.Event(
+                pygame.MOUSEBUTTONUP,
+                {"button": 1, "pos": view.difficulty_rects["hard"].center},
+            )
+        )
+        self.assertEqual({"hard"}, view.selected_difficulties)
+        view.handle_event(
+            pygame.event.Event(
+                pygame.MOUSEBUTTONUP,
+                {"button": 1, "pos": view.difficulty_rects["easy"].center},
+            )
+        )
+        self.assertEqual({"easy", "hard"}, view.selected_difficulties)
         self.assertEqual(LOGICAL_SIZE, self.app.render().get_size())
 
     def test_statistics_answer_percentage_handles_empty_data(self):
         self.assertEqual(75, StatisticsView._answer_percentage(3, 4))
         self.assertEqual(0, StatisticsView._answer_percentage(0, 0))
+
+    def test_statistics_filters_have_hover_effect(self):
+        self.app.show("statistics")
+        self.app._transition_surface = None
+        view = self.app.view
+        view.mouse_position = None
+        before = pygame.image.tobytes(self.app.render(), "RGB")
+
+        view.handle_event(
+            pygame.event.Event(
+                pygame.MOUSEMOTION,
+                {"pos": view.difficulty_rects["easy"].center},
+            )
+        )
+        after = pygame.image.tobytes(self.app.render(), "RGB")
+
+        self.assertNotEqual(before, after)
 
     def test_all_avatars_load(self):
         for index in range(10):
@@ -1653,7 +1688,7 @@ class PygameAppTests(unittest.TestCase):
             self.assertIsNotNone(restored_app._confirmation)
 
     def test_end_round_saves_answers_and_opens_home(self):
-        before = self.app.repository.statistics()["total"]["rounds"]
+        before = self.app.repository.statistics()["total"]
         self.app.start_game(GameConfig(["flags"], ["Europe"], 10))
         view = self.app.view
         view._answer(view.active_question.correct_answer)
@@ -1662,10 +1697,25 @@ class PygameAppTests(unittest.TestCase):
 
         view.handle_button(end_round_button)
 
-        after = self.app.repository.statistics()["total"]["rounds"]
-        self.assertEqual(before + 1, after)
+        after = self.app.repository.statistics()["total"]
+        self.assertEqual(before["rounds"] + 1, after["rounds"])
+        self.assertEqual(
+            before["rounds_completed"],
+            after["rounds_completed"],
+        )
+        self.assertFalse(self.app.repository.lifetime_rounds()[-1]["completed"])
         self.assertEqual("HomeView", type(self.app.view).__name__)
         self.assertIsNone(self.app.repository.load_active_game())
+
+    def test_empty_cancelled_round_is_saved(self):
+        before = self.app.repository.statistics()["total"]["rounds"]
+        self.app.start_game(GameConfig(["flags"], ["Europe"], 10))
+
+        self.app.view.end_round()
+
+        total = self.app.repository.statistics()["total"]
+        self.assertEqual(before + 1, total["rounds"])
+        self.assertFalse(self.app.repository.lifetime_rounds()[-1]["completed"])
 
     def test_pygame_gui_button_navigation(self):
         self.app.show("home")

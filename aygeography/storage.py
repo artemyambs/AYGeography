@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from collections.abc import Iterable
 from contextlib import closing
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import cast
 
 from .config import CONFIGS_DIR
+from .difficulty import DIFFICULTY_KEYS
 from .domain.review import ReviewItem, ReviewStatus
 from .models import AnswerRecord, RoundResult
 from .persistence import SQLiteDatabase
@@ -18,6 +20,7 @@ class GameRepository:
     """SQLite-репозиторий локального профиля, настроек и статистики."""
 
     BEST_SCORE_QUESTION_COUNT = 25
+    BEST_SCORE_QUESTION_COUNTS = (10, 25, 50, 100)
     BEST_SCORE_PERIOD_DAYS = 7
     DEFAULT_SETTINGS = {
         "fullscreen": False,
@@ -93,9 +96,9 @@ class GameRepository:
                 """
                 INSERT INTO rounds(
                     started_at, duration, score, correct_count,
-                    question_count, difficulty
+                    question_count, difficulty, completed
                 )
-                VALUES(?, ?, ?, ?, ?, ?)
+                VALUES(?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     result.started_at,
@@ -104,6 +107,7 @@ class GameRepository:
                     result.correct_count,
                     len(result.answers),
                     result.difficulty,
+                    int(result.completed),
                 ),
             )
             round_id = int(cursor.lastrowid)
@@ -280,7 +284,7 @@ class GameRepository:
             rows = db.execute(
                 """
                 SELECT id, started_at, duration, score, correct_count,
-                       question_count, difficulty
+                       question_count, difficulty, completed
                 FROM rounds
                 ORDER BY id
                 """
@@ -428,9 +432,99 @@ class GameRepository:
         end = today if period == "yesterday" else today + timedelta(days=1)
         return start.isoformat(), end.isoformat()
 
-    def statistics(self, period: str = "all") -> dict[str, object]:
+    @staticmethod
+    def _statistics_date_bounds(
+        start_date: date | str | None,
+        end_date: date | str | None,
+    ) -> tuple[str | None, str | None]:
+        def parse(value: date | str | None) -> date | None:
+            if value is None:
+                return None
+            return value if isinstance(value, date) else date.fromisoformat(value)
+
+        start = parse(start_date)
+        end = parse(end_date)
+        if start is None and end is None:
+            return None, None
+        start = start or end
+        end = end or start
+        if start is None or end is None:
+            raise ValueError("Не удалось определить период статистики")
+        if start > end:
+            raise ValueError("Начальная дата не может быть позже конечной")
+        return start.isoformat(), (end + timedelta(days=1)).isoformat()
+
+    @staticmethod
+    def _active_round_matches(
+        payload: str | None,
+        *,
+        period_start: str | None,
+        period_end: str | None,
+        difficulties: frozenset[str] | None,
+        reset_at: str,
+    ) -> bool:
+        if not payload:
+            return False
+        try:
+            state = json.loads(payload)
+            session = state["session"]
+            started_at = str(session["started_at"])
+            active_difficulty = str(session.get("difficulty", "medium"))
+        except (AttributeError, json.JSONDecodeError, KeyError, TypeError):
+            return False
+        return not (
+            started_at < reset_at
+            or (period_start is not None and started_at < period_start)
+            or (period_end is not None and started_at >= period_end)
+            or (
+                difficulties is not None
+                and active_difficulty not in difficulties
+            )
+        )
+
+    @staticmethod
+    def _statistics_difficulties(
+        difficulty: str | None,
+        difficulties: Iterable[str] | None,
+    ) -> frozenset[str] | None:
+        if difficulty is not None and difficulties is not None:
+            raise ValueError("Переданы два фильтра сложности")
+        if difficulties is None:
+            if difficulty is None:
+                return None
+            selected = frozenset({difficulty})
+        else:
+            selected = frozenset(difficulties)
+            if not selected:
+                raise ValueError("Выберите хотя бы один уровень сложности")
+        unknown = selected.difference(DIFFICULTY_KEYS)
+        if unknown:
+            raise ValueError(
+                f"Неизвестные уровни сложности: {', '.join(sorted(unknown))}"
+            )
+        return None if selected == frozenset(DIFFICULTY_KEYS) else selected
+
+    def statistics(
+        self,
+        period: str = "all",
+        *,
+        start_date: date | str | None = None,
+        end_date: date | str | None = None,
+        difficulty: str | None = None,
+        difficulties: Iterable[str] | None = None,
+    ) -> dict[str, object]:
         today = date.today()
-        period_start, period_end = self._statistics_period_bounds(period)
+        difficulty_filter = self._statistics_difficulties(
+            difficulty,
+            difficulties,
+        )
+        if start_date is None and end_date is None:
+            period_start, period_end = self._statistics_period_bounds(period)
+        else:
+            period_start, period_end = self._statistics_date_bounds(
+                start_date,
+                end_date,
+            )
         best_score_first_day = today - timedelta(
             days=self.BEST_SCORE_PERIOD_DAYS - 1
         )
@@ -451,16 +545,31 @@ class GameRepository:
                     period_start=period_start,
                     period_end=period_end,
                 )
+            difficulty_sql = ""
+            if difficulty_filter is not None:
+                placeholders = []
+                for index, value in enumerate(sorted(difficulty_filter)):
+                    parameter_name = f"difficulty_{index}"
+                    placeholders.append(f":{parameter_name}")
+                    parameters[parameter_name] = value
+                difficulty_sql = (
+                    " AND rounds.difficulty IN ("
+                    + ", ".join(placeholders)
+                    + ")"
+                )
             total = db.execute(
                 f"""
                 SELECT
                     COUNT(*) rounds,
+                    COALESCE(SUM(completed), 0) rounds_completed,
                     COALESCE(SUM(duration), 0) duration,
-                    COALESCE(SUM(question_count), 0) question_count
+                    COALESCE(SUM(question_count), 0) question_count,
+                    COALESCE(SUM(correct_count), 0) correct_count
                 FROM rounds
                 WHERE rounds.id > :reset_id
                   AND rounds.started_at >= :reset_at
                   {period_sql}
+                  {difficulty_sql}
                 """,
                 parameters,
             ).fetchone()
@@ -470,6 +579,7 @@ class GameRepository:
                 FROM rounds
                 WHERE 1=1
                   {period_sql}
+                  {difficulty_sql}
                 """,
                 parameters,
             ).fetchone()
@@ -479,19 +589,37 @@ class GameRepository:
                 FROM rounds
                 WHERE rounds.id > :reset_id
                   AND rounds.started_at >= :reset_at
+                  AND completed = 1
                   AND question_count = :question_count
                   {period_sql}
+                  {difficulty_sql}
                 """,
                 parameters,
             ).fetchone()
+            best_score_rows = db.execute(
+                f"""
+                SELECT question_count, COALESCE(MAX(score), 0) best_score
+                FROM rounds
+                WHERE rounds.id > :reset_id
+                  AND rounds.started_at >= :reset_at
+                  AND completed = 1
+                  AND question_count IN (10, 25, 50, 100)
+                  {period_sql}
+                  {difficulty_sql}
+                GROUP BY question_count
+                """,
+                parameters,
+            ).fetchall()
             last_week_best = db.execute(
-                """
+                f"""
                 SELECT COALESCE(MAX(score), 0) best_score
                 FROM rounds
                 WHERE rounds.id > :reset_id
                   AND rounds.started_at >= :reset_at
+                  AND completed = 1
                   AND question_count = :question_count
                   AND date(started_at) BETWEEN :week_start AND :today
+                  {difficulty_sql}
                 """,
                 {
                     **parameters,
@@ -508,6 +636,7 @@ class GameRepository:
                 WHERE rounds.id > :reset_id
                   AND rounds.started_at >= :reset_at
                   {period_sql}
+                  {difficulty_sql}
                 GROUP BY answers.mode
                 """,
                 parameters,
@@ -523,11 +652,12 @@ class GameRepository:
                 WHERE rounds.id > :reset_id
                   AND rounds.started_at >= :reset_at
                   {period_sql}
+                  {difficulty_sql}
                 GROUP BY answer_countries.country_iso
                 """,
                 parameters,
             ).fetchall()
-            first_day = today - timedelta(days=29)
+            first_day = today - timedelta(days=364)
             recent_rows = db.execute(
                 f"""
                 SELECT date(started_at) day, COUNT(*) count,
@@ -535,13 +665,17 @@ class GameRepository:
                 FROM rounds
                 WHERE date(started_at) >= :first_day
                   {period_sql}
+                  {difficulty_sql}
                 GROUP BY date(started_at)
                 """,
                 {**parameters, "first_day": first_day.isoformat()},
             ).fetchall()
+            active_round = db.execute(
+                "SELECT payload FROM active_game WHERE id=1"
+            ).fetchone()
         recent_by_day = {row["day"]: dict(row) for row in recent_rows}
         recent = []
-        for offset in range(30):
+        for offset in range(365):
             day = (first_day + timedelta(days=offset)).isoformat()
             recent.append(
                 recent_by_day.get(
@@ -550,6 +684,18 @@ class GameRepository:
                 )
             )
         total_stats = dict(total)
+        active_round_count = int(
+            self._active_round_matches(
+                str(active_round["payload"]) if active_round else None,
+                period_start=period_start,
+                period_end=period_end,
+                difficulties=difficulty_filter,
+                reset_at=reset_at,
+            )
+        )
+        total_stats["rounds_total"] = (
+            int(total_stats["rounds"]) + active_round_count
+        )
         total_stats["duration"] = play_time["duration"]
         total_stats["best_score_25_questions"] = comparable_best["best_score"]
         total_stats["best_score_last_7_days_25_questions"] = (
@@ -557,6 +703,17 @@ class GameRepository:
         )
         return {
             "total": total_stats,
+            "best_scores": {
+                question_count: next(
+                    (
+                        int(row["best_score"])
+                        for row in best_score_rows
+                        if int(row["question_count"]) == question_count
+                    ),
+                    0,
+                )
+                for question_count in self.BEST_SCORE_QUESTION_COUNTS
+            },
             "modes": [dict(row) for row in modes],
             "countries": [dict(row) for row in continents],
             "recent": recent,

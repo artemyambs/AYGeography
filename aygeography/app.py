@@ -646,10 +646,8 @@ class AYGeographyApp:
     def end_round(self, result: RoundResult) -> None:
         previous_frame = self._capture_transition_frame()
         self._clear_active_game()
-        if result.answers:
-            unlocked = self._finish_round.execute(result)
-        else:
-            unlocked = []
+        result.completed = False
+        unlocked = self._finish_round.execute(result)
         self.view = None
         self.show("home")
         self._transition_surface = previous_frame

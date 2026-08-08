@@ -10,7 +10,7 @@ from typing import Mapping
 class SQLiteDatabase:
     """Owns SQLite connections and ordered, idempotent migrations."""
 
-    SCHEMA_VERSION = 4
+    SCHEMA_VERSION = 5
 
     def __init__(
         self,
@@ -65,7 +65,8 @@ class SQLiteDatabase:
                 score INTEGER NOT NULL,
                 correct_count INTEGER NOT NULL,
                 question_count INTEGER NOT NULL,
-                difficulty TEXT NOT NULL DEFAULT 'medium'
+                difficulty TEXT NOT NULL DEFAULT 'medium',
+                completed INTEGER NOT NULL DEFAULT 1
             );
             CREATE TABLE IF NOT EXISTS answers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -126,6 +127,12 @@ class SQLiteDatabase:
             "rounds",
             "difficulty",
             "TEXT NOT NULL DEFAULT 'medium'",
+        )
+        self._ensure_column(
+            db,
+            "rounds",
+            "completed",
+            "INTEGER NOT NULL DEFAULT 1",
         )
         self._ensure_column(
             db,

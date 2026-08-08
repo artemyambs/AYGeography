@@ -327,6 +327,7 @@ class ProgressionTests(unittest.TestCase):
             db.commit()
         repository = GameRepository(old_path)
         self.assertEqual(repository.lifetime_rounds()[0]["difficulty"], "medium")
+        self.assertEqual(repository.lifetime_rounds()[0]["completed"], 1)
 
     def test_old_answers_are_backfilled_into_country_links(self):
         old_path = Path(self.temporary.name) / "old_answers.db"

@@ -120,11 +120,14 @@ class _LifetimeSnapshot:
     ) -> None:
         self.rounds = rounds
         self.answers = answers
+        completed_round_ids = {int(row["id"]) for row in rounds}
         self.answers_by_round: dict[int, list[dict[str, object]]] = defaultdict(
             list
         )
         for answer in answers:
-            self.answers_by_round[int(answer["round_id"])].append(answer)
+            round_id = int(answer["round_id"])
+            if round_id in completed_round_ids:
+                self.answers_by_round[round_id].append(answer)
 
     @staticmethod
     def _accuracy(round_row: dict[str, object]) -> int:
@@ -265,8 +268,13 @@ class ProgressionService:
         return result
 
     def achievements(self) -> list[AchievementProgress]:
+        completed_rounds = [
+            row
+            for row in self.repository.lifetime_rounds()
+            if bool(row.get("completed", True))
+        ]
         snapshot = _LifetimeSnapshot(
-            self.repository.lifetime_rounds(),
+            completed_rounds,
             self.repository.lifetime_answers(),
         )
         mastery = self.country_mastery()

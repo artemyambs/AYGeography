@@ -56,6 +56,7 @@ class RoundResult:
     score: int
     answers: list[AnswerRecord]
     difficulty: str = "medium"
+    completed: bool = True
 
     @property
     def correct_count(self) -> int:

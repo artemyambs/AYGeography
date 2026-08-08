@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 import textwrap
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -75,6 +76,7 @@ from .components import (
     render_scale,
 )
 from .controllers import GameStateCodec
+from .date_range_picker import DateRangePicker
 from .layout import (
     CAPITAL_LABEL_FONT_SIZE,
     CONTENT,
@@ -1596,37 +1598,87 @@ class ResultView(BaseView):
 
 class StatisticsView(BaseView):
     active = "statistics"
-    PERIODS = (
-        ("today", "Сегодня"),
-        ("yesterday", "Вчера"),
-        ("3_days", "Последние 3 дня"),
-        ("week", "Неделя"),
-        ("month", "Месяц"),
-        ("all", "Всё время"),
+    DIFFICULTIES = (
+        (None, "Все уровни"),
+        ("easy", DIFFICULTY_NAMES["easy"]),
+        ("medium", DIFFICULTY_NAMES["medium"]),
+        ("hard", DIFFICULTY_NAMES["hard"]),
     )
+    BODY_VIEWPORT = pygame.Rect(230, 170, 1305, 680)
+    CONTENT_HEIGHT = 1040
 
     def __init__(self, app) -> None:
         super().__init__(app)
         self.mouse_position: tuple[int, int] | None = None
-        self.activity_cells: list[
-            tuple[pygame.Rect, str, float]
-        ] = []
-        self.period = "all"
-        self.period_rects: dict[str, pygame.Rect] = {}
-        widths = (112, 105, 165, 105, 105, 120)
-        x = 772
-        for (key, _), width in zip(self.PERIODS, widths):
-            rect = pygame.Rect(x, 18, width, 36)
-            self.period_rects[key] = rect
-            self.add_action(
-                rect,
-                lambda value=key: setattr(self, "period", value),
-            )
-            x += width + 8
+        self.activity_cells: list[tuple[pygame.Rect, str, float]] = []
+        self.date_picker = DateRangePicker(pygame.Rect(250, 108, 315, 42))
+        self.selected_difficulties = set(DIFFICULTY_NAMES)
+        self.difficulty_rects: dict[str | None, pygame.Rect] = {
+            key: pygame.Rect(600 + index * 143, 108, 135, 42)
+            for index, (key, _) in enumerate(self.DIFFICULTIES)
+        }
+        self.scroll_offset = 0
+
+    @property
+    def max_scroll(self) -> int:
+        return max(0, self.CONTENT_HEIGHT - self.BODY_VIEWPORT.height)
+
+    def _scroll(self, delta: int) -> None:
+        self.scroll_offset = max(
+            0,
+            min(self.max_scroll, self.scroll_offset + delta),
+        )
+
+    def _toggle_difficulty(self, difficulty: str | None) -> None:
+        all_difficulties = set(DIFFICULTY_NAMES)
+        if difficulty is None:
+            self.selected_difficulties = all_difficulties
+            return
+        if self.selected_difficulties == all_difficulties:
+            self.selected_difficulties = {difficulty}
+            return
+        if difficulty in self.selected_difficulties:
+            if len(self.selected_difficulties) > 1:
+                self.selected_difficulties.remove(difficulty)
+            return
+        self.selected_difficulties.add(difficulty)
 
     def handle_event(self, event: pygame.event.Event) -> None:
         if event.type == pygame.MOUSEMOTION:
             self.mouse_position = event.pos
+            return
+        if event.type == pygame.MOUSEWHEEL:
+            self._scroll(-event.y * 55)
+            return
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_PAGEUP:
+                self._scroll(-self.BODY_VIEWPORT.height)
+            elif event.key == pygame.K_PAGEDOWN:
+                self._scroll(self.BODY_VIEWPORT.height)
+            elif event.key == pygame.K_HOME:
+                self.scroll_offset = 0
+            elif event.key == pygame.K_END:
+                self.scroll_offset = self.max_scroll
+            return
+        if event.type != pygame.MOUSEBUTTONUP or event.button != 1:
+            return
+        self.date_picker.handle_event(event)
+        if self.date_picker.is_open:
+            return
+        for difficulty, rect in self.difficulty_rects.items():
+            if rect.collidepoint(event.pos):
+                self._toggle_difficulty(difficulty)
+                return
+
+    def interactive_at(self, position: tuple[int, int]) -> bool:
+        return (
+            super().interactive_at(position)
+            or self.date_picker.interactive_at(position)
+            or any(
+                rect.collidepoint(position)
+                for rect in self.difficulty_rects.values()
+            )
+        )
 
     @staticmethod
     def _format_play_time(seconds: float) -> str:
@@ -1645,7 +1697,7 @@ class StatisticsView(BaseView):
         bands = (
             (threshold, pygame.Color(colour))
             for threshold, colour in zip(
-                (15 * 60, 30 * 60, 60 * 60, 2 * 60 * 60, float("inf")),
+                (5 * 60, 10 * 60, 20 * 60, 30 * 60, float("inf")),
                 UI_THEME.visualizations["activity_colors"],
             )
         )
@@ -1720,52 +1772,152 @@ class StatisticsView(BaseView):
                 anchor="center",
             )
 
-    def draw(self, surface: pygame.Surface) -> None:
-        super().draw(surface)
-        stats = self.app.repository.statistics(self.period)
-        total = stats["total"]
+    def _draw_filters(self, surface: pygame.Surface) -> None:
         draw_text(
             surface,
             "Статистика",
-            (250, 25),
+            (CONTENT.centerx, 22),
             PAGE_TITLE_FONT_SIZE,
             TEXT,
             bold=True,
+            anchor="midtop",
         )
-        for key, label in self.PERIODS:
+        draw_text(surface, "Дата или период", (250, 76), 16, TEXT, bold=True)
+        draw_text(surface, "Уровень сложности", (600, 76), 16, TEXT, bold=True)
+        all_selected = self.selected_difficulties == set(DIFFICULTY_NAMES)
+        pointer = self.mouse_position or self._pointer_position
+        for key, label in self.DIFFICULTIES:
+            rect = self.difficulty_rects[key]
+            hovered = bool(pointer and rect.collidepoint(pointer))
             draw_button(
                 surface,
-                self.period_rects[key],
+                rect,
                 label,
-                selected=key == self.period,
+                selected=(all_selected if key is None else key in self.selected_difficulties and not all_selected),
+                hovered=hovered,
                 size=FONT_SIZES["caption"],
                 bold=True,
             )
+            if hovered:
+                draw_native_rect(
+                    surface,
+                    UI_THEME.colour("interaction_hover_border"),
+                    rect,
+                    1,
+                    border_radius=8,
+                )
+
+    def _draw_metrics(
+        self,
+        surface: pygame.Surface,
+        total: dict[str, Any],
+        top: int,
+    ) -> None:
         metrics = [
-            ("Раундов", str(total["rounds"])),
-            ("Ответов", str(total["question_count"])),
-            ("Игровых минут", str(round(total["duration"] / 60))),
             (
-                "Лучший результат (25 вопросов)",
-                f"{total['best_score_25_questions']} XP",
+                "Раунды",
+                f"{total['rounds_completed']} / {total['rounds_total']}",
+                "завершённых / всего",
+            ),
+            (
+                "Ответы",
+                (
+                    f"{self._answer_percentage(int(total['correct_count']), int(total['question_count']))}% "
+                    f"· {total['correct_count']} / {total['question_count']}"
+                ),
+                "% · правильных ответов / всего",
+            ),
+            (
+                "Игровое время",
+                str(round(total["duration"] / 60)),
+                "минут",
             ),
         ]
-        for index, (title, value) in enumerate(metrics):
-            rect = pygame.Rect(250 + index * 325, 68, 290, 72)
+        for index, (title, value, caption) in enumerate(metrics):
+            rect = pygame.Rect(250 + index * 435, top, 400, 90)
             panel(surface, rect)
-            draw_text(surface, title, (rect.left + 18, rect.top + 11), 12, MUTED)
-            draw_text(surface, value, (rect.left + 18, rect.top + 34), 23, TEXT, bold=True)
-        left = pygame.Rect(250, 165, 620, 330)
-        right = pygame.Rect(900, 165, 620, 330)
-        bottom = pygame.Rect(250, 525, 1270, 285)
+            draw_text(
+                surface,
+                title,
+                (rect.left + 18, rect.top + 13),
+                12,
+                MUTED,
+            )
+            draw_text(
+                surface,
+                value,
+                (rect.left + 18, rect.top + 39),
+                23,
+                TEXT,
+                bold=True,
+            )
+            draw_text(
+                surface,
+                caption,
+                (rect.right - 18, rect.top + 51),
+                11,
+                MUTED,
+                anchor="midright",
+            )
+
+    def _draw_best_results(
+        self,
+        surface: pygame.Surface,
+        best_scores: dict[int, int],
+        top: int,
+    ) -> None:
+        container = pygame.Rect(250, top, 1270, 155)
+        panel(surface, container)
+        draw_text(
+            surface,
+            "Лучшие результаты",
+            (container.left + 20, container.top + 18),
+            16,
+            TEXT,
+            bold=True,
+        )
+        for index, question_count in enumerate((10, 25, 50, 100)):
+            rect = pygame.Rect(
+                container.left + 20 + index * 313,
+                container.top + 53,
+                291,
+                78,
+            )
+            panel(surface, rect, fill=PANEL_ALT)
+            draw_text(
+                surface,
+                f"{question_count} вопросов",
+                (rect.left + 16, rect.top + 13),
+                12,
+                MUTED,
+            )
+            draw_text(
+                surface,
+                f"{best_scores.get(question_count, 0)} XP",
+                (rect.left + 16, rect.top + 38),
+                23,
+                TEXT,
+                bold=True,
+            )
+
+    def _draw_answer_panels(
+        self,
+        surface: pygame.Surface,
+        stats: dict[str, Any],
+        top: int,
+    ) -> None:
+        left = pygame.Rect(250, top, 620, 350)
+        right = pygame.Rect(900, top, 620, 350)
         panel(surface, left)
         panel(surface, right)
-        panel(surface, bottom)
         draw_text(surface, "Ответы по континентам", (left.left + 20, left.top + 18), 16, TEXT, bold=True)
         country_stats = {item["country_iso"]: item for item in stats["countries"]}
         for index, (continent, label) in enumerate(CONTINENT_NAMES.items()):
-            rows = [country_stats.get(iso3) for iso3 in self.app.catalog.continents[continent]]
-            rows = [row for row in rows if row]
+            rows = [
+                country_stats[iso3]
+                for iso3 in self.app.catalog.continents[continent]
+                if iso3 in country_stats
+            ]
             attempts = sum(row["total"] for row in rows)
             correct = sum(row["correct"] for row in rows)
             y = left.top + 62 + index * 40
@@ -1793,14 +1945,38 @@ class StatisticsView(BaseView):
                 int(mode_stat["correct"]),
                 int(mode_stat["total"]),
             )
-        draw_text(surface, "Активность за последние 30 дней", (bottom.left + 20, bottom.top + 18), 16, TEXT, bold=True)
+
+    def _draw_activity(
+        self,
+        surface: pygame.Surface,
+        recent: list[dict[str, Any]],
+        top: int,
+    ) -> None:
+        bottom = pygame.Rect(250, top, 1270, 350)
+        panel(surface, bottom)
+        draw_text(surface, "Активность за последний год", (bottom.left + 20, bottom.top + 18), 16, TEXT, bold=True)
         self.activity_cells.clear()
-        for column, item in enumerate(stats["recent"]):
+        if not recent:
+            return
+        first_day = date.fromisoformat(str(recent[0]["day"]))
+        grid_start = first_day - timedelta(days=first_day.weekday())
+        grid_left = bottom.left + 78
+        grid_right = bottom.right - 20
+        grid_top = bottom.top + 78
+        cell_size = 15
+        last_day = date.fromisoformat(str(recent[-1]["day"]))
+        max_column = max(1, (last_day - grid_start).days // 7)
+        column_pitch = (grid_right - grid_left - cell_size) / max_column
+        labelled_months: set[tuple[int, int]] = set()
+        for item in recent:
+            day_value = date.fromisoformat(str(item["day"]))
+            day_offset = (day_value - grid_start).days
+            column, row = divmod(day_offset, 7)
             rect = pygame.Rect(
-                bottom.left + 22 + column * 41,
-                bottom.top + 82,
-                30,
-                30,
+                round(grid_left + column * column_pitch),
+                grid_top + row * 21,
+                cell_size,
+                cell_size,
             )
             duration = float(item["duration"])
             if duration > 0:
@@ -1815,28 +1991,54 @@ class StatisticsView(BaseView):
                 GREEN_DARK if duration > 0 else BORDER,
                 rect,
                 1,
-                border_radius=5,
+                border_radius=4,
             )
-            self.activity_cells.append((rect, item["day"], duration))
+            self.activity_cells.append((rect, str(item["day"]), duration))
+            month_key = (day_value.year, day_value.month)
+            if day_value.day <= 7 and month_key not in labelled_months:
+                labelled_months.add(month_key)
+                draw_text(
+                    surface,
+                    DateRangePicker.MONTH_NAMES[day_value.month][:3],
+                    (rect.left, grid_top - 24),
+                    10,
+                    MUTED,
+                    bold=True,
+                )
+
+        for row, label in ((0, "Пн"), (2, "Ср"), (4, "Пт"), (6, "Вс")):
+            draw_text(
+                surface,
+                label,
+                (bottom.left + 20, grid_top + row * 21 + cell_size // 2),
+                10,
+                MUTED,
+                anchor="midleft",
+            )
 
         draw_text(
             surface,
-            "Шкала времени в игре",
-            (bottom.left + 22, bottom.top + 145),
+            "Время в игре за день",
+            (bottom.left + 22, bottom.top + 252),
             12,
             TEXT,
             bold=True,
         )
         legend = (
-            (10 * 60, "до 15 мин"),
-            (20 * 60, "15–30 мин"),
-            (45 * 60, "30–60 мин"),
-            (90 * 60, "1–2 часа"),
-            (3 * 60 * 60, "более 2 часов"),
+            (5 * 60, "до 5 мин"),
+            (10 * 60, "5–10 мин"),
+            (20 * 60, "10–20 мин"),
+            (30 * 60, "20–30 мин"),
+            (31 * 60, "более 30 мин"),
         )
         for index, (seconds, label) in enumerate(legend):
-            x = bottom.left + 22 + index * 238
-            marker = pygame.Rect(x, bottom.top + 178, 18, 18)
+            legend_left = bottom.left + 22
+            legend_right = bottom.right - 140
+            x = round(
+                legend_left
+                + index * (legend_right - legend_left) / (len(legend) - 1)
+            )
+            marker = pygame.Rect(x, bottom.top + 290, 18, 18)
             draw_native_rect(
                 surface,
                 self._activity_colour(seconds),
@@ -1876,6 +2078,46 @@ class StatisticsView(BaseView):
                     bold=True,
                     anchor="midtop",
                 )
+
+    def _draw_scrollbar(self, surface: pygame.Surface) -> None:
+        if self.max_scroll <= 0:
+            return
+        track = pygame.Rect(1525, self.BODY_VIEWPORT.top, 4, self.BODY_VIEWPORT.height)
+        draw_native_rect(surface, BORDER, track, border_radius=2)
+        thumb_height = max(
+            48,
+            round(track.height * self.BODY_VIEWPORT.height / self.CONTENT_HEIGHT),
+        )
+        travel = track.height - thumb_height
+        thumb_top = track.top + round(travel * self.scroll_offset / self.max_scroll)
+        draw_native_rect(
+            surface,
+            CYAN_DARK,
+            (track.left, thumb_top, track.width, thumb_height),
+            border_radius=2,
+        )
+
+    def draw(self, surface: pygame.Surface) -> None:
+        super().draw(surface)
+        stats = self.app.repository.statistics(
+            start_date=self.date_picker.start_date,
+            end_date=self.date_picker.end_date,
+            difficulties=self.selected_difficulties,
+        )
+        self._draw_filters(surface)
+        content_top = self.BODY_VIEWPORT.top - self.scroll_offset
+        previous_clip = surface.get_clip()
+        surface.set_clip(physical_rect(surface, self.BODY_VIEWPORT))
+        self._draw_metrics(surface, stats["total"], content_top)
+        self._draw_best_results(surface, stats["best_scores"], content_top + 115)
+        self._draw_answer_panels(surface, stats, content_top + 295)
+        self._draw_activity(surface, stats["recent"], content_top + 670)
+        surface.set_clip(previous_clip)
+        self._draw_scrollbar(surface)
+        self.date_picker.draw(
+            surface,
+            self.mouse_position or self._pointer_position,
+        )
 
 
 class AchievementsView(BaseView):
